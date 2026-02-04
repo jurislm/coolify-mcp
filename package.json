@@ -1,8 +1,8 @@
 {
-  "name": "@masonator/coolify-mcp",
-  "scope": "@masonator",
-  "version": "2.6.2",
-  "description": "MCP server implementation for Coolify",
+  "name": "@jurislm/coolify-mcp",
+  "scope": "@jurislm",
+  "version": "2.7.0",
+  "description": "MCP server implementation for Coolify (JurisLM fork with bug fixes)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -42,7 +42,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/StuMason/coolify-mcp.git"
+    "url": "https://github.com/terry90918/coolify-mcp.git"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.23.0",
