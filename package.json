@@ -1,6 +1,5 @@
 {
-  "name": "@jurislm/coolify-mcp",
-  "scope": "@jurislm",
+  "name": "jurislm-coolify-mcp",
   "version": "2.7.0",
   "description": "MCP server implementation for Coolify (JurisLM fork with bug fixes)",
   "type": "module",
