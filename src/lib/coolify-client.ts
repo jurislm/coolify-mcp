@@ -898,9 +898,10 @@ export class CoolifyClient {
   }
 
   async updateService(uuid: string, data: UpdateServiceRequest): Promise<Service> {
-    const payload = { ...data };
-    if (payload.docker_compose_raw) {
-      payload.docker_compose_raw = toBase64(payload.docker_compose_raw);
+    const mapped = mapFqdnToDomains(data);
+    const payload = { ...mapped };
+    if (data.docker_compose_raw) {
+      (payload as Record<string, unknown>).docker_compose_raw = toBase64(data.docker_compose_raw);
     }
     return this.request<Service>(`/services/${uuid}`, {
       method: 'PATCH',
