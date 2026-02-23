@@ -773,7 +773,6 @@ export interface CreateServiceRequest {
 export interface UpdateServiceRequest {
   name?: string;
   description?: string;
-  fqdn?: string; // Domain - will be mapped to 'domains' by client
   docker_compose_raw?: string; // Raw or base64 docker-compose YAML (auto-encoded by client)
 }
 
