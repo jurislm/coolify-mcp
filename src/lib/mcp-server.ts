@@ -1140,6 +1140,7 @@ export class CoolifyMcpServer extends McpServer {
               };
             return wrap(() => this.client.listGitHubAppBranches(id, owner, repo));
         }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
     );
 
@@ -1177,7 +1178,8 @@ export class CoolifyMcpServer extends McpServer {
         database_backup_retention_amount_s3: z.number().optional(),
       },
       async (args) => {
-        const { action, database_uuid, backup_uuid, execution_uuid, ...backupData } = args;
+        const { action, database_uuid, backup_uuid, execution_uuid, delete_s3, ...backupData } =
+          args;
         switch (action) {
           case 'list_schedules':
             return wrap(() => this.client.listDatabaseBackups(database_uuid));
@@ -1211,7 +1213,7 @@ export class CoolifyMcpServer extends McpServer {
                 database_uuid,
                 backup_uuid,
                 execution_uuid,
-                args.delete_s3,
+                delete_s3,
               ),
             );
           case 'create':
@@ -1234,6 +1236,7 @@ export class CoolifyMcpServer extends McpServer {
               return { content: [{ type: 'text' as const, text: 'Error: backup_uuid required' }] };
             return wrap(() => this.client.deleteDatabaseBackup(database_uuid, backup_uuid));
         }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
     );
 
@@ -1317,17 +1320,25 @@ export class CoolifyMcpServer extends McpServer {
                   },
                 ],
               };
-            const createData = {
-              type,
-              mount_path,
-              ...(name !== undefined && { name }),
-              ...(host_path !== undefined && { host_path }),
-              ...(content !== undefined && { content }),
-              ...(is_directory !== undefined && { is_directory }),
-              ...(fs_path !== undefined && { fs_path }),
-              ...(resource_type === 'service' &&
-                service_resource_uuid && { resource_uuid: service_resource_uuid }),
-            };
+            const createData =
+              type === 'persistent'
+                ? {
+                    type,
+                    mount_path,
+                    ...(name !== undefined && { name }),
+                    ...(host_path !== undefined && { host_path }),
+                    ...(resource_type === 'service' &&
+                      service_resource_uuid && { resource_uuid: service_resource_uuid }),
+                  }
+                : {
+                    type,
+                    mount_path,
+                    ...(content !== undefined && { content }),
+                    ...(is_directory !== undefined && { is_directory }),
+                    ...(fs_path !== undefined && { fs_path }),
+                    ...(resource_type === 'service' &&
+                      service_resource_uuid && { resource_uuid: service_resource_uuid }),
+                  };
             if (resource_type === 'application')
               return wrap(() => this.client.createApplicationStorage(uuid, createData));
             if (resource_type === 'database')
@@ -1375,6 +1386,7 @@ export class CoolifyMcpServer extends McpServer {
               return wrap(() => this.client.deleteDatabaseStorage(uuid, storage_uuid));
             return wrap(() => this.client.deleteServiceStorage(uuid, storage_uuid));
         }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
     );
 
@@ -1474,6 +1486,7 @@ export class CoolifyMcpServer extends McpServer {
               ? wrap(() => this.client.listApplicationScheduledTaskExecutions(uuid, task_uuid))
               : wrap(() => this.client.listServiceScheduledTaskExecutions(uuid, task_uuid));
         }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
     );
 
@@ -1527,6 +1540,7 @@ export class CoolifyMcpServer extends McpServer {
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
             return wrap(() => this.client.validateCloudToken(uuid));
         }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
     );
 
