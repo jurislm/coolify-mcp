@@ -55,6 +55,12 @@ import type {
   BackupExecution,
   CreateDatabaseBackupRequest,
   UpdateDatabaseBackupRequest,
+  // Storage types
+  StorageListResponse,
+  LocalPersistentVolume,
+  LocalFileVolume,
+  CreateStorageRequest,
+  UpdateStorageRequest,
   // Service types
   Service,
   CreateServiceRequest,
@@ -1178,6 +1184,106 @@ export class CoolifyClient {
 
   async deleteDatabaseBackup(databaseUuid: string, backupUuid: string): Promise<MessageResponse> {
     return this.request<MessageResponse>(`/databases/${databaseUuid}/backups/${backupUuid}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ===========================================================================
+  // Storage endpoints
+  // ===========================================================================
+
+  async listApplicationStorages(applicationUuid: string): Promise<StorageListResponse> {
+    return this.request<StorageListResponse>(`/applications/${applicationUuid}/storages`);
+  }
+
+  async createApplicationStorage(
+    applicationUuid: string,
+    data: CreateStorageRequest,
+  ): Promise<LocalPersistentVolume | LocalFileVolume> {
+    return this.request<LocalPersistentVolume | LocalFileVolume>(
+      `/applications/${applicationUuid}/storages`,
+      { method: 'POST', body: JSON.stringify(data) },
+    );
+  }
+
+  async updateApplicationStorage(
+    applicationUuid: string,
+    data: UpdateStorageRequest,
+  ): Promise<LocalPersistentVolume | LocalFileVolume> {
+    return this.request<LocalPersistentVolume | LocalFileVolume>(
+      `/applications/${applicationUuid}/storages`,
+      { method: 'PATCH', body: JSON.stringify(data) },
+    );
+  }
+
+  async deleteApplicationStorage(
+    applicationUuid: string,
+    storageUuid: string,
+  ): Promise<MessageResponse> {
+    return this.request<MessageResponse>(
+      `/applications/${applicationUuid}/storages/${storageUuid}`,
+      {
+        method: 'DELETE',
+      },
+    );
+  }
+
+  async listDatabaseStorages(databaseUuid: string): Promise<StorageListResponse> {
+    return this.request<StorageListResponse>(`/databases/${databaseUuid}/storages`);
+  }
+
+  async createDatabaseStorage(
+    databaseUuid: string,
+    data: CreateStorageRequest,
+  ): Promise<LocalPersistentVolume | LocalFileVolume> {
+    return this.request<LocalPersistentVolume | LocalFileVolume>(
+      `/databases/${databaseUuid}/storages`,
+      { method: 'POST', body: JSON.stringify(data) },
+    );
+  }
+
+  async updateDatabaseStorage(
+    databaseUuid: string,
+    data: UpdateStorageRequest,
+  ): Promise<LocalPersistentVolume | LocalFileVolume> {
+    return this.request<LocalPersistentVolume | LocalFileVolume>(
+      `/databases/${databaseUuid}/storages`,
+      { method: 'PATCH', body: JSON.stringify(data) },
+    );
+  }
+
+  async deleteDatabaseStorage(databaseUuid: string, storageUuid: string): Promise<MessageResponse> {
+    return this.request<MessageResponse>(`/databases/${databaseUuid}/storages/${storageUuid}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async listServiceStorages(serviceUuid: string): Promise<StorageListResponse> {
+    return this.request<StorageListResponse>(`/services/${serviceUuid}/storages`);
+  }
+
+  async createServiceStorage(
+    serviceUuid: string,
+    data: CreateStorageRequest,
+  ): Promise<LocalPersistentVolume | LocalFileVolume> {
+    return this.request<LocalPersistentVolume | LocalFileVolume>(
+      `/services/${serviceUuid}/storages`,
+      { method: 'POST', body: JSON.stringify(data) },
+    );
+  }
+
+  async updateServiceStorage(
+    serviceUuid: string,
+    data: UpdateStorageRequest,
+  ): Promise<LocalPersistentVolume | LocalFileVolume> {
+    return this.request<LocalPersistentVolume | LocalFileVolume>(
+      `/services/${serviceUuid}/storages`,
+      { method: 'PATCH', body: JSON.stringify(data) },
+    );
+  }
+
+  async deleteServiceStorage(serviceUuid: string, storageUuid: string): Promise<MessageResponse> {
+    return this.request<MessageResponse>(`/services/${serviceUuid}/storages/${storageUuid}`, {
       method: 'DELETE',
     });
   }

@@ -1110,3 +1110,64 @@ export interface DeploymentEssential {
   logs_available?: boolean; // true if logs exist but were excluded
   logs_info?: string;
 }
+
+// =============================================================================
+// Storage Types
+// =============================================================================
+
+export interface LocalPersistentVolume {
+  id: number;
+  uuid: string;
+  name: string;
+  mount_path: string;
+  host_path: string | null;
+  is_preview_suffix_enabled: boolean;
+  resource_id: number;
+  resource_type: string;
+  resource_uuid?: string; // services only
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LocalFileVolume {
+  id: number;
+  uuid: string;
+  fs_path: string | null;
+  mount_path: string;
+  content: string | null;
+  is_directory: boolean;
+  is_based_on_git: boolean;
+  is_preview_suffix_enabled: boolean;
+  resource_id: number;
+  resource_type: string;
+  resource_uuid?: string; // services only
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StorageListResponse {
+  persistent_storages: LocalPersistentVolume[];
+  file_storages: LocalFileVolume[];
+}
+
+export interface CreateStorageRequest {
+  type: 'persistent' | 'file';
+  mount_path: string;
+  name?: string;
+  host_path?: string;
+  content?: string;
+  is_directory?: boolean;
+  fs_path?: string;
+  resource_uuid?: string; // required for service storages
+}
+
+export interface UpdateStorageRequest {
+  type: 'persistent' | 'file';
+  uuid?: string;
+  id?: number;
+  name?: string;
+  mount_path?: string;
+  host_path?: string;
+  content?: string;
+  is_preview_suffix_enabled?: boolean;
+}
