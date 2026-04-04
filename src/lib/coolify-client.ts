@@ -86,6 +86,9 @@ import type {
   CreateGitHubAppRequest,
   UpdateGitHubAppRequest,
   GitHubAppUpdateResponse,
+  GitHubRepository,
+  GitHubRepositorySummary,
+  GitHubBranch,
   // Cloud token types
   CloudToken,
   CreateCloudTokenRequest,
@@ -319,6 +322,16 @@ function toGitHubAppSummary(app: GitHubApp): GitHubAppSummary {
     organization: app.organization,
     is_public: app.is_public,
     app_id: app.app_id,
+  };
+}
+
+function toGitHubRepoSummary(repo: GitHubRepository): GitHubRepositorySummary {
+  return {
+    name: repo.name,
+    full_name: repo.full_name,
+    owner: repo.owner.login,
+    private: repo.private,
+    default_branch: repo.default_branch,
   };
 }
 
@@ -1101,6 +1114,20 @@ export class CoolifyClient {
     });
   }
 
+  async listGitHubAppRepositories(id: number): Promise<GitHubRepositorySummary[]> {
+    const response = await this.request<{ repositories: GitHubRepository[] }>(
+      `/github-apps/${id}/repositories`,
+    );
+    return response.repositories.map(toGitHubRepoSummary);
+  }
+
+  async listGitHubAppBranches(id: number, owner: string, repo: string): Promise<GitHubBranch[]> {
+    const response = await this.request<{ branches: GitHubBranch[] }>(
+      `/github-apps/${id}/repositories/${owner}/${repo}/branches`,
+    );
+    return response.branches;
+  }
+
   // ===========================================================================
   // Cloud Token endpoints (Hetzner, DigitalOcean)
   // ===========================================================================
@@ -1366,7 +1393,10 @@ export class CoolifyClient {
     });
   }
 
-  async deleteApplicationScheduledTask(appUuid: string, taskUuid: string): Promise<MessageResponse> {
+  async deleteApplicationScheduledTask(
+    appUuid: string,
+    taskUuid: string,
+  ): Promise<MessageResponse> {
     return this.request<MessageResponse>(`/applications/${appUuid}/scheduled-tasks/${taskUuid}`, {
       method: 'DELETE',
     });

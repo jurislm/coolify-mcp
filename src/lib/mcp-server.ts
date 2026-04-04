@@ -1032,11 +1032,21 @@ export class CoolifyMcpServer extends McpServer {
     // =========================================================================
     this.tool(
       'github_apps',
-      'Manage GitHub Apps: list/get/create/update/delete',
+      'Manage GitHub Apps: list/get/create/update/delete/list_repositories/list_branches',
       {
-        action: z.enum(['list', 'get', 'create', 'update', 'delete']),
+        action: z.enum([
+          'list',
+          'get',
+          'create',
+          'update',
+          'delete',
+          'list_repositories',
+          'list_branches',
+        ]),
         // GitHub apps use integer id, not uuid
         id: z.number().optional(),
+        owner: z.string().optional().describe('Repository owner (required for list_branches)'),
+        repo: z.string().optional().describe('Repository name (required for list_branches)'),
         // Create/Update fields
         name: z.string().optional(),
         organization: z.string().optional(),
@@ -1053,7 +1063,7 @@ export class CoolifyMcpServer extends McpServer {
         is_system_wide: z.boolean().optional(),
       },
       async (args) => {
-        const { action, id, ...apiData } = args;
+        const { action, id, owner, repo, ...apiData } = args;
         switch (action) {
           case 'list':
             return wrap(async () => {
@@ -1113,6 +1123,17 @@ export class CoolifyMcpServer extends McpServer {
           case 'delete':
             if (!id) return { content: [{ type: 'text' as const, text: 'Error: id required' }] };
             return wrap(() => this.client.deleteGitHubApp(id));
+          case 'list_repositories':
+            if (!id) return { content: [{ type: 'text' as const, text: 'Error: id required' }] };
+            return wrap(() => this.client.listGitHubAppRepositories(id));
+          case 'list_branches':
+            if (!id || !owner || !repo)
+              return {
+                content: [
+                  { type: 'text' as const, text: 'Error: id, owner, repo required' },
+                ],
+              };
+            return wrap(() => this.client.listGitHubAppBranches(id, owner, repo));
         }
       },
     );
@@ -1420,12 +1441,8 @@ export class CoolifyMcpServer extends McpServer {
                 content: [{ type: 'text' as const, text: 'Error: task_uuid required' }],
               };
             return resource_type === 'application'
-              ? wrap(() =>
-                  this.client.listApplicationScheduledTaskExecutions(uuid, task_uuid),
-                )
-              : wrap(() =>
-                  this.client.listServiceScheduledTaskExecutions(uuid, task_uuid),
-                );
+              ? wrap(() => this.client.listApplicationScheduledTaskExecutions(uuid, task_uuid))
+              : wrap(() => this.client.listServiceScheduledTaskExecutions(uuid, task_uuid));
         }
       },
     );

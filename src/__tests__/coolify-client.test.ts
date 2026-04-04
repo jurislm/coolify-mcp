@@ -652,6 +652,49 @@ describe('CoolifyClient', () => {
         expect.objectContaining({ method: 'DELETE' }),
       );
     });
+
+    it('should list github app repositories', async () => {
+      const mockRepos = {
+        repositories: [
+          {
+            id: 123,
+            name: 'my-repo',
+            full_name: 'owner/my-repo',
+            owner: { login: 'owner' },
+            private: false,
+            default_branch: 'main',
+          },
+        ],
+      };
+      mockFetch.mockResolvedValueOnce(mockResponse(mockRepos));
+
+      const result = await client.listGitHubAppRepositories(1);
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result[0]).toHaveProperty('name', 'my-repo');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/github-apps/1/repositories',
+        expect.any(Object),
+      );
+    });
+
+    it('should list github app branches', async () => {
+      const mockBranches = {
+        branches: [
+          { name: 'main', commit: { sha: 'abc123', url: 'https://...' }, protected: true },
+          { name: 'develop', commit: { sha: 'def456', url: 'https://...' }, protected: false },
+        ],
+      };
+      mockFetch.mockResolvedValueOnce(mockResponse(mockBranches));
+
+      const result = await client.listGitHubAppBranches(1, 'owner', 'my-repo');
+
+      expect(result).toEqual(mockBranches.branches);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/github-apps/1/repositories/owner/my-repo/branches',
+        expect.any(Object),
+      );
+    });
   });
 
   describe('error handling', () => {

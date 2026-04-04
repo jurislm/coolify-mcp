@@ -937,6 +937,31 @@ export interface GitHubAppUpdateResponse {
   data: GitHubApp;
 }
 
+export interface GitHubRepository {
+  id: number;
+  name: string;
+  full_name: string;
+  owner: { login: string };
+  private: boolean;
+  default_branch: string;
+  html_url?: string;
+  description?: string | null;
+}
+
+export interface GitHubRepositorySummary {
+  name: string;
+  full_name: string;
+  owner: string;
+  private: boolean;
+  default_branch: string;
+}
+
+export interface GitHubBranch {
+  name: string;
+  commit: { sha: string; url: string };
+  protected: boolean;
+}
+
 // =============================================================================
 // Cloud Token Types (Hetzner, DigitalOcean)
 // =============================================================================
