@@ -109,10 +109,31 @@ The Coolify OpenAPI docs are unreliable — always test against the real API. Kn
 
 ## Git Workflow
 
-- Commit frequently to trigger pre-commit hooks (linting, formatting, tests)
-- Always stage all modified files after making changes
-- Push changes to remote after committing
-- Work on feature branches, not main
+### Commit Message Format
+
+Use bracketed type prefix:
+
+```
+[feat] add storages tool for persistent volume management
+[fix] correct fqdn mapping to domains field
+[refactor] consolidate env var client methods
+[chore] update tool count in README
+[docs] add scheduled tasks to Available Tools
+[test] add method existence checks for storage client
+```
+
+### Commit Timing
+
+Commit after each independent task:
+- Feature module complete
+- Major bug fixed
+- Architecture adjusted
+- Config updated
+
+### Branch Rule
+
+**All development must happen in `.worktrees/develop`**, never directly on `main`.
+`main` only receives changes via PR/merge from `develop`.
 
 ## Publishing
 
