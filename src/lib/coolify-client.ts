@@ -1188,6 +1188,51 @@ export class CoolifyClient {
   }
 
   // ===========================================================================
+  // Database Environment Variables
+  // ===========================================================================
+
+  async listDatabaseEnvVars(
+    uuid: string,
+    options?: { summary?: boolean },
+  ): Promise<EnvironmentVariable[] | EnvVarSummary[]> {
+    const envVars = await this.request<EnvironmentVariable[]>(`/databases/${uuid}/envs`);
+    return options?.summary ? envVars.map(toEnvVarSummary) : envVars;
+  }
+
+  async createDatabaseEnvVar(uuid: string, data: CreateEnvVarRequest): Promise<UuidResponse> {
+    return this.request<UuidResponse>(`/databases/${uuid}/envs`, {
+      method: 'POST',
+      body: JSON.stringify(cleanRequestData(data)),
+    });
+  }
+
+  async updateDatabaseEnvVar(
+    uuid: string,
+    data: UpdateEnvVarRequest,
+  ): Promise<EnvironmentVariable> {
+    return this.request<EnvironmentVariable>(`/databases/${uuid}/envs`, {
+      method: 'PATCH',
+      body: JSON.stringify(cleanRequestData(data)),
+    });
+  }
+
+  async bulkUpdateDatabaseEnvVars(
+    uuid: string,
+    data: BulkUpdateEnvVarsRequest,
+  ): Promise<EnvironmentVariable[]> {
+    return this.request<EnvironmentVariable[]>(`/databases/${uuid}/envs/bulk`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteDatabaseEnvVar(uuid: string, envUuid: string): Promise<MessageResponse> {
+    return this.request<MessageResponse>(`/databases/${uuid}/envs/${envUuid}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ===========================================================================
   // Storage endpoints
   // ===========================================================================
 

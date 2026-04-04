@@ -29,7 +29,7 @@ This MCP server provides **36 token-optimized tools** for **debugging, managemen
 | **Databases**        | `list_databases`, `get_database`, `database` (create 8 types, delete), `database_backups` (CRUD schedules, view executions) |
 | **Services**         | `list_services`, `get_service`, `service` (create, update, delete)                                                          |
 | **Control**          | `control` (start/stop/restart for apps, databases, services)                                                                |
-| **Env Vars**         | `env_vars` (CRUD for application and service env vars)                                                                      |
+| **Env Vars**         | `env_vars` (CRUD for application, service, and database env vars)                                                           |
 | **Deployments**      | `list_deployments`, `deploy`, `deployment` (get, cancel, list_for_app)                                                      |
 | **Private Keys**     | `private_keys` (list, get, create, update, delete via action param)                                                         |
 | **GitHub Apps**      | `github_apps` (list, get, create, update, delete via action param)                                                          |

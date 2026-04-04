@@ -823,16 +823,20 @@ export class CoolifyMcpServer extends McpServer {
     // =========================================================================
     this.tool(
       'env_vars',
-      'Manage env vars for app or service',
+      'Manage env vars for app, service, or database',
       {
-        resource: z.enum(['application', 'service']),
-        action: z.enum(['list', 'create', 'update', 'delete']),
+        resource: z.enum(['application', 'service', 'database']),
+        action: z.enum(['list', 'create', 'update', 'delete', 'bulk_create']),
         uuid: z.string(),
         key: z.string().optional(),
         value: z.string().optional(),
         env_uuid: z.string().optional(),
+        bulk_data: z
+          .array(z.object({ key: z.string(), value: z.string() }))
+          .optional()
+          .describe('Array of {key, value} for bulk_create action'),
       },
-      async ({ resource, action, uuid, key, value, env_uuid }) => {
+      async ({ resource, action, uuid, key, value, env_uuid, bulk_data }) => {
         if (resource === 'application') {
           switch (action) {
             case 'list':
@@ -850,6 +854,37 @@ export class CoolifyMcpServer extends McpServer {
               if (!env_uuid)
                 return { content: [{ type: 'text' as const, text: 'Error: env_uuid required' }] };
               return wrap(() => this.client.deleteApplicationEnvVar(uuid, env_uuid));
+            case 'bulk_create':
+              if (!bulk_data?.length)
+                return {
+                  content: [{ type: 'text' as const, text: 'Error: bulk_data required' }],
+                };
+              return wrap(() =>
+                this.client.bulkUpdateApplicationEnvVars(uuid, { data: bulk_data }),
+              );
+          }
+        } else if (resource === 'database') {
+          switch (action) {
+            case 'list':
+              return wrap(() => this.client.listDatabaseEnvVars(uuid, { summary: true }));
+            case 'create':
+              if (!key || !value)
+                return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
+              return wrap(() => this.client.createDatabaseEnvVar(uuid, { key, value }));
+            case 'update':
+              if (!key || !value)
+                return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
+              return wrap(() => this.client.updateDatabaseEnvVar(uuid, { key, value }));
+            case 'delete':
+              if (!env_uuid)
+                return { content: [{ type: 'text' as const, text: 'Error: env_uuid required' }] };
+              return wrap(() => this.client.deleteDatabaseEnvVar(uuid, env_uuid));
+            case 'bulk_create':
+              if (!bulk_data?.length)
+                return {
+                  content: [{ type: 'text' as const, text: 'Error: bulk_data required' }],
+                };
+              return wrap(() => this.client.bulkUpdateDatabaseEnvVars(uuid, { data: bulk_data }));
           }
         } else {
           switch (action) {
@@ -869,6 +904,12 @@ export class CoolifyMcpServer extends McpServer {
               if (!env_uuid)
                 return { content: [{ type: 'text' as const, text: 'Error: env_uuid required' }] };
               return wrap(() => this.client.deleteServiceEnvVar(uuid, env_uuid));
+            case 'bulk_create':
+              return {
+                content: [
+                  { type: 'text' as const, text: 'Error: service bulk_create not supported' },
+                ],
+              };
           }
         }
       },

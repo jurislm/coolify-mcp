@@ -125,6 +125,11 @@ describe('CoolifyMcpServer v2', () => {
       expect(typeof client.listServiceEnvVars).toBe('function');
       expect(typeof client.createServiceEnvVar).toBe('function');
       expect(typeof client.deleteServiceEnvVar).toBe('function');
+      expect(typeof client.listDatabaseEnvVars).toBe('function');
+      expect(typeof client.createDatabaseEnvVar).toBe('function');
+      expect(typeof client.updateDatabaseEnvVar).toBe('function');
+      expect(typeof client.bulkUpdateDatabaseEnvVars).toBe('function');
+      expect(typeof client.deleteDatabaseEnvVar).toBe('function');
 
       // Deployment operations
       expect(typeof client.listDeployments).toBe('function');

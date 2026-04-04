@@ -2031,6 +2031,91 @@ describe('CoolifyClient', () => {
     });
   });
 
+  describe('database environment variables', () => {
+    const mockEnvVar = {
+      uuid: 'db-env-uuid',
+      key: 'DB_VAR',
+      value: 'db-value',
+    };
+
+    it('should list database env vars', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse([mockEnvVar]));
+
+      const result = await client.listDatabaseEnvVars('db-uuid');
+
+      expect(result).toEqual([mockEnvVar]);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/databases/db-uuid/envs',
+        expect.any(Object),
+      );
+    });
+
+    it('should list database env vars with summary', async () => {
+      const mockEnvVars = [{ uuid: 'e1', key: 'KEY1', value: 'val1' }];
+      mockFetch.mockResolvedValueOnce(mockResponse(mockEnvVars));
+
+      const result = await client.listDatabaseEnvVars('db-uuid', { summary: true });
+
+      expect(Array.isArray(result)).toBe(true);
+    });
+
+    it('should create database env var', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ uuid: 'new-db-env-uuid' }));
+
+      const result = await client.createDatabaseEnvVar('db-uuid', {
+        key: 'NEW_DB_VAR',
+        value: 'new-value',
+      });
+
+      expect(result).toEqual({ uuid: 'new-db-env-uuid' });
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/databases/db-uuid/envs',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+
+    it('should update database env var', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(mockEnvVar));
+
+      const result = await client.updateDatabaseEnvVar('db-uuid', {
+        key: 'DB_VAR',
+        value: 'updated-value',
+      });
+
+      expect(result).toEqual(mockEnvVar);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/databases/db-uuid/envs',
+        expect.objectContaining({ method: 'PATCH' }),
+      );
+    });
+
+    it('should bulk update database env vars', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse([mockEnvVar]));
+
+      const result = await client.bulkUpdateDatabaseEnvVars('db-uuid', {
+        data: [{ key: 'DB_VAR', value: 'bulk-value' }],
+      });
+
+      expect(result).toEqual([mockEnvVar]);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/databases/db-uuid/envs/bulk',
+        expect.objectContaining({ method: 'PATCH' }),
+      );
+    });
+
+    it('should delete database env var', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Deleted' }));
+
+      const result = await client.deleteDatabaseEnvVar('db-uuid', 'db-env-uuid');
+
+      expect(result).toEqual({ message: 'Deleted' });
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/databases/db-uuid/envs/db-env-uuid',
+        expect.objectContaining({ method: 'DELETE' }),
+      );
+    });
+  });
+
   // =========================================================================
   // Deployment endpoints - extended coverage
   // =========================================================================
