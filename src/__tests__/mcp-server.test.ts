@@ -188,6 +188,14 @@ describe('CoolifyMcpServer v2', () => {
       expect(typeof client.updateServiceStorage).toBe('function');
       expect(typeof client.deleteServiceStorage).toBe('function');
 
+      // Cloud token operations
+      expect(typeof client.listCloudTokens).toBe('function');
+      expect(typeof client.getCloudToken).toBe('function');
+      expect(typeof client.createCloudToken).toBe('function');
+      expect(typeof client.updateCloudToken).toBe('function');
+      expect(typeof client.deleteCloudToken).toBe('function');
+      expect(typeof client.validateCloudToken).toBe('function');
+
       // Diagnostic operations
       expect(typeof client.diagnoseApplication).toBe('function');
       expect(typeof client.diagnoseServer).toBe('function');

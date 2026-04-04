@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Service storages require `service_resource_uuid` to target a specific sub-resource
   - 12 new client methods across all resource types
 
+- **Cloud Provider Tokens** - New `cloud_tokens` tool for managing Hetzner/DigitalOcean credentials:
+  - Actions: `list`, `get`, `create`, `update`, `delete`, `validate`
+  - Fixed `UpdateCloudTokenRequest.name` to be required (matches API contract)
+
 - **GitHub Apps Repositories** - Extended `github_apps` tool with repository and branch listing:
   - `list_repositories` action: browse repositories accessible to a GitHub App
   - `list_branches` action: list branches of a specific repository

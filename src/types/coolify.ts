@@ -986,7 +986,7 @@ export interface CreateCloudTokenRequest {
 }
 
 export interface UpdateCloudTokenRequest {
-  name?: string;
+  name: string;
 }
 
 export interface CloudTokenValidation {

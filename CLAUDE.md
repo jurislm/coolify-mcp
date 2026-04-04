@@ -155,11 +155,11 @@ When making changes to the codebase, ensure documentation is updated:
    - Follow [Keep a Changelog](https://keepachangelog.com/) format
 
 2. **README.md** - Update if:
-   - Tool count changes (update "37 tools" in Features section)
+   - Tool count changes (update "38 tools" in Features section)
    - New tools added (add to appropriate category in Available Tools)
    - New example prompts needed
    - Response size improvements made (update comparison table)
 
-3. **This file (CLAUDE.md)** - Update tool count if changed (currently 37 tools)
+3. **This file (CLAUDE.md)** - Update tool count if changed (currently 38 tools)
 
 Always work on a feature branch and include documentation updates in the same PR as code changes.

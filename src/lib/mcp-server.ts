@@ -1448,6 +1448,59 @@ export class CoolifyMcpServer extends McpServer {
     );
 
     // =========================================================================
+    // Cloud Tokens (1 tool)
+    // =========================================================================
+    this.tool(
+      'cloud_tokens',
+      'Manage cloud provider tokens (Hetzner/DigitalOcean): list/get/create/update/delete/validate',
+      {
+        action: z.enum(['list', 'get', 'create', 'update', 'delete', 'validate']),
+        uuid: z
+          .string()
+          .optional()
+          .describe('Token UUID (required for get/update/delete/validate)'),
+        provider: z
+          .enum(['hetzner', 'digitalocean'])
+          .optional()
+          .describe('Cloud provider (required for create)'),
+        token: z.string().optional().describe('API token (required for create)'),
+        name: z.string().optional().describe('Token name (required for create/update)'),
+      },
+      async ({ action, uuid, provider, token, name }) => {
+        switch (action) {
+          case 'list':
+            return wrap(() => this.client.listCloudTokens());
+          case 'get':
+            if (!uuid)
+              return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
+            return wrap(() => this.client.getCloudToken(uuid));
+          case 'create':
+            if (!provider || !token || !name)
+              return {
+                content: [
+                  { type: 'text' as const, text: 'Error: provider, token, name required' },
+                ],
+              };
+            return wrap(() => this.client.createCloudToken({ provider, token, name }));
+          case 'update':
+            if (!uuid || !name)
+              return {
+                content: [{ type: 'text' as const, text: 'Error: uuid, name required' }],
+              };
+            return wrap(() => this.client.updateCloudToken(uuid, { name }));
+          case 'delete':
+            if (!uuid)
+              return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
+            return wrap(() => this.client.deleteCloudToken(uuid));
+          case 'validate':
+            if (!uuid)
+              return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
+            return wrap(() => this.client.validateCloudToken(uuid));
+        }
+      },
+    );
+
+    // =========================================================================
     // Batch Operations (4 tools)
     // =========================================================================
     this.tool(
