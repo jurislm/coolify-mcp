@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Service storages require `service_resource_uuid` to target a specific sub-resource
   - 12 new client methods across all resource types
 
+- **Backup Execution Deletion** - Extended `database_backups` tool with `delete_execution` action:
+  - Delete individual backup execution records
+  - Optional `delete_s3` parameter to also remove S3 backup files
+
 - **Cloud Provider Tokens** - New `cloud_tokens` tool for managing Hetzner/DigitalOcean credentials:
   - Actions: `list`, `get`, `create`, `update`, `delete`, `validate`
   - Fixed `UpdateCloudTokenRequest.name` to be required (matches API contract)

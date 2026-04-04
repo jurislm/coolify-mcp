@@ -1192,6 +1192,21 @@ export class CoolifyClient {
     );
   }
 
+  async deleteBackupExecution(
+    databaseUuid: string,
+    backupUuid: string,
+    executionUuid: string,
+    deleteS3?: boolean,
+  ): Promise<MessageResponse> {
+    return this.request<MessageResponse>(
+      `/databases/${databaseUuid}/backups/${backupUuid}/executions/${executionUuid}`,
+      {
+        method: 'DELETE',
+        ...(deleteS3 && { body: JSON.stringify({ delete_s3: true }) }),
+      },
+    );
+  }
+
   async createDatabaseBackup(
     databaseUuid: string,
     data: CreateDatabaseBackupRequest,

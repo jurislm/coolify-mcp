@@ -1801,6 +1801,42 @@ describe('CoolifyClient', () => {
       );
     });
 
+    it('should delete a backup execution', async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockResponse({ message: 'Backup execution deleted.' }),
+      );
+
+      const result = await client.deleteBackupExecution('db-uuid', 'backup-uuid', 'exec-uuid');
+
+      expect(result).toEqual({ message: 'Backup execution deleted.' });
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/databases/db-uuid/backups/backup-uuid/executions/exec-uuid',
+        expect.objectContaining({ method: 'DELETE' }),
+      );
+    });
+
+    it('should delete a backup execution with delete_s3', async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockResponse({ message: 'Backup execution deleted.' }),
+      );
+
+      const result = await client.deleteBackupExecution(
+        'db-uuid',
+        'backup-uuid',
+        'exec-uuid',
+        true,
+      );
+
+      expect(result).toEqual({ message: 'Backup execution deleted.' });
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/databases/db-uuid/backups/backup-uuid/executions/exec-uuid',
+        expect.objectContaining({
+          method: 'DELETE',
+          body: JSON.stringify({ delete_s3: true }),
+        }),
+      );
+    });
+
     it('should create a PostgreSQL database', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse({ uuid: 'pg-uuid' }));
 

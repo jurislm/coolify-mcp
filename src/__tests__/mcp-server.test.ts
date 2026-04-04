@@ -161,6 +161,7 @@ describe('CoolifyMcpServer v2', () => {
       expect(typeof client.deleteDatabaseBackup).toBe('function');
       expect(typeof client.listBackupExecutions).toBe('function');
       expect(typeof client.getBackupExecution).toBe('function');
+      expect(typeof client.deleteBackupExecution).toBe('function');
 
       // Scheduled task operations
       expect(typeof client.listApplicationScheduledTasks).toBe('function');

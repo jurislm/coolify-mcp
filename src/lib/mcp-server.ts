@@ -1148,13 +1148,14 @@ export class CoolifyMcpServer extends McpServer {
     // =========================================================================
     this.tool(
       'database_backups',
-      'Manage backups: list_schedules/get_schedule/list_executions/get_execution/create/update/delete',
+      'Manage backups: list_schedules/get_schedule/list_executions/get_execution/delete_execution/create/update/delete',
       {
         action: z.enum([
           'list_schedules',
           'get_schedule',
           'list_executions',
           'get_execution',
+          'delete_execution',
           'create',
           'update',
           'delete',
@@ -1162,6 +1163,7 @@ export class CoolifyMcpServer extends McpServer {
         database_uuid: z.string(),
         backup_uuid: z.string().optional(),
         execution_uuid: z.string().optional(),
+        delete_s3: z.boolean().optional().describe('Also delete backup file from S3 (for delete_execution)'),
         // Backup configuration parameters
         frequency: z.string().optional(),
         enabled: z.boolean().optional(),
@@ -1196,6 +1198,21 @@ export class CoolifyMcpServer extends McpServer {
               };
             return wrap(() =>
               this.client.getBackupExecution(database_uuid, backup_uuid, execution_uuid),
+            );
+          case 'delete_execution':
+            if (!backup_uuid || !execution_uuid)
+              return {
+                content: [
+                  { type: 'text' as const, text: 'Error: backup_uuid, execution_uuid required' },
+                ],
+              };
+            return wrap(() =>
+              this.client.deleteBackupExecution(
+                database_uuid,
+                backup_uuid,
+                execution_uuid,
+                args.delete_s3,
+              ),
             );
           case 'create':
             if (!args.frequency)
