@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Storage Management** - New `storages` tool for managing persistent volumes and file storages:
+  - Supports applications, databases, and services via `resource_type` parameter
+  - Actions: `list`, `create`, `update`, `delete`
+  - Persistent volumes: named Docker volumes with optional host path binding
+  - File storages: mounted config files or directories with optional inline content
+  - Service storages require `service_resource_uuid` to target a specific sub-resource
+  - 12 new client methods across all resource types
+
 ## [2.6.2] - 2026-01-31
 
 ### Fixed

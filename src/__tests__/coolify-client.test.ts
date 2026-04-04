@@ -3476,4 +3476,192 @@ describe('CoolifyClient', () => {
       });
     });
   });
+
+  // ===========================================================================
+  // Storage endpoints
+  // ===========================================================================
+
+  describe('Storage Operations', () => {
+    const mockStorageList = {
+      persistent_storages: [{ id: 1, uuid: 'pv-uuid', name: 'data', mount_path: '/data' }],
+      file_storages: [{ id: 2, uuid: 'fv-uuid', mount_path: '/config', content: 'key=value' }],
+    };
+    const mockPersistentStorage = { id: 1, uuid: 'pv-uuid', name: 'data', mount_path: '/data' };
+    const mockDeleteResponse = { message: 'Storage deleted.' };
+
+    describe('Application Storages', () => {
+      it('should list application storages', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse(mockStorageList));
+
+        const result = await client.listApplicationStorages('app-uuid');
+
+        expect(result).toEqual(mockStorageList);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/applications/app-uuid/storages',
+          expect.any(Object),
+        );
+      });
+
+      it('should create an application storage', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse(mockPersistentStorage));
+
+        const result = await client.createApplicationStorage('app-uuid', {
+          type: 'persistent',
+          name: 'data',
+          mount_path: '/data',
+        });
+
+        expect(result).toEqual(mockPersistentStorage);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/applications/app-uuid/storages',
+          expect.objectContaining({ method: 'POST' }),
+        );
+      });
+
+      it('should update an application storage', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse(mockPersistentStorage));
+
+        const result = await client.updateApplicationStorage('app-uuid', {
+          type: 'persistent',
+          uuid: 'pv-uuid',
+          mount_path: '/data-new',
+        });
+
+        expect(result).toEqual(mockPersistentStorage);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/applications/app-uuid/storages',
+          expect.objectContaining({ method: 'PATCH' }),
+        );
+      });
+
+      it('should delete an application storage', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse(mockDeleteResponse));
+
+        const result = await client.deleteApplicationStorage('app-uuid', 'pv-uuid');
+
+        expect(result).toEqual(mockDeleteResponse);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/applications/app-uuid/storages/pv-uuid',
+          expect.objectContaining({ method: 'DELETE' }),
+        );
+      });
+    });
+
+    describe('Database Storages', () => {
+      it('should list database storages', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse(mockStorageList));
+
+        const result = await client.listDatabaseStorages('db-uuid');
+
+        expect(result).toEqual(mockStorageList);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/databases/db-uuid/storages',
+          expect.any(Object),
+        );
+      });
+
+      it('should create a database storage', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse(mockPersistentStorage));
+
+        const result = await client.createDatabaseStorage('db-uuid', {
+          type: 'persistent',
+          name: 'db-data',
+          mount_path: '/var/lib/postgresql/data',
+        });
+
+        expect(result).toEqual(mockPersistentStorage);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/databases/db-uuid/storages',
+          expect.objectContaining({ method: 'POST' }),
+        );
+      });
+
+      it('should update a database storage', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse(mockPersistentStorage));
+
+        const result = await client.updateDatabaseStorage('db-uuid', {
+          type: 'persistent',
+          uuid: 'pv-uuid',
+          mount_path: '/var/lib/postgresql/data',
+        });
+
+        expect(result).toEqual(mockPersistentStorage);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/databases/db-uuid/storages',
+          expect.objectContaining({ method: 'PATCH' }),
+        );
+      });
+
+      it('should delete a database storage', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse(mockDeleteResponse));
+
+        const result = await client.deleteDatabaseStorage('db-uuid', 'pv-uuid');
+
+        expect(result).toEqual(mockDeleteResponse);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/databases/db-uuid/storages/pv-uuid',
+          expect.objectContaining({ method: 'DELETE' }),
+        );
+      });
+    });
+
+    describe('Service Storages', () => {
+      it('should list service storages', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse(mockStorageList));
+
+        const result = await client.listServiceStorages('svc-uuid');
+
+        expect(result).toEqual(mockStorageList);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/services/svc-uuid/storages',
+          expect.any(Object),
+        );
+      });
+
+      it('should create a service storage', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse(mockPersistentStorage));
+
+        const result = await client.createServiceStorage('svc-uuid', {
+          type: 'persistent',
+          name: 'svc-data',
+          mount_path: '/data',
+          resource_uuid: 'sub-resource-uuid',
+        });
+
+        expect(result).toEqual(mockPersistentStorage);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/services/svc-uuid/storages',
+          expect.objectContaining({ method: 'POST' }),
+        );
+      });
+
+      it('should update a service storage', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse(mockPersistentStorage));
+
+        const result = await client.updateServiceStorage('svc-uuid', {
+          type: 'persistent',
+          uuid: 'pv-uuid',
+          mount_path: '/data-new',
+        });
+
+        expect(result).toEqual(mockPersistentStorage);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/services/svc-uuid/storages',
+          expect.objectContaining({ method: 'PATCH' }),
+        );
+      });
+
+      it('should delete a service storage', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse(mockDeleteResponse));
+
+        const result = await client.deleteServiceStorage('svc-uuid', 'pv-uuid');
+
+        expect(result).toEqual(mockDeleteResponse);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/services/svc-uuid/storages/pv-uuid',
+          expect.objectContaining({ method: 'DELETE' }),
+        );
+      });
+    });
+  });
 });

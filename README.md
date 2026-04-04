@@ -15,7 +15,7 @@ A Model Context Protocol (MCP) server for [Coolify](https://coolify.io/), enabli
 
 ## Features
 
-This MCP server provides **35 token-optimized tools** for **debugging, management, and deployment**:
+This MCP server provides **36 token-optimized tools** for **debugging, management, and deployment**:
 
 | Category             | Tools                                                                                                                       |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------- |
@@ -33,6 +33,7 @@ This MCP server provides **35 token-optimized tools** for **debugging, managemen
 | **Deployments**      | `list_deployments`, `deploy`, `deployment` (get, cancel, list_for_app)                                                      |
 | **Private Keys**     | `private_keys` (list, get, create, update, delete via action param)                                                         |
 | **GitHub Apps**      | `github_apps` (list, get, create, update, delete via action param)                                                          |
+| **Storages**         | `storages` (list, create, update, delete for applications, databases, services)                                             |
 
 ### Token-Optimized Design
 
@@ -276,6 +277,13 @@ These tools accept human-friendly identifiers instead of just UUIDs:
 - `service` - Create, update, or delete services with `action: create|update|delete`
 - `env_vars` - Manage env vars with `resource: service, action: list|create|delete`
 - `control` - Start/stop/restart with `resource: service, action: start|stop|restart`
+
+### Storages
+
+- `storages` - Manage persistent volumes & file storages with `action: list|create|update|delete, resource_type: application|database|service`
+  - Persistent volumes: named Docker volumes with optional host path
+  - File storages: mounted config files or directories with optional content
+  - Service storages require `service_resource_uuid` for create to target a sub-resource
 
 ### Deployments
 

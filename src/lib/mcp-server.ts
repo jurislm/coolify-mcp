@@ -1154,6 +1154,147 @@ export class CoolifyMcpServer extends McpServer {
     );
 
     // =========================================================================
+    // Storage Management (1 tool)
+    // =========================================================================
+    this.tool(
+      'storages',
+      'Manage persistent volumes & file storages: list/create/update/delete for applications, databases, services',
+      {
+        action: z.enum(['list', 'create', 'update', 'delete']),
+        resource_type: z.enum(['application', 'database', 'service']),
+        uuid: z.string().describe('The application/database/service UUID'),
+        storage_uuid: z.string().optional().describe('Storage UUID (required for delete)'),
+        // create/update fields
+        type: z
+          .enum(['persistent', 'file'])
+          .optional()
+          .describe('Storage type (required for create/update)'),
+        name: z.string().optional().describe('Volume name (persistent only)'),
+        mount_path: z
+          .string()
+          .optional()
+          .describe('Mount path inside container (required for create)'),
+        host_path: z.string().optional().describe('Host path to mount (persistent only)'),
+        content: z.string().optional().describe('File content (file only)'),
+        is_directory: z.boolean().optional().describe('Mount as directory (file only)'),
+        fs_path: z
+          .string()
+          .optional()
+          .describe('Filesystem path (file only, required when is_directory=true)'),
+        is_preview_suffix_enabled: z
+          .boolean()
+          .optional()
+          .describe('Enable preview suffix (update only)'),
+        service_resource_uuid: z
+          .string()
+          .optional()
+          .describe('Sub-resource UUID (required for service create)'),
+      },
+      async (args) => {
+        const {
+          action,
+          resource_type,
+          uuid,
+          storage_uuid,
+          service_resource_uuid,
+          type,
+          name,
+          mount_path,
+          host_path,
+          content,
+          is_directory,
+          fs_path,
+          is_preview_suffix_enabled,
+        } = args;
+
+        switch (action) {
+          case 'list':
+            if (resource_type === 'application')
+              return wrap(() => this.client.listApplicationStorages(uuid));
+            if (resource_type === 'database')
+              return wrap(() => this.client.listDatabaseStorages(uuid));
+            return wrap(() => this.client.listServiceStorages(uuid));
+
+          case 'create': {
+            if (!type)
+              return {
+                content: [{ type: 'text' as const, text: 'Error: type required for create' }],
+              };
+            if (!mount_path)
+              return {
+                content: [{ type: 'text' as const, text: 'Error: mount_path required for create' }],
+              };
+            if (resource_type === 'service' && !service_resource_uuid)
+              return {
+                content: [
+                  {
+                    type: 'text' as const,
+                    text: 'Error: service_resource_uuid required for service storage create',
+                  },
+                ],
+              };
+            const createData = {
+              type,
+              mount_path,
+              ...(name !== undefined && { name }),
+              ...(host_path !== undefined && { host_path }),
+              ...(content !== undefined && { content }),
+              ...(is_directory !== undefined && { is_directory }),
+              ...(fs_path !== undefined && { fs_path }),
+              ...(resource_type === 'service' &&
+                service_resource_uuid && { resource_uuid: service_resource_uuid }),
+            };
+            if (resource_type === 'application')
+              return wrap(() => this.client.createApplicationStorage(uuid, createData));
+            if (resource_type === 'database')
+              return wrap(() => this.client.createDatabaseStorage(uuid, createData));
+            return wrap(() => this.client.createServiceStorage(uuid, createData));
+          }
+
+          case 'update': {
+            if (!type)
+              return {
+                content: [{ type: 'text' as const, text: 'Error: type required for update' }],
+              };
+            if (!storage_uuid)
+              return {
+                content: [
+                  { type: 'text' as const, text: 'Error: storage_uuid required for update' },
+                ],
+              };
+            const updateData = {
+              type,
+              uuid: storage_uuid,
+              ...(name !== undefined && { name }),
+              ...(mount_path !== undefined && { mount_path }),
+              ...(host_path !== undefined && { host_path }),
+              ...(content !== undefined && { content }),
+              ...(is_preview_suffix_enabled !== undefined && { is_preview_suffix_enabled }),
+            };
+            if (resource_type === 'application')
+              return wrap(() => this.client.updateApplicationStorage(uuid, updateData));
+            if (resource_type === 'database')
+              return wrap(() => this.client.updateDatabaseStorage(uuid, updateData));
+            return wrap(() => this.client.updateServiceStorage(uuid, updateData));
+          }
+
+          case 'delete':
+            if (!storage_uuid)
+              return {
+                content: [
+                  { type: 'text' as const, text: 'Error: storage_uuid required for delete' },
+                ],
+              };
+            if (resource_type === 'application')
+              return wrap(() => this.client.deleteApplicationStorage(uuid, storage_uuid));
+            if (resource_type === 'database')
+              return wrap(() => this.client.deleteDatabaseStorage(uuid, storage_uuid));
+            return wrap(() => this.client.deleteServiceStorage(uuid, storage_uuid));
+        }
+      },
+    );
+
+    // =========================================================================
     // Batch Operations (4 tools)
     // =========================================================================
     this.tool(

@@ -155,6 +155,20 @@ describe('CoolifyMcpServer v2', () => {
       expect(typeof client.listBackupExecutions).toBe('function');
       expect(typeof client.getBackupExecution).toBe('function');
 
+      // Storage operations
+      expect(typeof client.listApplicationStorages).toBe('function');
+      expect(typeof client.createApplicationStorage).toBe('function');
+      expect(typeof client.updateApplicationStorage).toBe('function');
+      expect(typeof client.deleteApplicationStorage).toBe('function');
+      expect(typeof client.listDatabaseStorages).toBe('function');
+      expect(typeof client.createDatabaseStorage).toBe('function');
+      expect(typeof client.updateDatabaseStorage).toBe('function');
+      expect(typeof client.deleteDatabaseStorage).toBe('function');
+      expect(typeof client.listServiceStorages).toBe('function');
+      expect(typeof client.createServiceStorage).toBe('function');
+      expect(typeof client.updateServiceStorage).toBe('function');
+      expect(typeof client.deleteServiceStorage).toBe('function');
+
       // Diagnostic operations
       expect(typeof client.diagnoseApplication).toBe('function');
       expect(typeof client.diagnoseServer).toBe('function');
