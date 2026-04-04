@@ -912,6 +912,11 @@ export class CoolifyMcpServer extends McpServer {
               };
           }
         }
+        return {
+          content: [
+            { type: 'text' as const, text: 'Error: unknown action/resource combination' },
+          ],
+        };
       },
     );
 
@@ -1403,28 +1408,36 @@ export class CoolifyMcpServer extends McpServer {
               : wrap(() => this.client.createServiceScheduledTask(uuid, createData));
           }
 
-          case 'update':
+          case 'update': {
             if (!task_uuid)
               return {
                 content: [{ type: 'text' as const, text: 'Error: task_uuid required' }],
               };
+            const updateData = {
+              ...(name !== undefined && { name }),
+              ...(command !== undefined && { command }),
+              ...(frequency !== undefined && { frequency }),
+              ...(taskData.container !== undefined && { container: taskData.container }),
+              ...(taskData.timeout !== undefined && { timeout: taskData.timeout }),
+              ...(taskData.enabled !== undefined && { enabled: taskData.enabled }),
+            };
+            if (Object.keys(updateData).length === 0)
+              return {
+                content: [
+                  {
+                    type: 'text' as const,
+                    text: 'Error: at least one field required for update (name, command, frequency, container, timeout, enabled)',
+                  },
+                ],
+              };
             return resource_type === 'application'
               ? wrap(() =>
-                  this.client.updateApplicationScheduledTask(uuid, task_uuid, {
-                    name,
-                    command,
-                    frequency,
-                    ...taskData,
-                  }),
+                  this.client.updateApplicationScheduledTask(uuid, task_uuid, updateData),
                 )
               : wrap(() =>
-                  this.client.updateServiceScheduledTask(uuid, task_uuid, {
-                    name,
-                    command,
-                    frequency,
-                    ...taskData,
-                  }),
+                  this.client.updateServiceScheduledTask(uuid, task_uuid, updateData),
                 );
+          }
 
           case 'delete':
             if (!task_uuid)
@@ -1463,7 +1476,7 @@ export class CoolifyMcpServer extends McpServer {
           .enum(['hetzner', 'digitalocean'])
           .optional()
           .describe('Cloud provider (required for create)'),
-        token: z.string().optional().describe('API token (required for create)'),
+        token: z.string().optional().describe('API token (required for create, not updatable — rotate via delete+create)'),
         name: z.string().optional().describe('Token name (required for create/update)'),
       },
       async ({ action, uuid, provider, token, name }) => {
