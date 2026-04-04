@@ -1,7 +1,7 @@
 {
-  "name": "jurislm-coolify-mcp",
+  "name": "@jurislm/coolify-mcp",
   "version": "2.7.1",
-  "description": "MCP server implementation for Coolify (JurisLM fork with bug fixes)",
+  "description": "MCP server implementation for Coolify",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -41,7 +41,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/terry90918/coolify-mcp.git"
+    "url": "https://github.com/jurislm/coolify-mcp.git"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.23.0",
