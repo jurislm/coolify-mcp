@@ -1123,7 +1123,7 @@ export class CoolifyClient {
 
   async listGitHubAppBranches(id: number, owner: string, repo: string): Promise<GitHubBranch[]> {
     const response = await this.request<{ branches: GitHubBranch[] }>(
-      `/github-apps/${id}/repositories/${owner}/${repo}/branches`,
+      `/github-apps/${id}/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/branches`,
     );
     return response.branches;
   }
@@ -1202,7 +1202,7 @@ export class CoolifyClient {
       `/databases/${databaseUuid}/backups/${backupUuid}/executions/${executionUuid}`,
       {
         method: 'DELETE',
-        ...(deleteS3 && { body: JSON.stringify({ delete_s3: true }) }),
+        ...(deleteS3 !== undefined && { body: JSON.stringify({ delete_s3: deleteS3 }) }),
       },
     );
   }

@@ -26,7 +26,7 @@ This MCP server provides **38 token-optimized tools** for **debugging, managemen
 | **Projects**         | `projects` (list, get, create, update, delete via action param)                                                             |
 | **Environments**     | `environments` (list, get, create, delete via action param)                                                                 |
 | **Applications**     | `list_applications`, `get_application`, `application` (CRUD), `application_logs`                                            |
-| **Databases**        | `list_databases`, `get_database`, `database` (create 8 types, delete), `database_backups` (CRUD schedules, view executions) |
+| **Databases**        | `list_databases`, `get_database`, `database` (create 8 types, delete), `database_backups` (CRUD schedules, view/delete executions) |
 | **Services**         | `list_services`, `get_service`, `service` (create, update, delete)                                                          |
 | **Control**          | `control` (start/stop/restart for apps, databases, services)                                                                |
 | **Env Vars**         | `env_vars` (CRUD for application, service, and database env vars)                                                           |
@@ -266,7 +266,7 @@ These tools accept human-friendly identifiers instead of just UUIDs:
 - `list_databases` - List all databases (returns summary)
 - `get_database` - Get database details
 - `database` - Create or delete databases with `action: create|delete, type: postgresql|mysql|mariadb|mongodb|redis|keydb|clickhouse|dragonfly`
-- `database_backups` - Manage backup schedules with `action: list_schedules|get_schedule|create|update|delete|list_executions|get_execution`
+- `database_backups` - Manage backup schedules with `action: list_schedules|get_schedule|create|update|delete|list_executions|get_execution|delete_execution`
   - Configure frequency, retention policies, S3 storage
   - Enable/disable schedules without deletion
   - View backup execution history
