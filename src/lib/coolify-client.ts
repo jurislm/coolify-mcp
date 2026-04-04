@@ -61,6 +61,11 @@ import type {
   LocalFileVolume,
   CreateStorageRequest,
   UpdateStorageRequest,
+  // Scheduled task types
+  ScheduledTask,
+  ScheduledTaskExecution,
+  CreateScheduledTaskRequest,
+  UpdateScheduledTaskRequest,
   // Service types
   Service,
   CreateServiceRequest,
@@ -1330,6 +1335,93 @@ export class CoolifyClient {
     return this.request<MessageResponse>(`/services/${serviceUuid}/storages/${storageUuid}`, {
       method: 'DELETE',
     });
+  }
+
+  // ===========================================================================
+  // Scheduled Tasks
+  // ===========================================================================
+
+  async listApplicationScheduledTasks(appUuid: string): Promise<ScheduledTask[]> {
+    return this.request<ScheduledTask[]>(`/applications/${appUuid}/scheduled-tasks`);
+  }
+
+  async createApplicationScheduledTask(
+    appUuid: string,
+    data: CreateScheduledTaskRequest,
+  ): Promise<ScheduledTask> {
+    return this.request<ScheduledTask>(`/applications/${appUuid}/scheduled-tasks`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateApplicationScheduledTask(
+    appUuid: string,
+    taskUuid: string,
+    data: UpdateScheduledTaskRequest,
+  ): Promise<ScheduledTask> {
+    return this.request<ScheduledTask>(`/applications/${appUuid}/scheduled-tasks/${taskUuid}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteApplicationScheduledTask(appUuid: string, taskUuid: string): Promise<MessageResponse> {
+    return this.request<MessageResponse>(`/applications/${appUuid}/scheduled-tasks/${taskUuid}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async listApplicationScheduledTaskExecutions(
+    appUuid: string,
+    taskUuid: string,
+  ): Promise<ScheduledTaskExecution[]> {
+    return this.request<ScheduledTaskExecution[]>(
+      `/applications/${appUuid}/scheduled-tasks/${taskUuid}/executions`,
+    );
+  }
+
+  async listServiceScheduledTasks(serviceUuid: string): Promise<ScheduledTask[]> {
+    return this.request<ScheduledTask[]>(`/services/${serviceUuid}/scheduled-tasks`);
+  }
+
+  async createServiceScheduledTask(
+    serviceUuid: string,
+    data: CreateScheduledTaskRequest,
+  ): Promise<ScheduledTask> {
+    return this.request<ScheduledTask>(`/services/${serviceUuid}/scheduled-tasks`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateServiceScheduledTask(
+    serviceUuid: string,
+    taskUuid: string,
+    data: UpdateScheduledTaskRequest,
+  ): Promise<ScheduledTask> {
+    return this.request<ScheduledTask>(`/services/${serviceUuid}/scheduled-tasks/${taskUuid}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteServiceScheduledTask(
+    serviceUuid: string,
+    taskUuid: string,
+  ): Promise<MessageResponse> {
+    return this.request<MessageResponse>(`/services/${serviceUuid}/scheduled-tasks/${taskUuid}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async listServiceScheduledTaskExecutions(
+    serviceUuid: string,
+    taskUuid: string,
+  ): Promise<ScheduledTaskExecution[]> {
+    return this.request<ScheduledTaskExecution[]>(
+      `/services/${serviceUuid}/scheduled-tasks/${taskUuid}/executions`,
+    );
   }
 
   // ===========================================================================

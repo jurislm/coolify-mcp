@@ -3749,4 +3749,167 @@ describe('CoolifyClient', () => {
       });
     });
   });
+
+  // ===========================================================================
+  // Scheduled Tasks
+  // ===========================================================================
+
+  describe('Scheduled Tasks', () => {
+    const mockTask = {
+      uuid: 'task-uuid',
+      name: 'Daily Backup',
+      command: 'php artisan backup:run',
+      frequency: '0 0 * * *',
+      enabled: true,
+      timeout: 300,
+      container: null,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+    };
+    const mockExecution = {
+      uuid: 'exec-uuid',
+      status: 'success',
+      message: null,
+      retry_count: 0,
+      duration: 12,
+      started_at: '2026-01-01T00:00:00Z',
+      finished_at: '2026-01-01T00:00:12Z',
+    };
+
+    describe('Application Scheduled Tasks', () => {
+      it('should list application scheduled tasks', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse([mockTask]));
+
+        const result = await client.listApplicationScheduledTasks('app-uuid');
+
+        expect(result).toEqual([mockTask]);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/applications/app-uuid/scheduled-tasks',
+          expect.any(Object),
+        );
+      });
+
+      it('should create an application scheduled task', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse(mockTask));
+
+        const result = await client.createApplicationScheduledTask('app-uuid', {
+          name: 'Daily Backup',
+          command: 'php artisan backup:run',
+          frequency: '0 0 * * *',
+        });
+
+        expect(result).toEqual(mockTask);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/applications/app-uuid/scheduled-tasks',
+          expect.objectContaining({ method: 'POST' }),
+        );
+      });
+
+      it('should update an application scheduled task', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse(mockTask));
+
+        const result = await client.updateApplicationScheduledTask('app-uuid', 'task-uuid', {
+          enabled: false,
+        });
+
+        expect(result).toEqual(mockTask);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/applications/app-uuid/scheduled-tasks/task-uuid',
+          expect.objectContaining({ method: 'PATCH' }),
+        );
+      });
+
+      it('should delete an application scheduled task', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Scheduled task deleted.' }));
+
+        const result = await client.deleteApplicationScheduledTask('app-uuid', 'task-uuid');
+
+        expect(result).toEqual({ message: 'Scheduled task deleted.' });
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/applications/app-uuid/scheduled-tasks/task-uuid',
+          expect.objectContaining({ method: 'DELETE' }),
+        );
+      });
+
+      it('should list application scheduled task executions', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse([mockExecution]));
+
+        const result = await client.listApplicationScheduledTaskExecutions('app-uuid', 'task-uuid');
+
+        expect(result).toEqual([mockExecution]);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/applications/app-uuid/scheduled-tasks/task-uuid/executions',
+          expect.any(Object),
+        );
+      });
+    });
+
+    describe('Service Scheduled Tasks', () => {
+      it('should list service scheduled tasks', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse([mockTask]));
+
+        const result = await client.listServiceScheduledTasks('svc-uuid');
+
+        expect(result).toEqual([mockTask]);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/services/svc-uuid/scheduled-tasks',
+          expect.any(Object),
+        );
+      });
+
+      it('should create a service scheduled task', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse(mockTask));
+
+        const result = await client.createServiceScheduledTask('svc-uuid', {
+          name: 'Daily Backup',
+          command: 'php artisan backup:run',
+          frequency: '0 0 * * *',
+        });
+
+        expect(result).toEqual(mockTask);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/services/svc-uuid/scheduled-tasks',
+          expect.objectContaining({ method: 'POST' }),
+        );
+      });
+
+      it('should update a service scheduled task', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse(mockTask));
+
+        const result = await client.updateServiceScheduledTask('svc-uuid', 'task-uuid', {
+          enabled: false,
+        });
+
+        expect(result).toEqual(mockTask);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/services/svc-uuid/scheduled-tasks/task-uuid',
+          expect.objectContaining({ method: 'PATCH' }),
+        );
+      });
+
+      it('should delete a service scheduled task', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Scheduled task deleted.' }));
+
+        const result = await client.deleteServiceScheduledTask('svc-uuid', 'task-uuid');
+
+        expect(result).toEqual({ message: 'Scheduled task deleted.' });
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/services/svc-uuid/scheduled-tasks/task-uuid',
+          expect.objectContaining({ method: 'DELETE' }),
+        );
+      });
+
+      it('should list service scheduled task executions', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse([mockExecution]));
+
+        const result = await client.listServiceScheduledTaskExecutions('svc-uuid', 'task-uuid');
+
+        expect(result).toEqual([mockExecution]);
+        expect(mockFetch).toHaveBeenCalledWith(
+          'http://localhost:3000/api/v1/services/svc-uuid/scheduled-tasks/task-uuid/executions',
+          expect.any(Object),
+        );
+      });
+    });
+  });
 });

@@ -160,6 +160,18 @@ describe('CoolifyMcpServer v2', () => {
       expect(typeof client.listBackupExecutions).toBe('function');
       expect(typeof client.getBackupExecution).toBe('function');
 
+      // Scheduled task operations
+      expect(typeof client.listApplicationScheduledTasks).toBe('function');
+      expect(typeof client.createApplicationScheduledTask).toBe('function');
+      expect(typeof client.updateApplicationScheduledTask).toBe('function');
+      expect(typeof client.deleteApplicationScheduledTask).toBe('function');
+      expect(typeof client.listApplicationScheduledTaskExecutions).toBe('function');
+      expect(typeof client.listServiceScheduledTasks).toBe('function');
+      expect(typeof client.createServiceScheduledTask).toBe('function');
+      expect(typeof client.updateServiceScheduledTask).toBe('function');
+      expect(typeof client.deleteServiceScheduledTask).toBe('function');
+      expect(typeof client.listServiceScheduledTaskExecutions).toBe('function');
+
       // Storage operations
       expect(typeof client.listApplicationStorages).toBe('function');
       expect(typeof client.createApplicationStorage).toBe('function');

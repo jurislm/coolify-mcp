@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Service storages require `service_resource_uuid` to target a specific sub-resource
   - 12 new client methods across all resource types
 
+- **Scheduled Tasks** - New `scheduled_tasks` tool for managing cron-based tasks:
+  - Supports applications and services via `resource_type` parameter
+  - Actions: `list`, `create`, `update`, `delete`, `list_executions`
+  - 10 new client methods across application and service resource types
+
 - **Database Environment Variables** - Extended `env_vars` tool to support `resource: 'database'`:
   - Actions: `list`, `create`, `update`, `delete`, `bulk_create`
   - 5 new client methods: `listDatabaseEnvVars`, `createDatabaseEnvVar`, `updateDatabaseEnvVar`, `bulkUpdateDatabaseEnvVars`, `deleteDatabaseEnvVar`

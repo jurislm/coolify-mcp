@@ -1336,6 +1336,101 @@ export class CoolifyMcpServer extends McpServer {
     );
 
     // =========================================================================
+    // Scheduled Tasks (1 tool)
+    // =========================================================================
+    this.tool(
+      'scheduled_tasks',
+      'Manage scheduled tasks: list/create/update/delete tasks and list_executions for applications & services',
+      {
+        action: z.enum(['list', 'create', 'update', 'delete', 'list_executions']),
+        resource_type: z.enum(['application', 'service']),
+        uuid: z.string().describe('Application or service UUID'),
+        task_uuid: z
+          .string()
+          .optional()
+          .describe('Task UUID (required for update/delete/list_executions)'),
+        name: z.string().optional().describe('Task name (required for create)'),
+        command: z.string().optional().describe('Command to execute (required for create)'),
+        frequency: z
+          .string()
+          .optional()
+          .describe('Cron expression, e.g. "0 0 * * *" (required for create)'),
+        container: z.string().optional().describe('Container name to run the command in'),
+        timeout: z.number().optional().describe('Timeout in seconds (default 300)'),
+        enabled: z.boolean().optional().describe('Enable or disable the task'),
+      },
+      async (args) => {
+        const { action, resource_type, uuid, task_uuid, name, command, frequency, ...taskData } =
+          args;
+
+        switch (action) {
+          case 'list':
+            return resource_type === 'application'
+              ? wrap(() => this.client.listApplicationScheduledTasks(uuid))
+              : wrap(() => this.client.listServiceScheduledTasks(uuid));
+
+          case 'create': {
+            if (!name || !command || !frequency)
+              return {
+                content: [
+                  { type: 'text' as const, text: 'Error: name, command, frequency required' },
+                ],
+              };
+            const createData = { name, command, frequency, ...taskData };
+            return resource_type === 'application'
+              ? wrap(() => this.client.createApplicationScheduledTask(uuid, createData))
+              : wrap(() => this.client.createServiceScheduledTask(uuid, createData));
+          }
+
+          case 'update':
+            if (!task_uuid)
+              return {
+                content: [{ type: 'text' as const, text: 'Error: task_uuid required' }],
+              };
+            return resource_type === 'application'
+              ? wrap(() =>
+                  this.client.updateApplicationScheduledTask(uuid, task_uuid, {
+                    name,
+                    command,
+                    frequency,
+                    ...taskData,
+                  }),
+                )
+              : wrap(() =>
+                  this.client.updateServiceScheduledTask(uuid, task_uuid, {
+                    name,
+                    command,
+                    frequency,
+                    ...taskData,
+                  }),
+                );
+
+          case 'delete':
+            if (!task_uuid)
+              return {
+                content: [{ type: 'text' as const, text: 'Error: task_uuid required' }],
+              };
+            return resource_type === 'application'
+              ? wrap(() => this.client.deleteApplicationScheduledTask(uuid, task_uuid))
+              : wrap(() => this.client.deleteServiceScheduledTask(uuid, task_uuid));
+
+          case 'list_executions':
+            if (!task_uuid)
+              return {
+                content: [{ type: 'text' as const, text: 'Error: task_uuid required' }],
+              };
+            return resource_type === 'application'
+              ? wrap(() =>
+                  this.client.listApplicationScheduledTaskExecutions(uuid, task_uuid),
+                )
+              : wrap(() =>
+                  this.client.listServiceScheduledTaskExecutions(uuid, task_uuid),
+                );
+        }
+      },
+    );
+
+    // =========================================================================
     // Batch Operations (4 tools)
     // =========================================================================
     this.tool(

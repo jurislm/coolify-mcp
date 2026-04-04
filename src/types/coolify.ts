@@ -1170,3 +1170,49 @@ export interface UpdateStorageRequest {
   content?: string;
   is_preview_suffix_enabled?: boolean;
 }
+
+// =============================================================================
+// Scheduled Task Types
+// =============================================================================
+
+export interface ScheduledTask {
+  uuid: string;
+  name: string;
+  command: string;
+  frequency: string;
+  container: string | null;
+  timeout: number;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScheduledTaskExecution {
+  uuid: string;
+  status: 'success' | 'failed' | 'running';
+  message: string | null;
+  retry_count: number;
+  duration: number | null;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateScheduledTaskRequest {
+  name: string;
+  command: string;
+  frequency: string;
+  container?: string;
+  timeout?: number;
+  enabled?: boolean;
+}
+
+export interface UpdateScheduledTaskRequest {
+  name?: string;
+  command?: string;
+  frequency?: string;
+  container?: string;
+  timeout?: number;
+  enabled?: boolean;
+}
