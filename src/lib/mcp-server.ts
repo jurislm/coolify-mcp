@@ -1460,8 +1460,7 @@ export class CoolifyMcpServer extends McpServer {
         database_backup_retention_amount_s3: z.number().optional(),
       },
       async (args) => {
-        const { action, database_uuid, backup_uuid, execution_uuid, delete_s3, ...backupData } =
-          args;
+        const { action, database_uuid, backup_uuid, execution_uuid, delete_s3 } = args;
         switch (action) {
           case 'list_schedules':
             return wrap(() => this.client.listDatabaseBackups(database_uuid));
@@ -1503,15 +1502,34 @@ export class CoolifyMcpServer extends McpServer {
               return { content: [{ type: 'text' as const, text: 'Error: frequency required' }] };
             return wrap(() =>
               this.client.createDatabaseBackup(database_uuid, {
-                ...backupData,
                 frequency: args.frequency!,
+                ...(args.enabled !== undefined && { enabled: args.enabled }),
+                ...(args.save_s3 !== undefined && { save_s3: args.save_s3 }),
+                ...(args.s3_storage_uuid !== undefined && { s3_storage_uuid: args.s3_storage_uuid }),
+                ...(args.databases_to_backup !== undefined && { databases_to_backup: args.databases_to_backup }),
+                ...(args.dump_all !== undefined && { dump_all: args.dump_all }),
+                ...(args.database_backup_retention_days_locally !== undefined && { database_backup_retention_days_locally: args.database_backup_retention_days_locally }),
+                ...(args.database_backup_retention_days_s3 !== undefined && { database_backup_retention_days_s3: args.database_backup_retention_days_s3 }),
+                ...(args.database_backup_retention_amount_locally !== undefined && { database_backup_retention_amount_locally: args.database_backup_retention_amount_locally }),
+                ...(args.database_backup_retention_amount_s3 !== undefined && { database_backup_retention_amount_s3: args.database_backup_retention_amount_s3 }),
               }),
             );
           case 'update':
             if (!backup_uuid)
               return { content: [{ type: 'text' as const, text: 'Error: backup_uuid required' }] };
             return wrap(() =>
-              this.client.updateDatabaseBackup(database_uuid, backup_uuid, backupData),
+              this.client.updateDatabaseBackup(database_uuid, backup_uuid, {
+                ...(args.frequency !== undefined && { frequency: args.frequency }),
+                ...(args.enabled !== undefined && { enabled: args.enabled }),
+                ...(args.save_s3 !== undefined && { save_s3: args.save_s3 }),
+                ...(args.s3_storage_uuid !== undefined && { s3_storage_uuid: args.s3_storage_uuid }),
+                ...(args.databases_to_backup !== undefined && { databases_to_backup: args.databases_to_backup }),
+                ...(args.dump_all !== undefined && { dump_all: args.dump_all }),
+                ...(args.database_backup_retention_days_locally !== undefined && { database_backup_retention_days_locally: args.database_backup_retention_days_locally }),
+                ...(args.database_backup_retention_days_s3 !== undefined && { database_backup_retention_days_s3: args.database_backup_retention_days_s3 }),
+                ...(args.database_backup_retention_amount_locally !== undefined && { database_backup_retention_amount_locally: args.database_backup_retention_amount_locally }),
+                ...(args.database_backup_retention_amount_s3 !== undefined && { database_backup_retention_amount_s3: args.database_backup_retention_amount_s3 }),
+              }),
             );
           case 'delete':
             if (!backup_uuid)

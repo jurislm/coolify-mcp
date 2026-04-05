@@ -458,7 +458,7 @@ export class CoolifyClient {
   }
 
   async getServer(uuid: string): Promise<Server> {
-    return this.request<Server>(`/servers/${uuid}`);
+    return this.request<Server>(`/servers/${encodeURIComponent(uuid)}`);
   }
 
   async createServer(data: CreateServerRequest): Promise<UuidResponse> {
@@ -469,28 +469,28 @@ export class CoolifyClient {
   }
 
   async updateServer(uuid: string, data: UpdateServerRequest): Promise<Server> {
-    return this.request<Server>(`/servers/${uuid}`, {
+    return this.request<Server>(`/servers/${encodeURIComponent(uuid)}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
   async deleteServer(uuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/servers/${uuid}`, {
+    return this.request<MessageResponse>(`/servers/${encodeURIComponent(uuid)}`, {
       method: 'DELETE',
     });
   }
 
   async getServerResources(uuid: string): Promise<ServerResource[]> {
-    return this.request<ServerResource[]>(`/servers/${uuid}/resources`);
+    return this.request<ServerResource[]>(`/servers/${encodeURIComponent(uuid)}/resources`);
   }
 
   async getServerDomains(uuid: string): Promise<ServerDomain[]> {
-    return this.request<ServerDomain[]>(`/servers/${uuid}/domains`);
+    return this.request<ServerDomain[]>(`/servers/${encodeURIComponent(uuid)}/domains`);
   }
 
   async validateServer(uuid: string): Promise<ServerValidation> {
-    return this.request<ServerValidation>(`/servers/${uuid}/validate`);
+    return this.request<ServerValidation>(`/servers/${encodeURIComponent(uuid)}/validate`);
   }
 
   // ===========================================================================
@@ -507,7 +507,7 @@ export class CoolifyClient {
   }
 
   async getProject(uuid: string): Promise<Project> {
-    return this.request<Project>(`/projects/${uuid}`);
+    return this.request<Project>(`/projects/${encodeURIComponent(uuid)}`);
   }
 
   async createProject(data: CreateProjectRequest): Promise<UuidResponse> {
@@ -518,14 +518,14 @@ export class CoolifyClient {
   }
 
   async updateProject(uuid: string, data: UpdateProjectRequest): Promise<Project> {
-    return this.request<Project>(`/projects/${uuid}`, {
+    return this.request<Project>(`/projects/${encodeURIComponent(uuid)}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
   async deleteProject(uuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/projects/${uuid}`, {
+    return this.request<MessageResponse>(`/projects/${encodeURIComponent(uuid)}`, {
       method: 'DELETE',
     });
   }
@@ -535,7 +535,7 @@ export class CoolifyClient {
   // ===========================================================================
 
   async listProjectEnvironments(projectUuid: string): Promise<Environment[]> {
-    return this.request<Environment[]>(`/projects/${projectUuid}/environments`);
+    return this.request<Environment[]>(`/projects/${encodeURIComponent(projectUuid)}/environments`);
   }
 
   async getProjectEnvironment(
@@ -543,7 +543,7 @@ export class CoolifyClient {
     environmentNameOrUuid: string,
   ): Promise<Environment> {
     return this.request<Environment>(
-      `/projects/${projectUuid}/${encodeURIComponent(environmentNameOrUuid)}`,
+      `/projects/${encodeURIComponent(projectUuid)}/${encodeURIComponent(environmentNameOrUuid)}`,
     );
   }
 
@@ -592,7 +592,7 @@ export class CoolifyClient {
     projectUuid: string,
     data: CreateEnvironmentRequest,
   ): Promise<UuidResponse> {
-    return this.request<UuidResponse>(`/projects/${projectUuid}/environments`, {
+    return this.request<UuidResponse>(`/projects/${encodeURIComponent(projectUuid)}/environments`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -603,7 +603,7 @@ export class CoolifyClient {
     environmentNameOrUuid: string,
   ): Promise<MessageResponse> {
     return this.request<MessageResponse>(
-      `/projects/${projectUuid}/environments/${encodeURIComponent(environmentNameOrUuid)}`,
+      `/projects/${encodeURIComponent(projectUuid)}/environments/${encodeURIComponent(environmentNameOrUuid)}`,
       {
         method: 'DELETE',
       },
@@ -624,7 +624,7 @@ export class CoolifyClient {
   }
 
   async getApplication(uuid: string): Promise<Application> {
-    return this.request<Application>(`/applications/${uuid}`);
+    return this.request<Application>(`/applications/${encodeURIComponent(uuid)}`);
   }
 
   async createApplicationPublic(data: CreateApplicationPublicRequest): Promise<UuidResponse> {
@@ -687,7 +687,7 @@ export class CoolifyClient {
     if (mapped.docker_compose_raw) {
       (payload as Record<string, unknown>).docker_compose_raw = toBase64(mapped.docker_compose_raw);
     }
-    return this.request<Application>(`/applications/${uuid}`, {
+    return this.request<Application>(`/applications/${encodeURIComponent(uuid)}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
     });
@@ -700,13 +700,13 @@ export class CoolifyClient {
       docker_cleanup: options?.dockerCleanup,
       delete_connected_networks: options?.deleteConnectedNetworks,
     });
-    return this.request<MessageResponse>(`/applications/${uuid}${query}`, {
+    return this.request<MessageResponse>(`/applications/${encodeURIComponent(uuid)}${query}`, {
       method: 'DELETE',
     });
   }
 
   async getApplicationLogs(uuid: string, lines: number = 100): Promise<string> {
-    return this.request<string>(`/applications/${uuid}/logs?lines=${lines}`);
+    return this.request<string>(`/applications/${encodeURIComponent(uuid)}/logs?lines=${encodeURIComponent(lines)}`);
   }
 
   async startApplication(
@@ -717,19 +717,19 @@ export class CoolifyClient {
       force: options?.force,
       instant_deploy: options?.instant_deploy,
     });
-    return this.request<ApplicationActionResponse>(`/applications/${uuid}/start${query}`, {
+    return this.request<ApplicationActionResponse>(`/applications/${encodeURIComponent(uuid)}/start${query}`, {
       method: 'POST',
     });
   }
 
   async stopApplication(uuid: string): Promise<ApplicationActionResponse> {
-    return this.request<ApplicationActionResponse>(`/applications/${uuid}/stop`, {
+    return this.request<ApplicationActionResponse>(`/applications/${encodeURIComponent(uuid)}/stop`, {
       method: 'POST',
     });
   }
 
   async restartApplication(uuid: string): Promise<ApplicationActionResponse> {
-    return this.request<ApplicationActionResponse>(`/applications/${uuid}/restart`, {
+    return this.request<ApplicationActionResponse>(`/applications/${encodeURIComponent(uuid)}/restart`, {
       method: 'POST',
     });
   }
@@ -742,19 +742,19 @@ export class CoolifyClient {
     uuid: string,
     options?: { summary?: boolean },
   ): Promise<EnvironmentVariable[] | EnvVarSummary[]> {
-    const envVars = await this.request<EnvironmentVariable[]>(`/applications/${uuid}/envs`);
+    const envVars = await this.request<EnvironmentVariable[]>(`/applications/${encodeURIComponent(uuid)}/envs`);
     return options?.summary ? envVars.map(toEnvVarSummary) : envVars;
   }
 
   async createApplicationEnvVar(uuid: string, data: CreateEnvVarRequest): Promise<UuidResponse> {
-    return this.request<UuidResponse>(`/applications/${uuid}/envs`, {
+    return this.request<UuidResponse>(`/applications/${encodeURIComponent(uuid)}/envs`, {
       method: 'POST',
       body: JSON.stringify(cleanRequestData(data)),
     });
   }
 
   async updateApplicationEnvVar(uuid: string, data: UpdateEnvVarRequest): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/applications/${uuid}/envs`, {
+    return this.request<MessageResponse>(`/applications/${encodeURIComponent(uuid)}/envs`, {
       method: 'PATCH',
       body: JSON.stringify(cleanRequestData(data)),
     });
@@ -764,14 +764,14 @@ export class CoolifyClient {
     uuid: string,
     data: BulkUpdateEnvVarsRequest,
   ): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/applications/${uuid}/envs/bulk`, {
+    return this.request<MessageResponse>(`/applications/${encodeURIComponent(uuid)}/envs/bulk`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
   async deleteApplicationEnvVar(uuid: string, envUuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/applications/${uuid}/envs/${envUuid}`, {
+    return this.request<MessageResponse>(`/applications/${encodeURIComponent(uuid)}/envs/${encodeURIComponent(envUuid)}`, {
       method: 'DELETE',
     });
   }
@@ -790,11 +790,11 @@ export class CoolifyClient {
   }
 
   async getDatabase(uuid: string): Promise<Database> {
-    return this.request<Database>(`/databases/${uuid}`);
+    return this.request<Database>(`/databases/${encodeURIComponent(uuid)}`);
   }
 
   async updateDatabase(uuid: string, data: UpdateDatabaseRequest): Promise<Database> {
-    return this.request<Database>(`/databases/${uuid}`, {
+    return this.request<Database>(`/databases/${encodeURIComponent(uuid)}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -807,25 +807,25 @@ export class CoolifyClient {
       docker_cleanup: options?.dockerCleanup,
       delete_connected_networks: options?.deleteConnectedNetworks,
     });
-    return this.request<MessageResponse>(`/databases/${uuid}${query}`, {
+    return this.request<MessageResponse>(`/databases/${encodeURIComponent(uuid)}${query}`, {
       method: 'DELETE',
     });
   }
 
   async startDatabase(uuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/databases/${uuid}/start`, {
+    return this.request<MessageResponse>(`/databases/${encodeURIComponent(uuid)}/start`, {
       method: 'POST',
     });
   }
 
   async stopDatabase(uuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/databases/${uuid}/stop`, {
+    return this.request<MessageResponse>(`/databases/${encodeURIComponent(uuid)}/stop`, {
       method: 'POST',
     });
   }
 
   async restartDatabase(uuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/databases/${uuid}/restart`, {
+    return this.request<MessageResponse>(`/databases/${encodeURIComponent(uuid)}/restart`, {
       method: 'POST',
     });
   }
@@ -901,7 +901,7 @@ export class CoolifyClient {
   }
 
   async getService(uuid: string): Promise<Service> {
-    return this.request<Service>(`/services/${uuid}`);
+    return this.request<Service>(`/services/${encodeURIComponent(uuid)}`);
   }
 
   async createService(data: CreateServiceRequest): Promise<ServiceCreateResponse> {
@@ -920,7 +920,7 @@ export class CoolifyClient {
     if (payload.docker_compose_raw) {
       payload.docker_compose_raw = toBase64(payload.docker_compose_raw);
     }
-    return this.request<Service>(`/services/${uuid}`, {
+    return this.request<Service>(`/services/${encodeURIComponent(uuid)}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
     });
@@ -933,25 +933,25 @@ export class CoolifyClient {
       docker_cleanup: options?.dockerCleanup,
       delete_connected_networks: options?.deleteConnectedNetworks,
     });
-    return this.request<MessageResponse>(`/services/${uuid}${query}`, {
+    return this.request<MessageResponse>(`/services/${encodeURIComponent(uuid)}${query}`, {
       method: 'DELETE',
     });
   }
 
   async startService(uuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/services/${uuid}/start`, {
+    return this.request<MessageResponse>(`/services/${encodeURIComponent(uuid)}/start`, {
       method: 'GET',
     });
   }
 
   async stopService(uuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/services/${uuid}/stop`, {
+    return this.request<MessageResponse>(`/services/${encodeURIComponent(uuid)}/stop`, {
       method: 'GET',
     });
   }
 
   async restartService(uuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/services/${uuid}/restart`, {
+    return this.request<MessageResponse>(`/services/${encodeURIComponent(uuid)}/restart`, {
       method: 'GET',
     });
   }
@@ -961,25 +961,25 @@ export class CoolifyClient {
   // ===========================================================================
 
   async listServiceEnvVars(uuid: string): Promise<EnvironmentVariable[]> {
-    return this.request<EnvironmentVariable[]>(`/services/${uuid}/envs`);
+    return this.request<EnvironmentVariable[]>(`/services/${encodeURIComponent(uuid)}/envs`);
   }
 
   async createServiceEnvVar(uuid: string, data: CreateEnvVarRequest): Promise<UuidResponse> {
-    return this.request<UuidResponse>(`/services/${uuid}/envs`, {
+    return this.request<UuidResponse>(`/services/${encodeURIComponent(uuid)}/envs`, {
       method: 'POST',
       body: JSON.stringify(cleanRequestData(data)),
     });
   }
 
   async updateServiceEnvVar(uuid: string, data: UpdateEnvVarRequest): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/services/${uuid}/envs`, {
+    return this.request<MessageResponse>(`/services/${encodeURIComponent(uuid)}/envs`, {
       method: 'PATCH',
       body: JSON.stringify(cleanRequestData(data)),
     });
   }
 
   async deleteServiceEnvVar(uuid: string, envUuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/services/${uuid}/envs/${envUuid}`, {
+    return this.request<MessageResponse>(`/services/${encodeURIComponent(uuid)}/envs/${encodeURIComponent(envUuid)}`, {
       method: 'DELETE',
     });
   }
@@ -1003,7 +1003,7 @@ export class CoolifyClient {
     uuid: string,
     options?: { includeLogs?: boolean },
   ): Promise<Deployment | DeploymentEssential> {
-    const deployment = await this.request<Deployment>(`/deployments/${uuid}`);
+    const deployment = await this.request<Deployment>(`/deployments/${encodeURIComponent(uuid)}`);
     return options?.includeLogs ? deployment : toDeploymentEssential(deployment);
   }
 
@@ -1011,13 +1011,13 @@ export class CoolifyClient {
     // Detect if the value looks like a UUID or a tag name
     const param = this.isLikelyUuid(tagOrUuid) ? 'uuid' : 'tag';
     return this.request<MessageResponse>(
-      `/deploy?${param}=${encodeURIComponent(tagOrUuid)}&force=${force}`,
+      `/deploy?${encodeURIComponent(param)}=${encodeURIComponent(tagOrUuid)}&force=${encodeURIComponent(force)}`,
       { method: 'GET' },
     );
   }
 
   async listApplicationDeployments(appUuid: string): Promise<Deployment[]> {
-    return this.request<Deployment[]>(`/deployments/applications/${appUuid}`);
+    return this.request<Deployment[]>(`/deployments/applications/${encodeURIComponent(appUuid)}`);
   }
 
   // ===========================================================================
@@ -1029,11 +1029,11 @@ export class CoolifyClient {
   }
 
   async getTeam(id: number): Promise<Team> {
-    return this.request<Team>(`/teams/${id}`);
+    return this.request<Team>(`/teams/${encodeURIComponent(id)}`);
   }
 
   async getTeamMembers(id: number): Promise<TeamMember[]> {
-    return this.request<TeamMember[]>(`/teams/${id}/members`);
+    return this.request<TeamMember[]>(`/teams/${encodeURIComponent(id)}/members`);
   }
 
   async getCurrentTeam(): Promise<Team> {
@@ -1053,7 +1053,7 @@ export class CoolifyClient {
   }
 
   async getPrivateKey(uuid: string): Promise<PrivateKey> {
-    return this.request<PrivateKey>(`/security/keys/${uuid}`);
+    return this.request<PrivateKey>(`/security/keys/${encodeURIComponent(uuid)}`);
   }
 
   async createPrivateKey(data: CreatePrivateKeyRequest): Promise<UuidResponse> {
@@ -1064,14 +1064,14 @@ export class CoolifyClient {
   }
 
   async updatePrivateKey(uuid: string, data: UpdatePrivateKeyRequest): Promise<PrivateKey> {
-    return this.request<PrivateKey>(`/security/keys/${uuid}`, {
+    return this.request<PrivateKey>(`/security/keys/${encodeURIComponent(uuid)}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
   async deletePrivateKey(uuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/security/keys/${uuid}`, {
+    return this.request<MessageResponse>(`/security/keys/${encodeURIComponent(uuid)}`, {
       method: 'DELETE',
     });
   }
@@ -1096,28 +1096,28 @@ export class CoolifyClient {
     id: number,
     data: UpdateGitHubAppRequest,
   ): Promise<GitHubAppUpdateResponse> {
-    return this.request<GitHubAppUpdateResponse>(`/github-apps/${id}`, {
+    return this.request<GitHubAppUpdateResponse>(`/github-apps/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       body: JSON.stringify(cleanRequestData(data)),
     });
   }
 
   async deleteGitHubApp(id: number): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/github-apps/${id}`, {
+    return this.request<MessageResponse>(`/github-apps/${encodeURIComponent(id)}`, {
       method: 'DELETE',
     });
   }
 
   async listGitHubAppRepositories(id: number): Promise<GitHubRepositorySummary[]> {
     const response = await this.request<{ repositories: GitHubRepository[] }>(
-      `/github-apps/${id}/repositories`,
+      `/github-apps/${encodeURIComponent(id)}/repositories`,
     );
     return response.repositories.map(toGitHubRepoSummary);
   }
 
   async listGitHubAppBranches(id: number, owner: string, repo: string): Promise<GitHubBranch[]> {
     const response = await this.request<{ branches: GitHubBranch[] }>(
-      `/github-apps/${id}/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/branches`,
+      `/github-apps/${encodeURIComponent(id)}/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/branches`,
     );
     return response.branches;
   }
@@ -1236,12 +1236,12 @@ export class CoolifyClient {
     uuid: string,
     options?: { summary?: boolean },
   ): Promise<EnvironmentVariable[] | EnvVarSummary[]> {
-    const envVars = await this.request<EnvironmentVariable[]>(`/databases/${uuid}/envs`);
+    const envVars = await this.request<EnvironmentVariable[]>(`/databases/${encodeURIComponent(uuid)}/envs`);
     return options?.summary ? envVars.map(toEnvVarSummary) : envVars;
   }
 
   async createDatabaseEnvVar(uuid: string, data: CreateEnvVarRequest): Promise<UuidResponse> {
-    return this.request<UuidResponse>(`/databases/${uuid}/envs`, {
+    return this.request<UuidResponse>(`/databases/${encodeURIComponent(uuid)}/envs`, {
       method: 'POST',
       body: JSON.stringify(cleanRequestData(data)),
     });
@@ -1251,7 +1251,7 @@ export class CoolifyClient {
     uuid: string,
     data: UpdateEnvVarRequest,
   ): Promise<EnvironmentVariable> {
-    return this.request<EnvironmentVariable>(`/databases/${uuid}/envs`, {
+    return this.request<EnvironmentVariable>(`/databases/${encodeURIComponent(uuid)}/envs`, {
       method: 'PATCH',
       body: JSON.stringify(cleanRequestData(data)),
     });
@@ -1261,14 +1261,14 @@ export class CoolifyClient {
     uuid: string,
     data: BulkUpdateEnvVarsRequest,
   ): Promise<EnvironmentVariable[]> {
-    return this.request<EnvironmentVariable[]>(`/databases/${uuid}/envs/bulk`, {
+    return this.request<EnvironmentVariable[]>(`/databases/${encodeURIComponent(uuid)}/envs/bulk`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
   async deleteDatabaseEnvVar(uuid: string, envUuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/databases/${uuid}/envs/${envUuid}`, {
+    return this.request<MessageResponse>(`/databases/${encodeURIComponent(uuid)}/envs/${encodeURIComponent(envUuid)}`, {
       method: 'DELETE',
     });
   }
@@ -1278,7 +1278,7 @@ export class CoolifyClient {
   // ===========================================================================
 
   async listApplicationStorages(applicationUuid: string): Promise<StorageListResponse> {
-    return this.request<StorageListResponse>(`/applications/${applicationUuid}/storages`);
+    return this.request<StorageListResponse>(`/applications/${encodeURIComponent(applicationUuid)}/storages`);
   }
 
   async createApplicationStorage(
@@ -1286,7 +1286,7 @@ export class CoolifyClient {
     data: CreateStorageRequest,
   ): Promise<LocalPersistentVolume | LocalFileVolume> {
     return this.request<LocalPersistentVolume | LocalFileVolume>(
-      `/applications/${applicationUuid}/storages`,
+      `/applications/${encodeURIComponent(applicationUuid)}/storages`,
       { method: 'POST', body: JSON.stringify(data) },
     );
   }
@@ -1296,7 +1296,7 @@ export class CoolifyClient {
     data: UpdateStorageRequest,
   ): Promise<LocalPersistentVolume | LocalFileVolume> {
     return this.request<LocalPersistentVolume | LocalFileVolume>(
-      `/applications/${applicationUuid}/storages`,
+      `/applications/${encodeURIComponent(applicationUuid)}/storages`,
       { method: 'PATCH', body: JSON.stringify(data) },
     );
   }
@@ -1306,7 +1306,7 @@ export class CoolifyClient {
     storageUuid: string,
   ): Promise<MessageResponse> {
     return this.request<MessageResponse>(
-      `/applications/${applicationUuid}/storages/${storageUuid}`,
+      `/applications/${encodeURIComponent(applicationUuid)}/storages/${encodeURIComponent(storageUuid)}`,
       {
         method: 'DELETE',
       },
@@ -1314,7 +1314,7 @@ export class CoolifyClient {
   }
 
   async listDatabaseStorages(databaseUuid: string): Promise<StorageListResponse> {
-    return this.request<StorageListResponse>(`/databases/${databaseUuid}/storages`);
+    return this.request<StorageListResponse>(`/databases/${encodeURIComponent(databaseUuid)}/storages`);
   }
 
   async createDatabaseStorage(
@@ -1322,7 +1322,7 @@ export class CoolifyClient {
     data: CreateStorageRequest,
   ): Promise<LocalPersistentVolume | LocalFileVolume> {
     return this.request<LocalPersistentVolume | LocalFileVolume>(
-      `/databases/${databaseUuid}/storages`,
+      `/databases/${encodeURIComponent(databaseUuid)}/storages`,
       { method: 'POST', body: JSON.stringify(data) },
     );
   }
@@ -1332,19 +1332,19 @@ export class CoolifyClient {
     data: UpdateStorageRequest,
   ): Promise<LocalPersistentVolume | LocalFileVolume> {
     return this.request<LocalPersistentVolume | LocalFileVolume>(
-      `/databases/${databaseUuid}/storages`,
+      `/databases/${encodeURIComponent(databaseUuid)}/storages`,
       { method: 'PATCH', body: JSON.stringify(data) },
     );
   }
 
   async deleteDatabaseStorage(databaseUuid: string, storageUuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/databases/${databaseUuid}/storages/${storageUuid}`, {
+    return this.request<MessageResponse>(`/databases/${encodeURIComponent(databaseUuid)}/storages/${encodeURIComponent(storageUuid)}`, {
       method: 'DELETE',
     });
   }
 
   async listServiceStorages(serviceUuid: string): Promise<StorageListResponse> {
-    return this.request<StorageListResponse>(`/services/${serviceUuid}/storages`);
+    return this.request<StorageListResponse>(`/services/${encodeURIComponent(serviceUuid)}/storages`);
   }
 
   async createServiceStorage(
@@ -1352,7 +1352,7 @@ export class CoolifyClient {
     data: CreateStorageRequest,
   ): Promise<LocalPersistentVolume | LocalFileVolume> {
     return this.request<LocalPersistentVolume | LocalFileVolume>(
-      `/services/${serviceUuid}/storages`,
+      `/services/${encodeURIComponent(serviceUuid)}/storages`,
       { method: 'POST', body: JSON.stringify(data) },
     );
   }
@@ -1362,13 +1362,13 @@ export class CoolifyClient {
     data: UpdateStorageRequest,
   ): Promise<LocalPersistentVolume | LocalFileVolume> {
     return this.request<LocalPersistentVolume | LocalFileVolume>(
-      `/services/${serviceUuid}/storages`,
+      `/services/${encodeURIComponent(serviceUuid)}/storages`,
       { method: 'PATCH', body: JSON.stringify(data) },
     );
   }
 
   async deleteServiceStorage(serviceUuid: string, storageUuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/services/${serviceUuid}/storages/${storageUuid}`, {
+    return this.request<MessageResponse>(`/services/${encodeURIComponent(serviceUuid)}/storages/${encodeURIComponent(storageUuid)}`, {
       method: 'DELETE',
     });
   }
@@ -1468,7 +1468,7 @@ export class CoolifyClient {
   // ===========================================================================
 
   async cancelDeployment(uuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/deployments/${uuid}/cancel`, {
+    return this.request<MessageResponse>(`/deployments/${encodeURIComponent(uuid)}/cancel`, {
       method: 'POST',
     });
   }
