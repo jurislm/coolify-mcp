@@ -259,7 +259,7 @@ These tools accept human-friendly identifiers instead of just UUIDs:
 - `application` - Create, update, or delete apps with `action: create_public|create_github|create_key|create_dockerimage|create_dockerfile|update|delete`
   - Deploy from public repos, private GitHub, SSH keys, Docker images, or Dockerfiles
   - Configure health checks (path, interval, retries, etc.)
-- `env_vars` - Manage env vars with `resource: application, action: list|create|update|delete`
+- `env_vars` - Manage env vars with `resource: application, action: list|create|bulk_create|update|delete`
 - `control` - Start/stop/restart with `resource: application, action: start|stop|restart`
 
 ### Databases
@@ -271,7 +271,7 @@ These tools accept human-friendly identifiers instead of just UUIDs:
   - Configure frequency, retention policies, S3 storage
   - Enable/disable schedules without deletion
   - View backup execution history
-- `env_vars` - Manage env vars with `resource: database, action: list|create|update|delete`
+- `env_vars` - Manage env vars with `resource: database, action: list|create|bulk_create|update|delete`
 - `control` - Start/stop/restart with `resource: database, action: start|stop|restart`
 
 ### Services
@@ -305,7 +305,7 @@ These tools accept human-friendly identifiers instead of just UUIDs:
 
 ### Scheduled Tasks
 
-- `scheduled_tasks` - Manage cron tasks with `action: list|get|create|update|delete|list_executions, resource_type: application|service`
+- `scheduled_tasks` - Manage cron tasks with `action: list|create|update|delete|list_executions, resource_type: application|service`
   - Configure cron schedule, command, container, and enabled state
   - View execution history for debugging
 
