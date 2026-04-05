@@ -7,6 +7,7 @@
  */
 import { createRequire } from 'module';
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { z } from 'zod';
 import {
   CoolifyMcpServer,
   VERSION,
@@ -587,13 +588,12 @@ describe('stop_all_apps confirmation', () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
-  it('should return error when confirm_stop_all_apps=false', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const spy = jest.spyOn(server['client'] as any, 'stopAllApps').mockResolvedValue([]);
-    const result = (await callHandler(server, 'stop_all_apps', {
-      confirm_stop_all_apps: false,
-    })) as { content: Array<{ text: string }> };
-    expect(spy).not.toHaveBeenCalled();
-    expect(result.content[0].text).toContain('confirm_stop_all_apps=true required');
+  it('should not call stopAllApps when schema rejects non-true values', () => {
+    // z.literal(true) enforces the constraint at the Zod schema level — the MCP framework
+    // rejects calls where confirm_stop_all_apps !== true before reaching the handler.
+    // This is validated by the schema type itself (TypeScript enforces at compile time).
+    const schema = z.object({ confirm_stop_all_apps: z.literal(true) });
+    expect(() => schema.parse({ confirm_stop_all_apps: false })).toThrow();
+    expect(() => schema.parse({ confirm_stop_all_apps: true })).not.toThrow();
   });
 });

@@ -1287,8 +1287,8 @@ export class CoolifyClient {
   async bulkUpdateDatabaseEnvVars(
     uuid: string,
     data: BulkUpdateEnvVarsRequest,
-  ): Promise<EnvironmentVariable[]> {
-    return this.request<EnvironmentVariable[]>(`/databases/${encodeURIComponent(uuid)}/envs/bulk`, {
+  ): Promise<MessageResponse> {
+    return this.request<MessageResponse>(`/databases/${encodeURIComponent(uuid)}/envs/bulk`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });

@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Cloud Provider Tokens** - New `cloud_tokens` tool for managing Hetzner/DigitalOcean credentials:
   - Actions: `list`, `get`, `create`, `update`, `delete`, `validate`
-  - Fixed `UpdateCloudTokenRequest.name` to be required (matches API contract)
+  - `UpdateCloudTokenRequest.name` is optional (aligns with API contract)
 
 - **GitHub Apps Repositories** - Extended `github_apps` tool with repository and branch listing:
   - `list_repositories` action: browse repositories accessible to a GitHub App
