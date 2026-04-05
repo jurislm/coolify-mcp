@@ -1218,7 +1218,7 @@ export class CoolifyClient {
       `/databases/${encodeURIComponent(databaseUuid)}/backups/${encodeURIComponent(backupUuid)}/executions/${encodeURIComponent(executionUuid)}`,
       {
         method: 'DELETE',
-        ...(deleteS3 !== undefined && { body: JSON.stringify({ delete_s3: deleteS3 }) }),
+        body: JSON.stringify({ delete_s3: deleteS3 ?? false }),
       },
     );
   }
