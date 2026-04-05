@@ -1701,8 +1701,7 @@ export class CoolifyMcpServer extends McpServer {
         enabled: z.boolean().optional().describe('Enable or disable the task'),
       },
       async (args) => {
-        const { action, resource_type, uuid, task_uuid, name, command, frequency, ...taskData } =
-          args;
+        const { action, resource_type, uuid, task_uuid, name, command, frequency } = args;
 
         switch (action) {
           case 'list':
@@ -1717,7 +1716,14 @@ export class CoolifyMcpServer extends McpServer {
                   { type: 'text' as const, text: 'Error: name, command, frequency required' },
                 ],
               };
-            const createData = { name, command, frequency, ...taskData };
+            const createData = {
+              name,
+              command,
+              frequency,
+              ...(args.container !== undefined && { container: args.container }),
+              ...(args.timeout !== undefined && { timeout: args.timeout }),
+              ...(args.enabled !== undefined && { enabled: args.enabled }),
+            };
             return resource_type === 'application'
               ? wrap(() => this.client.createApplicationScheduledTask(uuid, createData))
               : wrap(() => this.client.createServiceScheduledTask(uuid, createData));
@@ -1732,9 +1738,9 @@ export class CoolifyMcpServer extends McpServer {
               ...(name !== undefined && { name }),
               ...(command !== undefined && { command }),
               ...(frequency !== undefined && { frequency }),
-              ...(taskData.container !== undefined && { container: taskData.container }),
-              ...(taskData.timeout !== undefined && { timeout: taskData.timeout }),
-              ...(taskData.enabled !== undefined && { enabled: taskData.enabled }),
+              ...(args.container !== undefined && { container: args.container }),
+              ...(args.timeout !== undefined && { timeout: args.timeout }),
+              ...(args.enabled !== undefined && { enabled: args.enabled }),
             };
             if (Object.keys(updateData).length === 0)
               return {
