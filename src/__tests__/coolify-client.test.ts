@@ -1139,6 +1139,17 @@ describe('CoolifyClient', () => {
       expect(result).toEqual(mockApplication);
     });
 
+    it('should encode special characters in application uuid path parameter', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(mockApplication));
+
+      await client.getApplication('app/uuid with spaces');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/applications/app%2Fuuid%20with%20spaces',
+        expect.any(Object),
+      );
+    });
+
     it('should create application from public repo', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse({ uuid: 'new-app-uuid' }));
 
@@ -1692,6 +1703,17 @@ describe('CoolifyClient', () => {
       const result = await client.getDatabase('db-uuid');
 
       expect(result).toEqual(mockDatabase);
+    });
+
+    it('should encode special characters in database uuid path parameter', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(mockDatabase));
+
+      await client.getDatabase('db/uuid with spaces');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/databases/db%2Fuuid%20with%20spaces',
+        expect.any(Object),
+      );
     });
 
     it('should update a database', async () => {

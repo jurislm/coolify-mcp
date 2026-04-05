@@ -1719,6 +1719,7 @@ export class CoolifyMcpServer extends McpServer {
                 : {
                     type,
                     mount_path,
+                    ...(name !== undefined && { name }),
                     ...(content !== undefined && { content }),
                     ...(is_directory !== undefined && { is_directory }),
                     ...(fs_path !== undefined && { fs_path }),
