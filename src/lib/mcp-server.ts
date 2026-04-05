@@ -682,6 +682,7 @@ export class CoolifyMcpServer extends McpServer {
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
             // Explicit allowlist: only UpdateApplicationRequest fields forwarded
+            // Excluded create-only fields: project_uuid, server_uuid, environment_uuid, build_pack
             return wrap(() =>
               this.client.updateApplication(uuid, {
                 name: args.name,
@@ -886,6 +887,7 @@ export class CoolifyMcpServer extends McpServer {
                     postgres_user: args.postgres_user,
                     postgres_password: args.postgres_password,
                     postgres_db: args.postgres_db,
+                    postgres_conf: args.postgres_conf,
                   }),
                 );
               case 'mysql':
@@ -896,6 +898,7 @@ export class CoolifyMcpServer extends McpServer {
                     mysql_user: args.mysql_user,
                     mysql_password: args.mysql_password,
                     mysql_database: args.mysql_database,
+                    mysql_conf: args.mysql_conf,
                   }),
                 );
               case 'mariadb':
@@ -906,6 +909,7 @@ export class CoolifyMcpServer extends McpServer {
                     mariadb_user: args.mariadb_user,
                     mariadb_password: args.mariadb_password,
                     mariadb_database: args.mariadb_database,
+                    mariadb_conf: args.mariadb_conf,
                   }),
                 );
               case 'mongodb':
@@ -915,11 +919,16 @@ export class CoolifyMcpServer extends McpServer {
                     mongo_initdb_root_username: args.mongo_initdb_root_username,
                     mongo_initdb_root_password: args.mongo_initdb_root_password,
                     mongo_initdb_database: args.mongo_initdb_database,
+                    mongo_conf: args.mongo_conf,
                   }),
                 );
               case 'redis':
                 return wrap(() =>
-                  this.client.createRedis({ ...base, redis_password: args.redis_password }),
+                  this.client.createRedis({
+                    ...base,
+                    redis_password: args.redis_password,
+                    redis_conf: args.redis_conf,
+                  }),
                 );
               case 'keydb':
                 return wrap(() =>
@@ -1784,7 +1793,7 @@ export class CoolifyMcpServer extends McpServer {
         frequency: z
           .string()
           .optional()
-          .describe('Cron expression, e.g. "0 0 * * *" (required for create)'),
+          .describe('Cron expression (e.g., "0 * * * *" for hourly). Required for create.'),
         container: z.string().optional().describe('Container name to run the command in'),
         timeout: z.number().optional().describe('Timeout in seconds (default 300)'),
         enabled: z.boolean().optional().describe('Enable or disable the task'),

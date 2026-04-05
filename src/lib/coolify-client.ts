@@ -1113,28 +1113,28 @@ export class CoolifyClient {
     id: number,
     data: UpdateGitHubAppRequest,
   ): Promise<GitHubAppUpdateResponse> {
-    return this.request<GitHubAppUpdateResponse>(`/github-apps/${encodeURIComponent(id)}`, {
+    return this.request<GitHubAppUpdateResponse>(`/github-apps/${encodeURIComponent(String(id))}`, {
       method: 'PATCH',
       body: JSON.stringify(cleanRequestData(data)),
     });
   }
 
   async deleteGitHubApp(id: number): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/github-apps/${encodeURIComponent(id)}`, {
+    return this.request<MessageResponse>(`/github-apps/${encodeURIComponent(String(id))}`, {
       method: 'DELETE',
     });
   }
 
   async listGitHubAppRepositories(id: number): Promise<GitHubRepositorySummary[]> {
     const response = await this.request<{ repositories: GitHubRepository[] }>(
-      `/github-apps/${encodeURIComponent(id)}/repositories`,
+      `/github-apps/${encodeURIComponent(String(id))}/repositories`,
     );
     return response.repositories.map(toGitHubRepoSummary);
   }
 
   async listGitHubAppBranches(id: number, owner: string, repo: string): Promise<GitHubBranch[]> {
     const response = await this.request<{ branches: GitHubBranch[] }>(
-      `/github-apps/${encodeURIComponent(id)}/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/branches`,
+      `/github-apps/${encodeURIComponent(String(id))}/repositories/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/branches`,
     );
     return response.branches;
   }

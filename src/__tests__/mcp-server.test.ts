@@ -552,6 +552,21 @@ describe('update handler allowlist — create-only fields must not be forwarded'
       expect(updatePayload).toHaveProperty('name', 'my-github-app');
       expect(updatePayload).toHaveProperty('organization', 'my-org');
     });
+
+    it('should not forward server_uuid or project_uuid to updateGitHubApp', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const spy = jest.spyOn(server['client'] as any, 'updateGitHubApp').mockResolvedValue({});
+      await callHandler(server, 'github_apps', {
+        action: 'update',
+        id: 42,
+        name: 'test-app',
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [, updatePayload] = spy.mock.calls[0] as [number, Record<string, unknown>];
+      expect(updatePayload).not.toHaveProperty('server_uuid');
+      expect(updatePayload).not.toHaveProperty('project_uuid');
+      expect(updatePayload).toHaveProperty('name', 'test-app');
+    });
   });
 });
 

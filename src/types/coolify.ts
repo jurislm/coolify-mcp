@@ -771,6 +771,7 @@ export interface CreateServiceRequest {
  *   - Replace $ with $$ in the hash
  *   - Disable label escaping in Coolify UI (manual step!)
  */
+// Note: fqdn is not supported for service updates — configure domains via docker_compose_raw Traefik labels instead
 export interface UpdateServiceRequest {
   name?: string;
   description?: string;
@@ -987,7 +988,7 @@ export interface CreateCloudTokenRequest {
 }
 
 export interface UpdateCloudTokenRequest {
-  name: string;
+  name?: string;
 }
 
 export interface CloudTokenValidation {
@@ -1215,7 +1216,7 @@ export interface ScheduledTask {
 
 export interface ScheduledTaskExecution {
   uuid: string;
-  status: 'success' | 'failed' | 'running';
+  status: 'success' | 'failed' | 'running' | 'finished' | 'pending' | 'skipped';
   message: string | null;
   retry_count: number;
   duration: number | null;
