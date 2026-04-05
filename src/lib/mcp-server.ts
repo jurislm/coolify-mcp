@@ -941,6 +941,9 @@ export class CoolifyMcpServer extends McpServer {
                   }),
                 );
             }
+            return {
+              content: [{ type: 'text' as const, text: 'Error: unknown database type' }],
+            };
           }
         }
         return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
@@ -1109,6 +1112,12 @@ export class CoolifyMcpServer extends McpServer {
           .describe('Array of {key, value} for bulk_create action (application and database only)'),
       },
       async ({ resource, action, uuid, key, value, env_uuid, bulk_data }) => {
+        if (resource === 'service' && action === 'bulk_create')
+          return {
+            content: [
+              { type: 'text' as const, text: 'Error: bulk_create not supported for service resource' },
+            ],
+          };
         if (resource === 'application') {
           switch (action) {
             case 'list':
@@ -1176,12 +1185,6 @@ export class CoolifyMcpServer extends McpServer {
               if (!env_uuid)
                 return { content: [{ type: 'text' as const, text: 'Error: env_uuid required' }] };
               return wrap(() => this.client.deleteServiceEnvVar(uuid, env_uuid));
-            case 'bulk_create':
-              return {
-                content: [
-                  { type: 'text' as const, text: 'Error: service bulk_create not supported' },
-                ],
-              };
           }
         }
         return {

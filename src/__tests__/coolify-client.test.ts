@@ -221,6 +221,17 @@ describe('CoolifyClient', () => {
 
       await expect(client.getServer('test-uuid')).rejects.toThrow('Resource not found');
     });
+
+    it('should encode special characters in uuid path parameter', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(mockServerInfo));
+
+      await client.getServer('srv/uuid with spaces');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/servers/srv%2Fuuid%20with%20spaces',
+        expect.any(Object),
+      );
+    });
   });
 
   describe('getServerResources', () => {
@@ -3878,6 +3889,8 @@ describe('CoolifyClient', () => {
       duration: 12,
       started_at: '2026-01-01T00:00:00Z',
       finished_at: '2026-01-01T00:00:12Z',
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:12Z',
     };
 
     describe('Application Scheduled Tasks', () => {
