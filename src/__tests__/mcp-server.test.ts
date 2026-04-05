@@ -535,6 +535,8 @@ describe('update handler allowlist — create-only fields must not be forwarded'
   });
 
   describe('github_apps update', () => {
+    // github_apps has no create-only fields to exclude; this test verifies
+    // that all valid update fields are forwarded via the allowlist.
     it('should call updateGitHubApp with update fields', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const spy = jest.spyOn(server['client'] as any, 'updateGitHubApp').mockResolvedValue({});
