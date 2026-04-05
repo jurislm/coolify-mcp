@@ -1797,7 +1797,12 @@ export class CoolifyMcpServer extends McpServer {
           .string()
           .optional()
           .describe('Cron expression (e.g., "0 * * * *" for hourly). Required for create.'),
-        container: z.string().optional().describe('Container name to run the command in'),
+        container: z
+          .string()
+          .optional()
+          .describe(
+            'Target container name to run the command in. Leave empty to use the default application container.',
+          ),
         timeout: z.number().optional().describe('Timeout in seconds (default 300)'),
         enabled: z.boolean().optional().describe('Enable or disable the task'),
       },
@@ -1899,7 +1904,10 @@ export class CoolifyMcpServer extends McpServer {
           .string()
           .optional()
           .describe('API token (required for create, not updatable — rotate via delete+create)'),
-        name: z.string().optional().describe('Token name (required for create/update)'),
+        name: z
+          .string()
+          .optional()
+          .describe('Token name (required for create and update — the only updatable field)'),
       },
       async ({ action, uuid, provider, token, name }) => {
         switch (action) {
