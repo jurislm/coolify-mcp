@@ -1415,7 +1415,9 @@ describe('CoolifyClient', () => {
         ports_exposes: '3000',
       };
 
-      await client.createApplicationPublic(argsFromMcpTool as unknown as Parameters<typeof client.createApplicationPublic>[0]);
+      await client.createApplicationPublic(
+        argsFromMcpTool as unknown as Parameters<typeof client.createApplicationPublic>[0],
+      );
 
       // This assertion proves the bug: 'action' IS included in the request body
       expect(mockFetch).toHaveBeenCalledWith(
@@ -1481,7 +1483,10 @@ describe('CoolifyClient', () => {
       };
 
       // The client passes whatever it receives to the API
-      await client.updateApplication('app-uuid', argsFromMcpTool as unknown as Parameters<typeof client.updateApplication>[1]);
+      await client.updateApplication(
+        'app-uuid',
+        argsFromMcpTool as unknown as Parameters<typeof client.updateApplication>[1],
+      );
 
       // This assertion proves the bug: 'action' IS included in the request body
       // The Coolify API will reject this with "action: This field is not allowed"

@@ -1962,7 +1962,15 @@ export class CoolifyMcpServer extends McpServer {
           .literal(true)
           .describe('Must be true to confirm stopping all apps'),
       },
-      async () => wrap(() => this.client.stopAllApps()),
+      async ({ confirm_stop_all_apps }) => {
+        if (confirm_stop_all_apps !== true)
+          return {
+            content: [
+              { type: 'text' as const, text: 'Error: confirm_stop_all_apps=true required' },
+            ],
+          };
+        return wrap(() => this.client.stopAllApps());
+      },
     );
 
     this.tool(
