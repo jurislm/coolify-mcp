@@ -514,7 +514,7 @@ export class CoolifyMcpServer extends McpServer {
           .string()
           .optional()
           .describe(
-            'Raw docker-compose YAML to update (auto base64-encoded, Docker Compose apps only)',
+            'Raw (unencoded) docker-compose YAML to update (client auto base64-encodes; Docker Compose apps only)',
           ),
         // Delete fields
         delete_volumes: z.boolean().optional(),
@@ -990,7 +990,9 @@ export class CoolifyMcpServer extends McpServer {
         docker_compose_raw: z
           .string()
           .optional()
-          .describe('Raw docker-compose YAML for custom services (auto base64-encoded)'),
+          .describe(
+            'Raw (unencoded) docker-compose YAML for custom services (client auto base64-encodes). To update domain, modify Traefik labels here — the API does not support direct domain updates for services.',
+          ),
         delete_volumes: z.boolean().optional(),
       },
       async (args) => {
@@ -1963,6 +1965,8 @@ export class CoolifyMcpServer extends McpServer {
           .describe('Must be true to confirm stopping all apps'),
       },
       async ({ confirm_stop_all_apps }) => {
+        // Defense-in-depth: z.literal(true) enforces this at the MCP framework level,
+        // but we guard here too in case the handler is invoked outside normal schema validation.
         if (confirm_stop_all_apps !== true)
           return {
             content: [
