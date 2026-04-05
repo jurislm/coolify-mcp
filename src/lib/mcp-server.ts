@@ -337,12 +337,20 @@ export class CoolifyMcpServer extends McpServer {
                 instant_validate: serverData.instant_validate,
               }),
             );
-          case 'update': {
+          case 'update':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            const { instant_validate: _, ...updateFields } = serverData;
-            return wrap(() => this.client.updateServer(uuid, updateFields));
-          }
+            return wrap(() =>
+              this.client.updateServer(uuid, {
+                name: serverData.name,
+                description: serverData.description,
+                ip: serverData.ip,
+                port: serverData.port,
+                user: serverData.user,
+                private_key_uuid: serverData.private_key_uuid,
+                is_build_server: serverData.is_build_server,
+              }),
+            );
           case 'delete':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
@@ -660,35 +668,37 @@ export class CoolifyMcpServer extends McpServer {
                 fqdn: args.fqdn,
               }),
             );
-          case 'update': {
+          case 'update':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            // Strip create-only fields — project/server assignment cannot be changed via update
-            const {
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              action: _a,
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              uuid: _u,
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              delete_volumes: _d,
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              project_uuid: _p,
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              server_uuid: _s,
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              github_app_uuid: _g,
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              private_key_uuid: _k,
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              environment_name: _e,
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              environment_uuid: _ev,
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              instant_deploy: _id,
-              ...updateData
-            } = args;
-            return wrap(() => this.client.updateApplication(uuid, updateData));
-          }
+            // Explicit allowlist: only UpdateApplicationRequest fields forwarded
+            return wrap(() =>
+              this.client.updateApplication(uuid, {
+                name: args.name,
+                description: args.description,
+                fqdn: args.fqdn,
+                git_repository: args.git_repository,
+                git_branch: args.git_branch,
+                ports_exposes: args.ports_exposes,
+                dockerfile: args.dockerfile,
+                dockerfile_location: args.dockerfile_location,
+                docker_registry_image_name: args.docker_registry_image_name,
+                docker_registry_image_tag: args.docker_registry_image_tag,
+                base_directory: args.base_directory,
+                health_check_enabled: args.health_check_enabled,
+                health_check_path: args.health_check_path,
+                health_check_port: args.health_check_port,
+                health_check_host: args.health_check_host,
+                health_check_method: args.health_check_method,
+                health_check_return_code: args.health_check_return_code,
+                health_check_scheme: args.health_check_scheme,
+                health_check_response_text: args.health_check_response_text,
+                health_check_interval: args.health_check_interval,
+                health_check_timeout: args.health_check_timeout,
+                health_check_retries: args.health_check_retries,
+                health_check_start_period: args.health_check_start_period,
+              }),
+            );
           case 'delete':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
@@ -778,18 +788,38 @@ export class CoolifyMcpServer extends McpServer {
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
             return wrap(() => this.client.deleteDatabase(uuid, { deleteVolumes: delete_volumes }));
-          case 'update': {
+          case 'update':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            const {
-              server_uuid: _s,
-              project_uuid: _p,
-              environment_name: _e,
-              instant_deploy: _i,
-              ...updateData
-            } = dbData;
-            return wrap(() => this.client.updateDatabase(uuid, updateData));
-          }
+            // Explicit allowlist: only UpdateDatabaseRequest fields forwarded
+            return wrap(() =>
+              this.client.updateDatabase(uuid, {
+                name: dbData.name,
+                description: dbData.description,
+                image: dbData.image,
+                is_public: dbData.is_public,
+                public_port: dbData.public_port,
+                postgres_user: dbData.postgres_user,
+                postgres_password: dbData.postgres_password,
+                postgres_db: dbData.postgres_db,
+                mysql_root_password: dbData.mysql_root_password,
+                mysql_user: dbData.mysql_user,
+                mysql_password: dbData.mysql_password,
+                mysql_database: dbData.mysql_database,
+                mariadb_root_password: dbData.mariadb_root_password,
+                mariadb_user: dbData.mariadb_user,
+                mariadb_password: dbData.mariadb_password,
+                mariadb_database: dbData.mariadb_database,
+                mongo_initdb_root_username: dbData.mongo_initdb_root_username,
+                mongo_initdb_root_password: dbData.mongo_initdb_root_password,
+                mongo_initdb_database: dbData.mongo_initdb_database,
+                redis_password: dbData.redis_password,
+                keydb_password: dbData.keydb_password,
+                clickhouse_admin_user: dbData.clickhouse_admin_user,
+                clickhouse_admin_password: dbData.clickhouse_admin_password,
+                dragonfly_password: dbData.dragonfly_password,
+              }),
+            );
           case 'create': {
             if (!type || !args.server_uuid || !args.project_uuid) {
               return {
@@ -1359,7 +1389,24 @@ export class CoolifyMcpServer extends McpServer {
             );
           case 'update':
             if (!id) return { content: [{ type: 'text' as const, text: 'Error: id required' }] };
-            return wrap(() => this.client.updateGitHubApp(id, apiData));
+            // Explicit allowlist: only UpdateGitHubAppRequest fields forwarded
+            return wrap(() =>
+              this.client.updateGitHubApp(id, {
+                name: apiData.name,
+                organization: apiData.organization,
+                api_url: apiData.api_url,
+                html_url: apiData.html_url,
+                custom_user: apiData.custom_user,
+                custom_port: apiData.custom_port,
+                app_id: apiData.app_id,
+                installation_id: apiData.installation_id,
+                client_id: apiData.client_id,
+                client_secret: apiData.client_secret,
+                webhook_secret: apiData.webhook_secret,
+                private_key_uuid: apiData.private_key_uuid,
+                is_system_wide: apiData.is_system_wide,
+              }),
+            );
           case 'delete':
             if (!id) return { content: [{ type: 'text' as const, text: 'Error: id required' }] };
             return wrap(() => this.client.deleteGitHubApp(id));

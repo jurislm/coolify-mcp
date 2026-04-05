@@ -6,7 +6,7 @@
  * These tests verify MCP server instantiation and structure.
  */
 import { createRequire } from 'module';
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import {
   CoolifyMcpServer,
   VERSION,
@@ -421,5 +421,134 @@ describe('getPagination', () => {
   it('should return undefined when count is undefined', () => {
     const result = getPagination('list_apps', 1, 50, undefined);
     expect(result).toBeUndefined();
+  });
+});
+
+// =============================================================================
+// Update Handler Allowlist Tests (RED phase — verify create-only fields excluded)
+// =============================================================================
+
+/**
+ * Helper to invoke a registered tool handler directly.
+ * Bypasses MCP transport layer; args are passed as plain object.
+ */
+async function callHandler(
+  server: CoolifyMcpServer,
+  toolName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const registeredTool = (server as any)['_registeredTools'][toolName];
+  if (!registeredTool) throw new Error(`Tool "${toolName}" not registered`);
+  return registeredTool.handler(args);
+}
+
+describe('update handler allowlist — create-only fields must not be forwarded', () => {
+  let server: CoolifyMcpServer;
+
+  beforeEach(() => {
+    server = new CoolifyMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  describe('server update', () => {
+    it('should not forward instant_validate to updateServer', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const spy = jest.spyOn(server['client'] as any, 'updateServer').mockResolvedValue({});
+      await callHandler(server, 'server', {
+        action: 'update',
+        uuid: 'srv-uuid',
+        name: 'my-server',
+        instant_validate: true,
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [, updatePayload] = spy.mock.calls[0] as [string, Record<string, unknown>];
+      expect(updatePayload).not.toHaveProperty('instant_validate');
+      expect(updatePayload).toHaveProperty('name', 'my-server');
+    });
+  });
+
+  describe('application update', () => {
+    it('should not forward project_uuid to updateApplication', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const spy = jest.spyOn(server['client'] as any, 'updateApplication').mockResolvedValue({});
+      await callHandler(server, 'application', {
+        action: 'update',
+        uuid: 'app-uuid',
+        name: 'my-app',
+        project_uuid: 'proj-123',
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [, updatePayload] = spy.mock.calls[0] as [string, Record<string, unknown>];
+      expect(updatePayload).not.toHaveProperty('project_uuid');
+      expect(updatePayload).toHaveProperty('name', 'my-app');
+    });
+
+    it('should not forward server_uuid to updateApplication', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const spy = jest.spyOn(server['client'] as any, 'updateApplication').mockResolvedValue({});
+      await callHandler(server, 'application', {
+        action: 'update',
+        uuid: 'app-uuid',
+        fqdn: 'https://app.example.com',
+        server_uuid: 'srv-456',
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [, updatePayload] = spy.mock.calls[0] as [string, Record<string, unknown>];
+      expect(updatePayload).not.toHaveProperty('server_uuid');
+      expect(updatePayload).toHaveProperty('fqdn', 'https://app.example.com');
+    });
+  });
+
+  describe('database update', () => {
+    it('should not forward server_uuid to updateDatabase', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const spy = jest.spyOn(server['client'] as any, 'updateDatabase').mockResolvedValue({});
+      await callHandler(server, 'database', {
+        action: 'update',
+        uuid: 'db-uuid',
+        name: 'my-db',
+        server_uuid: 'srv-789',
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [, updatePayload] = spy.mock.calls[0] as [string, Record<string, unknown>];
+      expect(updatePayload).not.toHaveProperty('server_uuid');
+      expect(updatePayload).toHaveProperty('name', 'my-db');
+    });
+
+    it('should not forward project_uuid to updateDatabase', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const spy = jest.spyOn(server['client'] as any, 'updateDatabase').mockResolvedValue({});
+      await callHandler(server, 'database', {
+        action: 'update',
+        uuid: 'db-uuid',
+        description: 'my desc',
+        project_uuid: 'proj-abc',
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [, updatePayload] = spy.mock.calls[0] as [string, Record<string, unknown>];
+      expect(updatePayload).not.toHaveProperty('project_uuid');
+      expect(updatePayload).toHaveProperty('description', 'my desc');
+    });
+  });
+
+  describe('github_apps update', () => {
+    it('should call updateGitHubApp with update fields', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const spy = jest.spyOn(server['client'] as any, 'updateGitHubApp').mockResolvedValue({});
+      await callHandler(server, 'github_apps', {
+        action: 'update',
+        id: 42,
+        name: 'my-github-app',
+        organization: 'my-org',
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [id, updatePayload] = spy.mock.calls[0] as [number, Record<string, unknown>];
+      expect(id).toBe(42);
+      expect(updatePayload).toHaveProperty('name', 'my-github-app');
+      expect(updatePayload).toHaveProperty('organization', 'my-org');
+    });
   });
 });
