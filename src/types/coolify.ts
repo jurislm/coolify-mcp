@@ -943,7 +943,7 @@ export interface GitHubRepository {
   id: number;
   name: string;
   full_name: string;
-  owner: { login: string };
+  owner?: { login: string };
   private: boolean;
   default_branch: string;
   html_url?: string;
