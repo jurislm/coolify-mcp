@@ -554,3 +554,31 @@ describe('update handler allowlist — create-only fields must not be forwarded'
     });
   });
 });
+
+describe('stop_all_apps confirmation', () => {
+  let server: CoolifyMcpServer;
+
+  beforeEach(() => {
+    server = new CoolifyMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should call stopAllApps when confirm_stop_all_apps=true', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const spy = jest.spyOn(server['client'] as any, 'stopAllApps').mockResolvedValue([]);
+    await callHandler(server, 'stop_all_apps', { confirm_stop_all_apps: true });
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should return error when confirm_stop_all_apps=false', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const spy = jest.spyOn(server['client'] as any, 'stopAllApps').mockResolvedValue([]);
+    const result = (await callHandler(server, 'stop_all_apps', {
+      confirm_stop_all_apps: false,
+    })) as { content: Array<{ text: string }> };
+    expect(spy).not.toHaveBeenCalled();
+    expect(result.content[0].text).toContain('confirm_stop_all_apps=true required');
+  });
+});

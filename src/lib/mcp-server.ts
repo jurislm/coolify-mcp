@@ -1932,7 +1932,7 @@ export class CoolifyMcpServer extends McpServer {
     this.tool(
       'stop_all_apps',
       'EMERGENCY: Stop all running apps',
-      { confirm_stop_all_apps: z.literal(true) },
+      { confirm_stop_all_apps: z.boolean().describe('Must be true to confirm stopping all apps') },
       async ({ confirm_stop_all_apps }) => {
         if (confirm_stop_all_apps !== true)
           return {
