@@ -1241,4 +1241,3 @@ export interface UpdateScheduledTaskRequest {
   timeout?: number;
   enabled?: boolean;
 }
-
