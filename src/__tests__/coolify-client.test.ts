@@ -668,6 +668,8 @@ describe('CoolifyClient', () => {
 
       expect(Array.isArray(result)).toBe(true);
       expect(result[0]).toHaveProperty('name', 'my-repo');
+      expect(result[0].owner).toBe('owner'); // owner object → string transform
+      expect(result[0]).not.toHaveProperty('id'); // raw fields stripped by summary
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/github-apps/1/repositories',
         expect.any(Object),
