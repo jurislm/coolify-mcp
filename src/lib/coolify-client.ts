@@ -542,7 +542,9 @@ export class CoolifyClient {
     projectUuid: string,
     environmentNameOrUuid: string,
   ): Promise<Environment> {
-    return this.request<Environment>(`/projects/${projectUuid}/${environmentNameOrUuid}`);
+    return this.request<Environment>(
+      `/projects/${projectUuid}/${encodeURIComponent(environmentNameOrUuid)}`,
+    );
   }
 
   /**
@@ -601,7 +603,7 @@ export class CoolifyClient {
     environmentNameOrUuid: string,
   ): Promise<MessageResponse> {
     return this.request<MessageResponse>(
-      `/projects/${projectUuid}/environments/${environmentNameOrUuid}`,
+      `/projects/${projectUuid}/environments/${encodeURIComponent(environmentNameOrUuid)}`,
       {
         method: 'DELETE',
       },

@@ -1157,8 +1157,8 @@ export class CoolifyMcpServer extends McpServer {
       {
         action: z.enum(['get', 'cancel', 'list_for_app']),
         uuid: z.string(),
-        lines: z.number().optional(), // Include logs truncated to last N lines (omit for no logs)
-        max_chars: z.number().optional(), // Limit log output to last N chars (default: 50000)
+        lines: z.number().int().min(1).max(10000).optional(), // Include logs truncated to last N lines (omit for no logs)
+        max_chars: z.number().int().min(1).max(500000).optional(), // Limit log output to last N chars (default: 50000)
       },
       async ({ action, uuid, lines, max_chars }) => {
         switch (action) {
