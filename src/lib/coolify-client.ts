@@ -655,7 +655,7 @@ export class CoolifyClient {
   ): Promise<UuidResponse> {
     return this.request<UuidResponse>('/applications/dockerfile', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(mapFqdnToDomains(data)),
     });
   }
 
