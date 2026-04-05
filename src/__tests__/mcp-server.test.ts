@@ -91,6 +91,7 @@ describe('CoolifyMcpServer v2', () => {
       expect(typeof client.createApplicationPublic).toBe('function');
       expect(typeof client.createApplicationPrivateGH).toBe('function');
       expect(typeof client.createApplicationPrivateKey).toBe('function');
+      expect(typeof client.createApplicationDockerfile).toBe('function');
       expect(typeof client.createApplicationDockerImage).toBe('function');
       expect(typeof client.updateApplication).toBe('function');
       expect(typeof client.deleteApplication).toBe('function');
@@ -110,6 +111,7 @@ describe('CoolifyMcpServer v2', () => {
       // Database operations
       expect(typeof client.listDatabases).toBe('function');
       expect(typeof client.getDatabase).toBe('function');
+      expect(typeof client.updateDatabase).toBe('function');
       expect(typeof client.deleteDatabase).toBe('function');
       expect(typeof client.createPostgresql).toBe('function');
       expect(typeof client.createMysql).toBe('function');

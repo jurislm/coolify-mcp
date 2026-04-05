@@ -337,10 +337,12 @@ export class CoolifyMcpServer extends McpServer {
                 instant_validate: serverData.instant_validate,
               }),
             );
-          case 'update':
+          case 'update': {
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            return wrap(() => this.client.updateServer(uuid, serverData));
+            const { instant_validate: _, ...updateFields } = serverData;
+            return wrap(() => this.client.updateServer(uuid, updateFields));
+          }
           case 'delete':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
@@ -754,10 +756,18 @@ export class CoolifyMcpServer extends McpServer {
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
             return wrap(() => this.client.deleteDatabase(uuid, { deleteVolumes: delete_volumes }));
-          case 'update':
+          case 'update': {
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            return wrap(() => this.client.updateDatabase(uuid, dbData));
+            const {
+              server_uuid: _s,
+              project_uuid: _p,
+              environment_name: _e,
+              instant_deploy: _i,
+              ...updateData
+            } = dbData;
+            return wrap(() => this.client.updateDatabase(uuid, updateData));
+          }
           case 'create': {
             if (!type || !args.server_uuid || !args.project_uuid) {
               return {
