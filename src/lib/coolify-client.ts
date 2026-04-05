@@ -706,7 +706,9 @@ export class CoolifyClient {
   }
 
   async getApplicationLogs(uuid: string, lines: number = 100): Promise<string> {
-    return this.request<string>(`/applications/${encodeURIComponent(uuid)}/logs?lines=${encodeURIComponent(lines)}`);
+    return this.request<string>(
+      `/applications/${encodeURIComponent(uuid)}/logs?lines=${encodeURIComponent(lines)}`,
+    );
   }
 
   async startApplication(
@@ -717,21 +719,30 @@ export class CoolifyClient {
       force: options?.force,
       instant_deploy: options?.instant_deploy,
     });
-    return this.request<ApplicationActionResponse>(`/applications/${encodeURIComponent(uuid)}/start${query}`, {
-      method: 'POST',
-    });
+    return this.request<ApplicationActionResponse>(
+      `/applications/${encodeURIComponent(uuid)}/start${query}`,
+      {
+        method: 'POST',
+      },
+    );
   }
 
   async stopApplication(uuid: string): Promise<ApplicationActionResponse> {
-    return this.request<ApplicationActionResponse>(`/applications/${encodeURIComponent(uuid)}/stop`, {
-      method: 'POST',
-    });
+    return this.request<ApplicationActionResponse>(
+      `/applications/${encodeURIComponent(uuid)}/stop`,
+      {
+        method: 'POST',
+      },
+    );
   }
 
   async restartApplication(uuid: string): Promise<ApplicationActionResponse> {
-    return this.request<ApplicationActionResponse>(`/applications/${encodeURIComponent(uuid)}/restart`, {
-      method: 'POST',
-    });
+    return this.request<ApplicationActionResponse>(
+      `/applications/${encodeURIComponent(uuid)}/restart`,
+      {
+        method: 'POST',
+      },
+    );
   }
 
   // ===========================================================================
@@ -742,7 +753,9 @@ export class CoolifyClient {
     uuid: string,
     options?: { summary?: boolean },
   ): Promise<EnvironmentVariable[] | EnvVarSummary[]> {
-    const envVars = await this.request<EnvironmentVariable[]>(`/applications/${encodeURIComponent(uuid)}/envs`);
+    const envVars = await this.request<EnvironmentVariable[]>(
+      `/applications/${encodeURIComponent(uuid)}/envs`,
+    );
     return options?.summary ? envVars.map(toEnvVarSummary) : envVars;
   }
 
@@ -771,9 +784,12 @@ export class CoolifyClient {
   }
 
   async deleteApplicationEnvVar(uuid: string, envUuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/applications/${encodeURIComponent(uuid)}/envs/${encodeURIComponent(envUuid)}`, {
-      method: 'DELETE',
-    });
+    return this.request<MessageResponse>(
+      `/applications/${encodeURIComponent(uuid)}/envs/${encodeURIComponent(envUuid)}`,
+      {
+        method: 'DELETE',
+      },
+    );
   }
 
   // ===========================================================================
@@ -979,9 +995,12 @@ export class CoolifyClient {
   }
 
   async deleteServiceEnvVar(uuid: string, envUuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/services/${encodeURIComponent(uuid)}/envs/${encodeURIComponent(envUuid)}`, {
-      method: 'DELETE',
-    });
+    return this.request<MessageResponse>(
+      `/services/${encodeURIComponent(uuid)}/envs/${encodeURIComponent(envUuid)}`,
+      {
+        method: 'DELETE',
+      },
+    );
   }
 
   // ===========================================================================
@@ -1155,7 +1174,10 @@ export class CoolifyClient {
   }
 
   async validateCloudToken(uuid: string): Promise<CloudTokenValidation> {
-    return this.request<CloudTokenValidation>(`/cloud-tokens/${encodeURIComponent(uuid)}/validate`, { method: 'POST' });
+    return this.request<CloudTokenValidation>(
+      `/cloud-tokens/${encodeURIComponent(uuid)}/validate`,
+      { method: 'POST' },
+    );
   }
 
   // ===========================================================================
@@ -1167,7 +1189,9 @@ export class CoolifyClient {
   }
 
   async getDatabaseBackup(databaseUuid: string, backupUuid: string): Promise<DatabaseBackup> {
-    return this.request<DatabaseBackup>(`/databases/${encodeURIComponent(databaseUuid)}/backups/${encodeURIComponent(backupUuid)}`);
+    return this.request<DatabaseBackup>(
+      `/databases/${encodeURIComponent(databaseUuid)}/backups/${encodeURIComponent(backupUuid)}`,
+    );
   }
 
   async listBackupExecutions(databaseUuid: string, backupUuid: string): Promise<BackupExecution[]> {
@@ -1216,16 +1240,22 @@ export class CoolifyClient {
     backupUuid: string,
     data: UpdateDatabaseBackupRequest,
   ): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/databases/${encodeURIComponent(databaseUuid)}/backups/${encodeURIComponent(backupUuid)}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
+    return this.request<MessageResponse>(
+      `/databases/${encodeURIComponent(databaseUuid)}/backups/${encodeURIComponent(backupUuid)}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      },
+    );
   }
 
   async deleteDatabaseBackup(databaseUuid: string, backupUuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/databases/${encodeURIComponent(databaseUuid)}/backups/${encodeURIComponent(backupUuid)}`, {
-      method: 'DELETE',
-    });
+    return this.request<MessageResponse>(
+      `/databases/${encodeURIComponent(databaseUuid)}/backups/${encodeURIComponent(backupUuid)}`,
+      {
+        method: 'DELETE',
+      },
+    );
   }
 
   // ===========================================================================
@@ -1236,7 +1266,9 @@ export class CoolifyClient {
     uuid: string,
     options?: { summary?: boolean },
   ): Promise<EnvironmentVariable[] | EnvVarSummary[]> {
-    const envVars = await this.request<EnvironmentVariable[]>(`/databases/${encodeURIComponent(uuid)}/envs`);
+    const envVars = await this.request<EnvironmentVariable[]>(
+      `/databases/${encodeURIComponent(uuid)}/envs`,
+    );
     return options?.summary ? envVars.map(toEnvVarSummary) : envVars;
   }
 
@@ -1268,9 +1300,12 @@ export class CoolifyClient {
   }
 
   async deleteDatabaseEnvVar(uuid: string, envUuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/databases/${encodeURIComponent(uuid)}/envs/${encodeURIComponent(envUuid)}`, {
-      method: 'DELETE',
-    });
+    return this.request<MessageResponse>(
+      `/databases/${encodeURIComponent(uuid)}/envs/${encodeURIComponent(envUuid)}`,
+      {
+        method: 'DELETE',
+      },
+    );
   }
 
   // ===========================================================================
@@ -1278,7 +1313,9 @@ export class CoolifyClient {
   // ===========================================================================
 
   async listApplicationStorages(applicationUuid: string): Promise<StorageListResponse> {
-    return this.request<StorageListResponse>(`/applications/${encodeURIComponent(applicationUuid)}/storages`);
+    return this.request<StorageListResponse>(
+      `/applications/${encodeURIComponent(applicationUuid)}/storages`,
+    );
   }
 
   async createApplicationStorage(
@@ -1314,7 +1351,9 @@ export class CoolifyClient {
   }
 
   async listDatabaseStorages(databaseUuid: string): Promise<StorageListResponse> {
-    return this.request<StorageListResponse>(`/databases/${encodeURIComponent(databaseUuid)}/storages`);
+    return this.request<StorageListResponse>(
+      `/databases/${encodeURIComponent(databaseUuid)}/storages`,
+    );
   }
 
   async createDatabaseStorage(
@@ -1338,13 +1377,18 @@ export class CoolifyClient {
   }
 
   async deleteDatabaseStorage(databaseUuid: string, storageUuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/databases/${encodeURIComponent(databaseUuid)}/storages/${encodeURIComponent(storageUuid)}`, {
-      method: 'DELETE',
-    });
+    return this.request<MessageResponse>(
+      `/databases/${encodeURIComponent(databaseUuid)}/storages/${encodeURIComponent(storageUuid)}`,
+      {
+        method: 'DELETE',
+      },
+    );
   }
 
   async listServiceStorages(serviceUuid: string): Promise<StorageListResponse> {
-    return this.request<StorageListResponse>(`/services/${encodeURIComponent(serviceUuid)}/storages`);
+    return this.request<StorageListResponse>(
+      `/services/${encodeURIComponent(serviceUuid)}/storages`,
+    );
   }
 
   async createServiceStorage(
@@ -1368,9 +1412,12 @@ export class CoolifyClient {
   }
 
   async deleteServiceStorage(serviceUuid: string, storageUuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/services/${encodeURIComponent(serviceUuid)}/storages/${encodeURIComponent(storageUuid)}`, {
-      method: 'DELETE',
-    });
+    return this.request<MessageResponse>(
+      `/services/${encodeURIComponent(serviceUuid)}/storages/${encodeURIComponent(storageUuid)}`,
+      {
+        method: 'DELETE',
+      },
+    );
   }
 
   // ===========================================================================
@@ -1378,17 +1425,22 @@ export class CoolifyClient {
   // ===========================================================================
 
   async listApplicationScheduledTasks(appUuid: string): Promise<ScheduledTask[]> {
-    return this.request<ScheduledTask[]>(`/applications/${encodeURIComponent(appUuid)}/scheduled-tasks`);
+    return this.request<ScheduledTask[]>(
+      `/applications/${encodeURIComponent(appUuid)}/scheduled-tasks`,
+    );
   }
 
   async createApplicationScheduledTask(
     appUuid: string,
     data: CreateScheduledTaskRequest,
   ): Promise<ScheduledTask> {
-    return this.request<ScheduledTask>(`/applications/${encodeURIComponent(appUuid)}/scheduled-tasks`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return this.request<ScheduledTask>(
+      `/applications/${encodeURIComponent(appUuid)}/scheduled-tasks`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+    );
   }
 
   async updateApplicationScheduledTask(
@@ -1396,19 +1448,25 @@ export class CoolifyClient {
     taskUuid: string,
     data: UpdateScheduledTaskRequest,
   ): Promise<ScheduledTask> {
-    return this.request<ScheduledTask>(`/applications/${encodeURIComponent(appUuid)}/scheduled-tasks/${encodeURIComponent(taskUuid)}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
+    return this.request<ScheduledTask>(
+      `/applications/${encodeURIComponent(appUuid)}/scheduled-tasks/${encodeURIComponent(taskUuid)}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      },
+    );
   }
 
   async deleteApplicationScheduledTask(
     appUuid: string,
     taskUuid: string,
   ): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/applications/${encodeURIComponent(appUuid)}/scheduled-tasks/${encodeURIComponent(taskUuid)}`, {
-      method: 'DELETE',
-    });
+    return this.request<MessageResponse>(
+      `/applications/${encodeURIComponent(appUuid)}/scheduled-tasks/${encodeURIComponent(taskUuid)}`,
+      {
+        method: 'DELETE',
+      },
+    );
   }
 
   async listApplicationScheduledTaskExecutions(
@@ -1421,17 +1479,22 @@ export class CoolifyClient {
   }
 
   async listServiceScheduledTasks(serviceUuid: string): Promise<ScheduledTask[]> {
-    return this.request<ScheduledTask[]>(`/services/${encodeURIComponent(serviceUuid)}/scheduled-tasks`);
+    return this.request<ScheduledTask[]>(
+      `/services/${encodeURIComponent(serviceUuid)}/scheduled-tasks`,
+    );
   }
 
   async createServiceScheduledTask(
     serviceUuid: string,
     data: CreateScheduledTaskRequest,
   ): Promise<ScheduledTask> {
-    return this.request<ScheduledTask>(`/services/${encodeURIComponent(serviceUuid)}/scheduled-tasks`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return this.request<ScheduledTask>(
+      `/services/${encodeURIComponent(serviceUuid)}/scheduled-tasks`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+    );
   }
 
   async updateServiceScheduledTask(
@@ -1439,19 +1502,25 @@ export class CoolifyClient {
     taskUuid: string,
     data: UpdateScheduledTaskRequest,
   ): Promise<ScheduledTask> {
-    return this.request<ScheduledTask>(`/services/${encodeURIComponent(serviceUuid)}/scheduled-tasks/${encodeURIComponent(taskUuid)}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
+    return this.request<ScheduledTask>(
+      `/services/${encodeURIComponent(serviceUuid)}/scheduled-tasks/${encodeURIComponent(taskUuid)}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      },
+    );
   }
 
   async deleteServiceScheduledTask(
     serviceUuid: string,
     taskUuid: string,
   ): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/services/${encodeURIComponent(serviceUuid)}/scheduled-tasks/${encodeURIComponent(taskUuid)}`, {
-      method: 'DELETE',
-    });
+    return this.request<MessageResponse>(
+      `/services/${encodeURIComponent(serviceUuid)}/scheduled-tasks/${encodeURIComponent(taskUuid)}`,
+      {
+        method: 'DELETE',
+      },
+    );
   }
 
   async listServiceScheduledTaskExecutions(

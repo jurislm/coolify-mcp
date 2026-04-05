@@ -125,6 +125,7 @@ Use bracketed type prefix:
 ### Commit Timing
 
 Commit after each independent task:
+
 - Feature module complete
 - Major bug fixed
 - Architecture adjusted

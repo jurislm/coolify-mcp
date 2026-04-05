@@ -1798,9 +1798,7 @@ describe('CoolifyClient', () => {
     });
 
     it('should delete a backup execution', async () => {
-      mockFetch.mockResolvedValueOnce(
-        mockResponse({ message: 'Backup execution deleted.' }),
-      );
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Backup execution deleted.' }));
 
       const result = await client.deleteBackupExecution('db-uuid', 'backup-uuid', 'exec-uuid');
 
@@ -1812,9 +1810,7 @@ describe('CoolifyClient', () => {
     });
 
     it('should delete a backup execution with delete_s3', async () => {
-      mockFetch.mockResolvedValueOnce(
-        mockResponse({ message: 'Backup execution deleted.' }),
-      );
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Backup execution deleted.' }));
 
       const result = await client.deleteBackupExecution(
         'db-uuid',

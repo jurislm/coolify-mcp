@@ -482,7 +482,10 @@ export class CoolifyMcpServer extends McpServer {
         build_pack: z.string().optional(),
         ports_exposes: z.string().optional(),
         // Dockerfile fields
-        dockerfile: z.string().optional().describe('Dockerfile content (required for create_dockerfile)'),
+        dockerfile: z
+          .string()
+          .optional()
+          .describe('Dockerfile content (required for create_dockerfile)'),
         dockerfile_location: z.string().optional(),
         base_directory: z.string().optional(),
         instant_deploy: z.boolean().optional(),
@@ -1147,9 +1150,7 @@ export class CoolifyMcpServer extends McpServer {
           }
         }
         return {
-          content: [
-            { type: 'text' as const, text: 'Error: unknown action/resource combination' },
-          ],
+          content: [{ type: 'text' as const, text: 'Error: unknown action/resource combination' }],
         };
       },
     );
@@ -1240,12 +1241,10 @@ export class CoolifyMcpServer extends McpServer {
           case 'current_members':
             return wrap(() => this.client.getCurrentTeamMembers());
           case 'get':
-            if (!id)
-              return { content: [{ type: 'text' as const, text: 'Error: id required' }] };
+            if (!id) return { content: [{ type: 'text' as const, text: 'Error: id required' }] };
             return wrap(() => this.client.getTeam(id));
           case 'members':
-            if (!id)
-              return { content: [{ type: 'text' as const, text: 'Error: id required' }] };
+            if (!id) return { content: [{ type: 'text' as const, text: 'Error: id required' }] };
             return wrap(() => this.client.getTeamMembers(id));
         }
         return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
@@ -1416,9 +1415,7 @@ export class CoolifyMcpServer extends McpServer {
           case 'list_branches':
             if (!id || !owner || !repo)
               return {
-                content: [
-                  { type: 'text' as const, text: 'Error: id, owner, repo required' },
-                ],
+                content: [{ type: 'text' as const, text: 'Error: id, owner, repo required' }],
               };
             return wrap(() => this.client.listGitHubAppBranches(id, owner, repo));
         }
@@ -1446,7 +1443,10 @@ export class CoolifyMcpServer extends McpServer {
         database_uuid: z.string(),
         backup_uuid: z.string().optional(),
         execution_uuid: z.string().optional(),
-        delete_s3: z.boolean().optional().describe('Also delete backup file from S3 (for delete_execution)'),
+        delete_s3: z
+          .boolean()
+          .optional()
+          .describe('Also delete backup file from S3 (for delete_execution)'),
         // Backup configuration parameters
         frequency: z.string().optional(),
         enabled: z.boolean().optional(),
@@ -1505,13 +1505,27 @@ export class CoolifyMcpServer extends McpServer {
                 frequency: args.frequency!,
                 ...(args.enabled !== undefined && { enabled: args.enabled }),
                 ...(args.save_s3 !== undefined && { save_s3: args.save_s3 }),
-                ...(args.s3_storage_uuid !== undefined && { s3_storage_uuid: args.s3_storage_uuid }),
-                ...(args.databases_to_backup !== undefined && { databases_to_backup: args.databases_to_backup }),
+                ...(args.s3_storage_uuid !== undefined && {
+                  s3_storage_uuid: args.s3_storage_uuid,
+                }),
+                ...(args.databases_to_backup !== undefined && {
+                  databases_to_backup: args.databases_to_backup,
+                }),
                 ...(args.dump_all !== undefined && { dump_all: args.dump_all }),
-                ...(args.database_backup_retention_days_locally !== undefined && { database_backup_retention_days_locally: args.database_backup_retention_days_locally }),
-                ...(args.database_backup_retention_days_s3 !== undefined && { database_backup_retention_days_s3: args.database_backup_retention_days_s3 }),
-                ...(args.database_backup_retention_amount_locally !== undefined && { database_backup_retention_amount_locally: args.database_backup_retention_amount_locally }),
-                ...(args.database_backup_retention_amount_s3 !== undefined && { database_backup_retention_amount_s3: args.database_backup_retention_amount_s3 }),
+                ...(args.database_backup_retention_days_locally !== undefined && {
+                  database_backup_retention_days_locally:
+                    args.database_backup_retention_days_locally,
+                }),
+                ...(args.database_backup_retention_days_s3 !== undefined && {
+                  database_backup_retention_days_s3: args.database_backup_retention_days_s3,
+                }),
+                ...(args.database_backup_retention_amount_locally !== undefined && {
+                  database_backup_retention_amount_locally:
+                    args.database_backup_retention_amount_locally,
+                }),
+                ...(args.database_backup_retention_amount_s3 !== undefined && {
+                  database_backup_retention_amount_s3: args.database_backup_retention_amount_s3,
+                }),
               }),
             );
           case 'update':
@@ -1522,13 +1536,27 @@ export class CoolifyMcpServer extends McpServer {
                 ...(args.frequency !== undefined && { frequency: args.frequency }),
                 ...(args.enabled !== undefined && { enabled: args.enabled }),
                 ...(args.save_s3 !== undefined && { save_s3: args.save_s3 }),
-                ...(args.s3_storage_uuid !== undefined && { s3_storage_uuid: args.s3_storage_uuid }),
-                ...(args.databases_to_backup !== undefined && { databases_to_backup: args.databases_to_backup }),
+                ...(args.s3_storage_uuid !== undefined && {
+                  s3_storage_uuid: args.s3_storage_uuid,
+                }),
+                ...(args.databases_to_backup !== undefined && {
+                  databases_to_backup: args.databases_to_backup,
+                }),
                 ...(args.dump_all !== undefined && { dump_all: args.dump_all }),
-                ...(args.database_backup_retention_days_locally !== undefined && { database_backup_retention_days_locally: args.database_backup_retention_days_locally }),
-                ...(args.database_backup_retention_days_s3 !== undefined && { database_backup_retention_days_s3: args.database_backup_retention_days_s3 }),
-                ...(args.database_backup_retention_amount_locally !== undefined && { database_backup_retention_amount_locally: args.database_backup_retention_amount_locally }),
-                ...(args.database_backup_retention_amount_s3 !== undefined && { database_backup_retention_amount_s3: args.database_backup_retention_amount_s3 }),
+                ...(args.database_backup_retention_days_locally !== undefined && {
+                  database_backup_retention_days_locally:
+                    args.database_backup_retention_days_locally,
+                }),
+                ...(args.database_backup_retention_days_s3 !== undefined && {
+                  database_backup_retention_days_s3: args.database_backup_retention_days_s3,
+                }),
+                ...(args.database_backup_retention_amount_locally !== undefined && {
+                  database_backup_retention_amount_locally:
+                    args.database_backup_retention_amount_locally,
+                }),
+                ...(args.database_backup_retention_amount_s3 !== undefined && {
+                  database_backup_retention_amount_s3: args.database_backup_retention_amount_s3,
+                }),
               }),
             );
           case 'delete':
@@ -1622,7 +1650,9 @@ export class CoolifyMcpServer extends McpServer {
               };
             if (type === 'file' && is_directory === true && !fs_path)
               return {
-                content: [{ type: 'text' as const, text: 'Error: fs_path required when is_directory=true' }],
+                content: [
+                  { type: 'text' as const, text: 'Error: fs_path required when is_directory=true' },
+                ],
               };
             const createData =
               type === 'persistent'
@@ -1770,12 +1800,8 @@ export class CoolifyMcpServer extends McpServer {
                 ],
               };
             return resource_type === 'application'
-              ? wrap(() =>
-                  this.client.updateApplicationScheduledTask(uuid, task_uuid, updateData),
-                )
-              : wrap(() =>
-                  this.client.updateServiceScheduledTask(uuid, task_uuid, updateData),
-                );
+              ? wrap(() => this.client.updateApplicationScheduledTask(uuid, task_uuid, updateData))
+              : wrap(() => this.client.updateServiceScheduledTask(uuid, task_uuid, updateData));
           }
 
           case 'delete':
@@ -1816,7 +1842,10 @@ export class CoolifyMcpServer extends McpServer {
           .enum(['hetzner', 'digitalocean'])
           .optional()
           .describe('Cloud provider (required for create)'),
-        token: z.string().optional().describe('API token (required for create, not updatable — rotate via delete+create)'),
+        token: z
+          .string()
+          .optional()
+          .describe('API token (required for create, not updatable — rotate via delete+create)'),
         name: z.string().optional().describe('Token name (required for create/update)'),
       },
       async ({ action, uuid, provider, token, name }) => {
@@ -1830,9 +1859,7 @@ export class CoolifyMcpServer extends McpServer {
           case 'create':
             if (!provider || !token || !name)
               return {
-                content: [
-                  { type: 'text' as const, text: 'Error: provider, token, name required' },
-                ],
+                content: [{ type: 'text' as const, text: 'Error: provider, token, name required' }],
               };
             return wrap(() => this.client.createCloudToken({ provider, token, name }));
           case 'update':
@@ -1883,7 +1910,11 @@ export class CoolifyMcpServer extends McpServer {
       { confirm_stop_all_apps: z.literal(true) },
       async ({ confirm_stop_all_apps }) => {
         if (confirm_stop_all_apps !== true)
-          return { content: [{ type: 'text' as const, text: 'Error: confirm_stop_all_apps=true required' }] };
+          return {
+            content: [
+              { type: 'text' as const, text: 'Error: confirm_stop_all_apps=true required' },
+            ],
+          };
         return wrap(() => this.client.stopAllApps());
       },
     );
