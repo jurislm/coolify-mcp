@@ -197,16 +197,8 @@ function cleanRequestData<T extends object>(data: T): Partial<T> {
   return cleaned;
 }
 
-/** Base64-encode a string, passing through values that are already base64. */
+/** Base64-encode a string. Always encodes — callers must pass raw content. */
 function toBase64(value: string): string {
-  try {
-    const decoded = Buffer.from(value, 'base64').toString('utf-8');
-    if (Buffer.from(decoded, 'utf-8').toString('base64') === value) {
-      return value; // Already valid base64
-    }
-  } catch {
-    // Not base64, encode it
-  }
   return Buffer.from(value, 'utf-8').toString('base64');
 }
 

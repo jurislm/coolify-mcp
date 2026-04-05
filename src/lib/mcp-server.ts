@@ -663,8 +663,30 @@ export class CoolifyMcpServer extends McpServer {
           case 'update': {
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { action: _, uuid: __, delete_volumes: ___, ...updateData } = args;
+            // Strip create-only fields — project/server assignment cannot be changed via update
+            const {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              action: _a,
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              uuid: _u,
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              delete_volumes: _d,
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              project_uuid: _p,
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              server_uuid: _s,
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              github_app_uuid: _g,
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              private_key_uuid: _k,
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              environment_name: _e,
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              environment_uuid: _ev,
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              instant_deploy: _id,
+              ...updateData
+            } = args;
             return wrap(() => this.client.updateApplication(uuid, updateData));
           }
           case 'delete':
@@ -681,7 +703,7 @@ export class CoolifyMcpServer extends McpServer {
     this.tool(
       'application_logs',
       'Get app logs',
-      { uuid: z.string(), lines: z.number().optional() },
+      { uuid: z.string(), lines: z.number().int().min(1).max(10000).optional() },
       async ({ uuid, lines }) => wrap(() => this.client.getApplicationLogs(uuid, lines)),
     );
 
@@ -779,17 +801,82 @@ export class CoolifyMcpServer extends McpServer {
                 ],
               };
             }
-            const dbMethods: Record<string, (data: any) => Promise<any>> = {
-              postgresql: (d) => this.client.createPostgresql(d),
-              mysql: (d) => this.client.createMysql(d),
-              mariadb: (d) => this.client.createMariadb(d),
-              mongodb: (d) => this.client.createMongodb(d),
-              redis: (d) => this.client.createRedis(d),
-              keydb: (d) => this.client.createKeydb(d),
-              clickhouse: (d) => this.client.createClickhouse(d),
-              dragonfly: (d) => this.client.createDragonfly(d),
+            // Base fields shared by all DB create types
+            const base = {
+              server_uuid: args.server_uuid,
+              project_uuid: args.project_uuid,
+              environment_name: args.environment_name,
+              name: args.name,
+              description: args.description,
+              image: args.image,
+              is_public: args.is_public,
+              public_port: args.public_port,
+              instant_deploy: args.instant_deploy,
             };
-            return wrap(() => dbMethods[type](dbData));
+            // Dispatch with explicit per-type field picking to avoid cross-type credential leakage
+            switch (type) {
+              case 'postgresql':
+                return wrap(() =>
+                  this.client.createPostgresql({
+                    ...base,
+                    postgres_user: args.postgres_user,
+                    postgres_password: args.postgres_password,
+                    postgres_db: args.postgres_db,
+                  }),
+                );
+              case 'mysql':
+                return wrap(() =>
+                  this.client.createMysql({
+                    ...base,
+                    mysql_root_password: args.mysql_root_password,
+                    mysql_user: args.mysql_user,
+                    mysql_password: args.mysql_password,
+                    mysql_database: args.mysql_database,
+                  }),
+                );
+              case 'mariadb':
+                return wrap(() =>
+                  this.client.createMariadb({
+                    ...base,
+                    mariadb_root_password: args.mariadb_root_password,
+                    mariadb_user: args.mariadb_user,
+                    mariadb_password: args.mariadb_password,
+                    mariadb_database: args.mariadb_database,
+                  }),
+                );
+              case 'mongodb':
+                return wrap(() =>
+                  this.client.createMongodb({
+                    ...base,
+                    mongo_initdb_root_username: args.mongo_initdb_root_username,
+                    mongo_initdb_root_password: args.mongo_initdb_root_password,
+                    mongo_initdb_database: args.mongo_initdb_database,
+                  }),
+                );
+              case 'redis':
+                return wrap(() =>
+                  this.client.createRedis({ ...base, redis_password: args.redis_password }),
+                );
+              case 'keydb':
+                return wrap(() =>
+                  this.client.createKeydb({ ...base, keydb_password: args.keydb_password }),
+                );
+              case 'clickhouse':
+                return wrap(() =>
+                  this.client.createClickhouse({
+                    ...base,
+                    clickhouse_admin_user: args.clickhouse_admin_user,
+                    clickhouse_admin_password: args.clickhouse_admin_password,
+                  }),
+                );
+              case 'dragonfly':
+                return wrap(() =>
+                  this.client.createDragonfly({
+                    ...base,
+                    dragonfly_password: args.dragonfly_password,
+                  }),
+                );
+            }
           }
         }
         return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
@@ -856,15 +943,21 @@ export class CoolifyMcpServer extends McpServer {
           case 'update': {
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { action: _, uuid: __, delete_volumes: ___, ...updateData } = args;
-            return wrap(() => this.client.updateService(uuid, updateData));
+            // Service update only accepts name, description, docker_compose_raw
+            return wrap(() =>
+              this.client.updateService(uuid, {
+                name: args.name,
+                description: args.description,
+                docker_compose_raw: args.docker_compose_raw,
+              }),
+            );
           }
           case 'delete':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
             return wrap(() => this.client.deleteService(uuid, { deleteVolumes: delete_volumes }));
         }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
     );
 
@@ -1712,12 +1805,8 @@ export class CoolifyMcpServer extends McpServer {
     this.tool(
       'stop_all_apps',
       'EMERGENCY: Stop all running apps',
-      { confirm: z.literal(true) },
-      async ({ confirm }) => {
-        if (!confirm)
-          return { content: [{ type: 'text' as const, text: 'Error: confirm=true required' }] };
-        return wrap(() => this.client.stopAllApps());
-      },
+      { confirm_stop_all_apps: z.literal(true) },
+      async () => wrap(() => this.client.stopAllApps()),
     );
 
     this.tool(

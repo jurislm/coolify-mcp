@@ -299,32 +299,28 @@ describe('CoolifyClient', () => {
       );
     });
 
-    it('should pass through already base64-encoded docker_compose_raw', async () => {
+    it('should always encode docker_compose_raw even if it looks like base64', async () => {
       const responseData = {
         uuid: 'compose-uuid',
         domains: ['custom.example.com'],
       };
       mockFetch.mockResolvedValueOnce(mockResponse(responseData));
 
-      const base64Value = 'dmVyc2lvbjogIjMiCnNlcnZpY2VzOgogIGFwcDoKICAgIGltYWdlOiBuZ2lueA==';
+      // Raw YAML that happens to be valid base64 — should be encoded, not passed through
+      const rawYaml = 'dmVyc2lvbjogIjMiCnNlcnZpY2VzOgogIGFwcDoKICAgIGltYWdlOiBuZ2lueA==';
       const createData: CreateServiceRequest = {
         name: 'custom-compose-service',
         project_uuid: 'project-uuid',
         environment_uuid: 'env-uuid',
         server_uuid: 'server-uuid',
-        docker_compose_raw: base64Value,
+        docker_compose_raw: rawYaml,
       };
 
-      const result = await client.createService(createData);
+      await client.createService(createData);
 
-      expect(result).toEqual(responseData);
-      expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/v1/services',
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify(createData),
-        }),
-      );
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      // Always encode — the raw value is base64-encoded again
+      expect(callBody.docker_compose_raw).toBe(Buffer.from(rawYaml, 'utf-8').toString('base64'));
     });
 
     it('should auto base64-encode raw YAML docker_compose_raw', async () => {
