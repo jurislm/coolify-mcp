@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Service storages require `service_resource_uuid` to target a specific sub-resource
   - 12 new client methods across all resource types
 
+- **Server CRUD** - New `server` tool for create/update/delete server management
+- **Database Update** - Extended `database` tool with `update` action for modifying database configuration
+- **Application Dockerfile** - Extended `application` tool with `create_dockerfile` action
+- **Teams** - New `teams` tool for team management (list, current, members)
+
 - **Backup Execution Deletion** - Extended `database_backups` tool with `delete_execution` action:
   - Delete individual backup execution records
   - Optional `delete_s3` parameter to also remove S3 backup files

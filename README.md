@@ -9,24 +9,24 @@
 [![codecov](https://codecov.io/gh/StuMason/coolify-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/StuMason/coolify-mcp)
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/stumason-coolify-mcp-badge.png)](https://mseep.ai/app/stumason-coolify-mcp)
 
-> **The most comprehensive MCP server for Coolify** - 38 optimized tools, smart diagnostics, and batch operations for managing your self-hosted PaaS through AI assistants.
+> **The most comprehensive MCP server for Coolify** - 40 optimized tools, smart diagnostics, and batch operations for managing your self-hosted PaaS through AI assistants.
 
 A Model Context Protocol (MCP) server for [Coolify](https://coolify.io/), enabling AI assistants to manage and debug your Coolify instances through natural language.
 
 ## Features
 
-This MCP server provides **38 token-optimized tools** for **debugging, management, and deployment**:
+This MCP server provides **40 token-optimized tools** for **debugging, management, and deployment**:
 
 | Category             | Tools                                                                                                                       |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | **Infrastructure**   | `get_infrastructure_overview`, `get_mcp_version`, `get_version`                                                             |
 | **Diagnostics**      | `diagnose_app`, `diagnose_server`, `find_issues`                                                                            |
 | **Batch Operations** | `restart_project_apps`, `bulk_env_update`, `stop_all_apps`, `redeploy_project`                                              |
-| **Servers**          | `list_servers`, `get_server`, `validate_server`, `server_resources`, `server_domains`                                       |
+| **Servers**          | `list_servers`, `get_server`, `server` (create, update, delete), `validate_server`, `server_resources`, `server_domains`    |
 | **Projects**         | `projects` (list, get, create, update, delete via action param)                                                             |
 | **Environments**     | `environments` (list, get, create, delete via action param)                                                                 |
-| **Applications**     | `list_applications`, `get_application`, `application` (CRUD), `application_logs`                                            |
-| **Databases**        | `list_databases`, `get_database`, `database` (create 8 types, delete), `database_backups` (CRUD schedules, view/delete executions) |
+| **Applications**     | `list_applications`, `get_application`, `application` (5 create types, update, delete), `application_logs`                  |
+| **Databases**        | `list_databases`, `get_database`, `database` (create 8 types, update, delete), `database_backups` (CRUD schedules, view/delete executions) |
 | **Services**         | `list_services`, `get_service`, `service` (create, update, delete)                                                          |
 | **Control**          | `control` (start/stop/restart for apps, databases, services)                                                                |
 | **Env Vars**         | `env_vars` (CRUD for application, service, and database env vars)                                                           |
@@ -36,6 +36,7 @@ This MCP server provides **38 token-optimized tools** for **debugging, managemen
 | **Storages**         | `storages` (list, create, update, delete for applications, databases, services)                                             |
 | **Scheduled Tasks**  | `scheduled_tasks` (list, create, update, delete, list_executions for applications & services)                               |
 | **Cloud Tokens**     | `cloud_tokens` (list, get, create, update, delete, validate for Hetzner/DigitalOcean)                                       |
+| **Teams**            | `teams` (list, current, current_members, get, members)                                                                      |
 
 ### Token-Optimized Design
 

@@ -57,9 +57,19 @@ describe('CoolifyMcpServer v2', () => {
       // Server operations
       expect(typeof client.listServers).toBe('function');
       expect(typeof client.getServer).toBe('function');
+      expect(typeof client.createServer).toBe('function');
+      expect(typeof client.updateServer).toBe('function');
+      expect(typeof client.deleteServer).toBe('function');
       expect(typeof client.getServerResources).toBe('function');
       expect(typeof client.getServerDomains).toBe('function');
       expect(typeof client.validateServer).toBe('function');
+
+      // Team operations
+      expect(typeof client.listTeams).toBe('function');
+      expect(typeof client.getCurrentTeam).toBe('function');
+      expect(typeof client.getCurrentTeamMembers).toBe('function');
+      expect(typeof client.getTeam).toBe('function');
+      expect(typeof client.getTeamMembers).toBe('function');
 
       // Project operations
       expect(typeof client.listProjects).toBe('function');

@@ -295,6 +295,62 @@ export class CoolifyMcpServer extends McpServer {
     );
 
     // =========================================================================
+    // Server CRUD (1 tool)
+    // =========================================================================
+    this.tool(
+      'server',
+      'Manage server: create/update/delete',
+      {
+        action: z.enum(['create', 'update', 'delete']),
+        uuid: z.string().optional().describe('Server UUID (required for update/delete)'),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        ip: z.string().optional().describe('Server IP (required for create)'),
+        port: z.number().optional(),
+        user: z.string().optional(),
+        private_key_uuid: z.string().optional().describe('SSH key UUID (required for create)'),
+        is_build_server: z.boolean().optional(),
+        instant_validate: z.boolean().optional(),
+      },
+      async (args) => {
+        const { action, uuid, ...serverData } = args;
+        switch (action) {
+          case 'create':
+            if (!serverData.ip || !serverData.private_key_uuid || !serverData.name)
+              return {
+                content: [
+                  {
+                    type: 'text' as const,
+                    text: 'Error: name, ip, private_key_uuid required',
+                  },
+                ],
+              };
+            return wrap(() =>
+              this.client.createServer({
+                name: serverData.name!,
+                ip: serverData.ip!,
+                private_key_uuid: serverData.private_key_uuid!,
+                description: serverData.description,
+                port: serverData.port,
+                user: serverData.user,
+                is_build_server: serverData.is_build_server,
+                instant_validate: serverData.instant_validate,
+              }),
+            );
+          case 'update':
+            if (!uuid)
+              return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
+            return wrap(() => this.client.updateServer(uuid, serverData));
+          case 'delete':
+            if (!uuid)
+              return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
+            return wrap(() => this.client.deleteServer(uuid));
+        }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
+      },
+    );
+
+    // =========================================================================
     // Projects (1 tool - consolidated CRUD)
     // =========================================================================
     this.tool(
@@ -398,6 +454,7 @@ export class CoolifyMcpServer extends McpServer {
           'create_public',
           'create_github',
           'create_key',
+          'create_dockerfile',
           'create_dockerimage',
           'update',
           'delete',
@@ -414,6 +471,11 @@ export class CoolifyMcpServer extends McpServer {
         environment_uuid: z.string().optional(),
         build_pack: z.string().optional(),
         ports_exposes: z.string().optional(),
+        // Dockerfile fields
+        dockerfile: z.string().optional().describe('Dockerfile content (required for create_dockerfile)'),
+        dockerfile_location: z.string().optional(),
+        base_directory: z.string().optional(),
+        instant_deploy: z.boolean().optional(),
         // Docker image fields
         docker_registry_image_name: z.string().optional(),
         docker_registry_image_tag: z.string().optional(),
@@ -539,6 +601,33 @@ export class CoolifyMcpServer extends McpServer {
                 fqdn: args.fqdn,
               }),
             );
+          case 'create_dockerfile':
+            if (!args.project_uuid || !args.server_uuid || !args.dockerfile) {
+              return {
+                content: [
+                  {
+                    type: 'text' as const,
+                    text: 'Error: project_uuid, server_uuid, dockerfile required',
+                  },
+                ],
+              };
+            }
+            return wrap(() =>
+              this.client.createApplicationDockerfile({
+                project_uuid: args.project_uuid!,
+                server_uuid: args.server_uuid!,
+                dockerfile: args.dockerfile!,
+                dockerfile_location: args.dockerfile_location,
+                base_directory: args.base_directory,
+                ports_exposes: args.ports_exposes,
+                instant_deploy: args.instant_deploy,
+                environment_name: args.environment_name,
+                environment_uuid: args.environment_uuid,
+                name: args.name,
+                description: args.description,
+                fqdn: args.fqdn,
+              }),
+            );
           case 'create_dockerimage':
             if (
               !args.project_uuid ||
@@ -583,6 +672,7 @@ export class CoolifyMcpServer extends McpServer {
               this.client.deleteApplication(uuid, { deleteVolumes: delete_volumes }),
             );
         }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
     );
 
@@ -610,9 +700,9 @@ export class CoolifyMcpServer extends McpServer {
 
     this.tool(
       'database',
-      'Manage database: create/delete',
+      'Manage database: create/update/delete',
       {
-        action: z.enum(['create', 'delete']),
+        action: z.enum(['create', 'update', 'delete']),
         type: z
           .enum([
             'postgresql',
@@ -659,29 +749,40 @@ export class CoolifyMcpServer extends McpServer {
       },
       async (args) => {
         const { action, type, uuid, delete_volumes, ...dbData } = args;
-        if (action === 'delete') {
-          if (!uuid) return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-          return wrap(() => this.client.deleteDatabase(uuid, { deleteVolumes: delete_volumes }));
+        switch (action) {
+          case 'delete':
+            if (!uuid)
+              return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
+            return wrap(() => this.client.deleteDatabase(uuid, { deleteVolumes: delete_volumes }));
+          case 'update':
+            if (!uuid)
+              return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
+            return wrap(() => this.client.updateDatabase(uuid, dbData));
+          case 'create': {
+            if (!type || !args.server_uuid || !args.project_uuid) {
+              return {
+                content: [
+                  {
+                    type: 'text' as const,
+                    text: 'Error: type, server_uuid, project_uuid required',
+                  },
+                ],
+              };
+            }
+            const dbMethods: Record<string, (data: any) => Promise<any>> = {
+              postgresql: (d) => this.client.createPostgresql(d),
+              mysql: (d) => this.client.createMysql(d),
+              mariadb: (d) => this.client.createMariadb(d),
+              mongodb: (d) => this.client.createMongodb(d),
+              redis: (d) => this.client.createRedis(d),
+              keydb: (d) => this.client.createKeydb(d),
+              clickhouse: (d) => this.client.createClickhouse(d),
+              dragonfly: (d) => this.client.createDragonfly(d),
+            };
+            return wrap(() => dbMethods[type](dbData));
+          }
         }
-        // create
-        if (!type || !args.server_uuid || !args.project_uuid) {
-          return {
-            content: [
-              { type: 'text' as const, text: 'Error: type, server_uuid, project_uuid required' },
-            ],
-          };
-        }
-        const dbMethods: Record<string, (data: any) => Promise<any>> = {
-          postgresql: (d) => this.client.createPostgresql(d),
-          mysql: (d) => this.client.createMysql(d),
-          mariadb: (d) => this.client.createMariadb(d),
-          mongodb: (d) => this.client.createMongodb(d),
-          redis: (d) => this.client.createRedis(d),
-          keydb: (d) => this.client.createKeydb(d),
-          clickhouse: (d) => this.client.createClickhouse(d),
-          dragonfly: (d) => this.client.createDragonfly(d),
-        };
-        return wrap(() => dbMethods[type](dbData));
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
     );
 
@@ -984,6 +1085,37 @@ export class CoolifyMcpServer extends McpServer {
           case 'list_for_app':
             return wrap(() => this.client.listApplicationDeployments(uuid));
         }
+      },
+    );
+
+    // =========================================================================
+    // Teams (1 tool)
+    // =========================================================================
+    this.tool(
+      'teams',
+      'Manage teams: list/current/current_members/get/members',
+      {
+        action: z.enum(['list', 'current', 'current_members', 'get', 'members']),
+        id: z.number().optional().describe('Team ID (required for get/members)'),
+      },
+      async ({ action, id }) => {
+        switch (action) {
+          case 'list':
+            return wrap(() => this.client.listTeams());
+          case 'current':
+            return wrap(() => this.client.getCurrentTeam());
+          case 'current_members':
+            return wrap(() => this.client.getCurrentTeamMembers());
+          case 'get':
+            if (!id)
+              return { content: [{ type: 'text' as const, text: 'Error: id required' }] };
+            return wrap(() => this.client.getTeam(id));
+          case 'members':
+            if (!id)
+              return { content: [{ type: 'text' as const, text: 'Error: id required' }] };
+            return wrap(() => this.client.getTeamMembers(id));
+        }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
     );
 
