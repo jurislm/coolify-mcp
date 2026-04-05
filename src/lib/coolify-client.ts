@@ -1046,11 +1046,11 @@ export class CoolifyClient {
   }
 
   async getTeam(id: number): Promise<Team> {
-    return this.request<Team>(`/teams/${encodeURIComponent(id)}`);
+    return this.request<Team>(`/teams/${id}`);
   }
 
   async getTeamMembers(id: number): Promise<TeamMember[]> {
-    return this.request<TeamMember[]>(`/teams/${encodeURIComponent(id)}/members`);
+    return this.request<TeamMember[]>(`/teams/${id}/members`);
   }
 
   async getCurrentTeam(): Promise<Team> {
@@ -1277,11 +1277,8 @@ export class CoolifyClient {
     });
   }
 
-  async updateDatabaseEnvVar(
-    uuid: string,
-    data: UpdateEnvVarRequest,
-  ): Promise<EnvironmentVariable> {
-    return this.request<EnvironmentVariable>(`/databases/${encodeURIComponent(uuid)}/envs`, {
+  async updateDatabaseEnvVar(uuid: string, data: UpdateEnvVarRequest): Promise<MessageResponse> {
+    return this.request<MessageResponse>(`/databases/${encodeURIComponent(uuid)}/envs`, {
       method: 'PATCH',
       body: JSON.stringify(cleanRequestData(data)),
     });

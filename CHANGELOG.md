@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`docker_compose_raw` always base64-encoded**: The `docker_compose_raw` field is now always base64-encoded by the client (`toBase64()` no longer passes through already-encoded content). Callers who previously passed pre-encoded base64 strings must switch to passing raw YAML — the client will handle encoding.
 - **BREAKING: `stop_all_apps` confirmation parameter renamed** - The `confirm` parameter is now `confirm_stop_all_apps`. Update any existing automation passing `confirm: true` to use `confirm_stop_all_apps: true`.
 - **Security: update handlers now use explicit allowlists** - `server`, `application`, `database`, and `github_apps` update actions build payloads from explicit field allowlists rather than spreading the full args object. Create-only fields (`project_uuid`, `server_uuid`, etc.) are no longer forwarded to PATCH endpoints.
 

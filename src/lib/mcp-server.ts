@@ -763,6 +763,13 @@ export class CoolifyMcpServer extends McpServer {
         public_port: z.number().optional(),
         instant_deploy: z.boolean().optional(),
         delete_volumes: z.boolean().optional(),
+        // Resource limit fields (update only)
+        limits_memory: z.string().optional(),
+        limits_memory_swap: z.string().optional(),
+        limits_memory_swappiness: z.number().optional(),
+        limits_memory_reservation: z.string().optional(),
+        limits_cpus: z.string().optional(),
+        limits_cpu_shares: z.number().optional(),
         // DB-specific optional fields
         postgres_user: z.string().optional(),
         postgres_password: z.string().optional(),
@@ -775,14 +782,18 @@ export class CoolifyMcpServer extends McpServer {
         mariadb_user: z.string().optional(),
         mariadb_password: z.string().optional(),
         mariadb_database: z.string().optional(),
+        mariadb_conf: z.string().optional(),
         mongo_initdb_root_username: z.string().optional(),
         mongo_initdb_root_password: z.string().optional(),
         mongo_initdb_database: z.string().optional(),
+        mongo_conf: z.string().optional(),
         redis_password: z.string().optional(),
+        redis_conf: z.string().optional(),
         keydb_password: z.string().optional(),
         clickhouse_admin_user: z.string().optional(),
         clickhouse_admin_password: z.string().optional(),
         dragonfly_password: z.string().optional(),
+        postgres_conf: z.string().optional(),
       },
       async (args) => {
         const { action, type, uuid, delete_volumes, ...dbData } = args;
@@ -802,9 +813,16 @@ export class CoolifyMcpServer extends McpServer {
                 image: dbData.image,
                 is_public: dbData.is_public,
                 public_port: dbData.public_port,
+                limits_memory: dbData.limits_memory,
+                limits_memory_swap: dbData.limits_memory_swap,
+                limits_memory_swappiness: dbData.limits_memory_swappiness,
+                limits_memory_reservation: dbData.limits_memory_reservation,
+                limits_cpus: dbData.limits_cpus,
+                limits_cpu_shares: dbData.limits_cpu_shares,
                 postgres_user: dbData.postgres_user,
                 postgres_password: dbData.postgres_password,
                 postgres_db: dbData.postgres_db,
+                postgres_conf: dbData.postgres_conf,
                 mysql_root_password: dbData.mysql_root_password,
                 mysql_user: dbData.mysql_user,
                 mysql_password: dbData.mysql_password,
@@ -813,10 +831,13 @@ export class CoolifyMcpServer extends McpServer {
                 mariadb_user: dbData.mariadb_user,
                 mariadb_password: dbData.mariadb_password,
                 mariadb_database: dbData.mariadb_database,
+                mariadb_conf: dbData.mariadb_conf,
                 mongo_initdb_root_username: dbData.mongo_initdb_root_username,
                 mongo_initdb_root_password: dbData.mongo_initdb_root_password,
                 mongo_initdb_database: dbData.mongo_initdb_database,
+                mongo_conf: dbData.mongo_conf,
                 redis_password: dbData.redis_password,
+                redis_conf: dbData.redis_conf,
                 keydb_password: dbData.keydb_password,
                 clickhouse_admin_user: dbData.clickhouse_admin_user,
                 clickhouse_admin_password: dbData.clickhouse_admin_password,
@@ -1063,7 +1084,11 @@ export class CoolifyMcpServer extends McpServer {
       'Manage env vars for app, service, or database',
       {
         resource: z.enum(['application', 'service', 'database']),
-        action: z.enum(['list', 'create', 'update', 'delete', 'bulk_create']),
+        action: z
+          .enum(['list', 'create', 'update', 'delete', 'bulk_create'])
+          .describe(
+            'Action to perform. Note: bulk_create is only supported for application and database resources, not service.',
+          ),
         uuid: z.string(),
         key: z.string().optional(),
         value: z.string().optional(),
@@ -1071,7 +1096,7 @@ export class CoolifyMcpServer extends McpServer {
         bulk_data: z
           .array(z.object({ key: z.string(), value: z.string() }))
           .optional()
-          .describe('Array of {key, value} for bulk_create action'),
+          .describe('Array of {key, value} for bulk_create action (application and database only)'),
       },
       async ({ resource, action, uuid, key, value, env_uuid, bulk_data }) => {
         if (resource === 'application') {

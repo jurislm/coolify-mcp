@@ -1286,6 +1286,37 @@ describe('CoolifyClient', () => {
       expect(callBody.domains).toBeUndefined();
     });
 
+    it('should map fqdn to domains in createApplicationDockerfile', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ uuid: 'new-app-uuid' }));
+
+      await client.createApplicationDockerfile({
+        project_uuid: 'proj-uuid',
+        server_uuid: 'server-uuid',
+        dockerfile: 'FROM node:18',
+        fqdn: 'https://app.example.com',
+      });
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(callBody.domains).toBe('https://app.example.com');
+      expect(callBody.fqdn).toBeUndefined();
+    });
+
+    it('should map fqdn to domains in createApplicationDockerImage', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ uuid: 'new-app-uuid' }));
+
+      await client.createApplicationDockerImage({
+        project_uuid: 'proj-uuid',
+        server_uuid: 'server-uuid',
+        docker_registry_image_name: 'nginx:latest',
+        ports_exposes: '80',
+        fqdn: 'https://app.example.com',
+      });
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(callBody.domains).toBe('https://app.example.com');
+      expect(callBody.fqdn).toBeUndefined();
+    });
+
     it('should create application from dockerfile', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse({ uuid: 'new-app-uuid' }));
 
@@ -2148,14 +2179,14 @@ describe('CoolifyClient', () => {
     });
 
     it('should update database env var', async () => {
-      mockFetch.mockResolvedValueOnce(mockResponse(mockEnvVar));
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Updated' }));
 
       const result = await client.updateDatabaseEnvVar('db-uuid', {
         key: 'DB_VAR',
         value: 'updated-value',
       });
 
-      expect(result).toEqual(mockEnvVar);
+      expect(result).toEqual({ message: 'Updated' });
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/databases/db-uuid/envs',
         expect.objectContaining({ method: 'PATCH' }),
