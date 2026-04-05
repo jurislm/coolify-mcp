@@ -651,3 +651,71 @@ describe('stop_all_apps confirmation', () => {
     expect(result.content[0].text).toContain('confirm_stop_all_apps=true required');
   });
 });
+
+describe('cloud_tokens handler dispatch', () => {
+  let server: CoolifyMcpServer;
+
+  beforeEach(() => {
+    server = new CoolifyMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('should return error when create missing required fields', async () => {
+    const result = (await callHandler(server, 'cloud_tokens', {
+      action: 'create',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('required');
+  });
+
+  it('should return error when update missing uuid', async () => {
+    const result = (await callHandler(server, 'cloud_tokens', {
+      action: 'update',
+      name: 'new-name',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('required');
+  });
+
+  it('should route validate to validateCloudToken', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const spy = jest
+      .spyOn(server['client'] as any, 'validateCloudToken')
+      .mockResolvedValue({ valid: true });
+    await callHandler(server, 'cloud_tokens', { action: 'validate', uuid: 'token-uuid' });
+    expect(spy).toHaveBeenCalledWith('token-uuid');
+  });
+});
+
+describe('scheduled_tasks handler dispatch', () => {
+  let server: CoolifyMcpServer;
+
+  beforeEach(() => {
+    server = new CoolifyMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('should return error when create missing required fields', async () => {
+    const result = (await callHandler(server, 'scheduled_tasks', {
+      action: 'create',
+      resource_type: 'application',
+      uuid: 'app-uuid',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('required');
+  });
+
+  it('should return error when update has no updatable fields', async () => {
+    const result = (await callHandler(server, 'scheduled_tasks', {
+      action: 'update',
+      resource_type: 'application',
+      uuid: 'app-uuid',
+      task_uuid: 'task-uuid',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('at least one field required');
+  });
+
+  it('should return error when list_executions missing task_uuid', async () => {
+    const result = (await callHandler(server, 'scheduled_tasks', {
+      action: 'list_executions',
+      resource_type: 'application',
+      uuid: 'app-uuid',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('required');
+  });
+});
