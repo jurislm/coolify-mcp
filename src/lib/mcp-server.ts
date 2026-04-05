@@ -1111,7 +1111,7 @@ export class CoolifyMcpServer extends McpServer {
         action: z
           .enum(['list', 'create', 'update', 'delete', 'bulk_create'])
           .describe(
-            'Action to perform. Note: bulk_create is only supported for application and database resources, not service.',
+            'Action to perform. Note: bulk_create performs upsert (creates new keys or updates existing ones via PATCH /envs/bulk). Only supported for application and database resources, not service.',
           ),
         uuid: z.string(),
         key: z.string().optional(),

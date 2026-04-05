@@ -1868,16 +1868,15 @@ describe('CoolifyClient', () => {
       );
     });
 
-    it('should delete a backup execution', async () => {
+    it('should delete a backup execution without body when deleteS3 not provided', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Backup execution deleted.' }));
 
       const result = await client.deleteBackupExecution('db-uuid', 'backup-uuid', 'exec-uuid');
 
       expect(result).toEqual({ message: 'Backup execution deleted.' });
-      expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/v1/databases/db-uuid/backups/backup-uuid/executions/exec-uuid',
-        expect.objectContaining({ method: 'DELETE' }),
-      );
+      const callOptions = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(callOptions).not.toHaveProperty('body');
+      expect(callOptions.method).toBe('DELETE');
     });
 
     it('should delete a backup execution with delete_s3', async () => {
