@@ -188,7 +188,7 @@ export class CoolifyMcpServer extends McpServer {
       content: [
         {
           type: 'text' as const,
-          text: JSON.stringify({ version: VERSION, name: '@masonator/coolify-mcp' }),
+          text: JSON.stringify({ version: VERSION, name: '@jurislm/coolify-mcp' }),
         },
       ],
     }));

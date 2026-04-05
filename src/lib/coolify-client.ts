@@ -551,7 +551,7 @@ export class CoolifyClient {
    * Get environment with missing database types (dragonfly, keydb, clickhouse).
    * Coolify API omits these from the environment endpoint - we cross-reference
    * with listDatabases using lightweight summaries.
-   * @see https://github.com/StuMason/coolify-mcp/issues/88
+   * @see https://github.com/jurislm/coolify-mcp/issues/88
    */
   async getProjectEnvironmentWithDatabases(
     projectUuid: string,
