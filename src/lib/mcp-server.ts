@@ -1115,7 +1115,10 @@ export class CoolifyMcpServer extends McpServer {
         if (resource === 'service' && action === 'bulk_create')
           return {
             content: [
-              { type: 'text' as const, text: 'Error: bulk_create not supported for service resource' },
+              {
+                type: 'text' as const,
+                text: 'Error: bulk_create not supported for service resource',
+              },
             ],
           };
         if (resource === 'application') {
