@@ -570,6 +570,60 @@ describe('update handler allowlist — create-only fields must not be forwarded'
   });
 });
 
+describe('application create_dockerfile handler dispatch', () => {
+  let server: CoolifyMcpServer;
+
+  beforeEach(() => {
+    server = new CoolifyMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should call createApplicationDockerfile with correct args', async () => {
+    const spy = jest
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .spyOn(server['client'] as any, 'createApplicationDockerfile')
+      .mockResolvedValue({ uuid: 'new-app-uuid' });
+    await callHandler(server, 'application', {
+      action: 'create_dockerfile',
+      project_uuid: 'proj-uuid',
+      server_uuid: 'server-uuid',
+      dockerfile: 'FROM node:18',
+      ports_exposes: '3000',
+    });
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should return error when required fields missing for create_dockerfile', async () => {
+    const result = (await callHandler(server, 'application', {
+      action: 'create_dockerfile',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('required');
+  });
+});
+
+describe('env_vars bulk_create service runtime guard', () => {
+  let server: CoolifyMcpServer;
+
+  beforeEach(() => {
+    server = new CoolifyMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should return error for service + bulk_create combination', async () => {
+    const result = (await callHandler(server, 'env_vars', {
+      resource: 'service',
+      action: 'bulk_create',
+      uuid: 'svc-uuid',
+      env_vars: [{ key: 'FOO', value: 'bar' }],
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('bulk_create not supported for service');
+  });
+});
+
 describe('stop_all_apps confirmation', () => {
   let server: CoolifyMcpServer;
 

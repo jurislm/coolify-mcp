@@ -2210,13 +2210,13 @@ describe('CoolifyClient', () => {
     });
 
     it('should bulk update database env vars', async () => {
-      mockFetch.mockResolvedValueOnce(mockResponse([mockEnvVar]));
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Updated' }));
 
       const result = await client.bulkUpdateDatabaseEnvVars('db-uuid', {
         data: [{ key: 'DB_VAR', value: 'bulk-value' }],
       });
 
-      expect(result).toEqual([mockEnvVar]);
+      expect(result).toEqual({ message: 'Updated' });
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/databases/db-uuid/envs/bulk',
         expect.objectContaining({ method: 'PATCH' }),
