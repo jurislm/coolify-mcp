@@ -706,9 +706,7 @@ export class CoolifyClient {
   }
 
   async getApplicationLogs(uuid: string, lines: number = 100): Promise<string> {
-    return this.request<string>(
-      `/applications/${encodeURIComponent(uuid)}/logs?lines=${encodeURIComponent(lines)}`,
-    );
+    return this.request<string>(`/applications/${encodeURIComponent(uuid)}/logs?lines=${lines}`);
   }
 
   async startApplication(
