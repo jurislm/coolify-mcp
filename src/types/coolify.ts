@@ -775,7 +775,10 @@ export interface CreateServiceRequest {
 export interface UpdateServiceRequest {
   name?: string;
   description?: string;
-  docker_compose_raw?: string; // Pass raw YAML — client always base64-encodes before sending to API
+  /** Pass raw YAML — client always base64-encodes before sending to API. To update domains, modify Traefik labels inside docker_compose_raw. */
+  docker_compose_raw?: string;
+  /** @deprecated Not supported by the API. Update domains via Traefik labels in docker_compose_raw instead. */
+  fqdn?: never;
 }
 
 export interface ServiceCreateResponse {

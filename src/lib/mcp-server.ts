@@ -791,19 +791,30 @@ export class CoolifyMcpServer extends McpServer {
         mariadb_user: z.string().optional(),
         mariadb_password: z.string().optional(),
         mariadb_database: z.string().optional(),
-        mariadb_conf: z.string().optional(),
+        mariadb_conf: z
+          .string()
+          .optional()
+          .describe('MariaDB config (plain text, e.g. "max_connections = 200")'),
         mongo_initdb_root_username: z.string().optional(),
         mongo_initdb_root_password: z.string().optional(),
         mongo_initdb_database: z.string().optional(),
-        mongo_conf: z.string().optional(),
+        mongo_conf: z.string().optional().describe('MongoDB config (plain text)'),
         redis_password: z.string().optional(),
-        redis_conf: z.string().optional(),
+        redis_conf: z
+          .string()
+          .optional()
+          .describe('Redis config (plain text, e.g. "maxmemory 256mb")'),
         keydb_password: z.string().optional(),
         clickhouse_admin_user: z.string().optional(),
         clickhouse_admin_password: z.string().optional(),
         dragonfly_password: z.string().optional(),
-        postgres_conf: z.string().optional(),
-        mysql_conf: z.string().optional(),
+        postgres_conf: z
+          .string()
+          .optional()
+          .describe(
+            'PostgreSQL config (plain text, e.g. "max_connections = 200\\nshared_buffers = 256MB")',
+          ),
+        mysql_conf: z.string().optional().describe('MySQL config (plain text)'),
       },
       async (args) => {
         const { action, type, uuid, delete_volumes, ...dbData } = args;
@@ -1804,7 +1815,12 @@ export class CoolifyMcpServer extends McpServer {
             'Target container name to run the command in. Leave empty to use the default application container.',
           ),
         timeout: z.number().optional().describe('Timeout in seconds (default 300)'),
-        enabled: z.boolean().optional().describe('Enable or disable the task'),
+        enabled: z
+          .boolean()
+          .optional()
+          .describe(
+            'Enable or disable the task. Omit to keep existing value; new tasks default to enabled.',
+          ),
       },
       async (args) => {
         const { action, resource_type, uuid, task_uuid, name, command, frequency } = args;
