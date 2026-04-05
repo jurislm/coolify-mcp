@@ -53,6 +53,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `createApplicationDockerfile` now correctly maps `fqdn` → `domains` (consistent with other create methods)
 - `application` update no longer incorrectly forwards `build_pack` to PATCH endpoint (`build_pack` is create-only and is not in `UpdateApplicationRequest`)
+- `deployByTagOrUuid` no longer unnecessarily applies `encodeURIComponent` to static key name (`'uuid'`/`'tag'`) and boolean `force` value
+
+### Known Limitations
+
+- **Service domain updates not supported via API**: The Coolify `PATCH /services/{uuid}` endpoint only accepts `name`, `description`, and `docker_compose_raw`. Domain changes for services must be applied by updating the Traefik labels inside `docker_compose_raw`.
 
 ## [2.6.2] - 2026-01-31
 

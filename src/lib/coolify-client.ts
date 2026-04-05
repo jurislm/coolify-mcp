@@ -1030,7 +1030,7 @@ export class CoolifyClient {
     // Detect if the value looks like a UUID or a tag name
     const param = this.isLikelyUuid(tagOrUuid) ? 'uuid' : 'tag';
     return this.request<MessageResponse>(
-      `/deploy?${encodeURIComponent(param)}=${encodeURIComponent(tagOrUuid)}&force=${encodeURIComponent(force)}`,
+      `/deploy?${param}=${encodeURIComponent(tagOrUuid)}&force=${force}`,
       { method: 'GET' },
     );
   }
