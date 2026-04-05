@@ -544,6 +544,7 @@ export interface UpdateDatabaseRequest {
   mysql_user?: string;
   mysql_password?: string;
   mysql_database?: string;
+  mysql_conf?: string;
   // MariaDB specific
   mariadb_root_password?: string;
   mariadb_user?: string;

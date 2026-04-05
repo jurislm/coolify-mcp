@@ -509,6 +509,13 @@ export class CoolifyMcpServer extends McpServer {
         health_check_timeout: z.number().optional(),
         health_check_retries: z.number().optional(),
         health_check_start_period: z.number().optional(),
+        // Docker Compose update field
+        docker_compose_raw: z
+          .string()
+          .optional()
+          .describe(
+            'Raw docker-compose YAML to update (auto base64-encoded, Docker Compose apps only)',
+          ),
         // Delete fields
         delete_volumes: z.boolean().optional(),
       },
@@ -700,6 +707,7 @@ export class CoolifyMcpServer extends McpServer {
                 health_check_timeout: args.health_check_timeout,
                 health_check_retries: args.health_check_retries,
                 health_check_start_period: args.health_check_start_period,
+                docker_compose_raw: args.docker_compose_raw,
               }),
             );
           case 'delete':
@@ -794,6 +802,7 @@ export class CoolifyMcpServer extends McpServer {
         clickhouse_admin_password: z.string().optional(),
         dragonfly_password: z.string().optional(),
         postgres_conf: z.string().optional(),
+        mysql_conf: z.string().optional(),
       },
       async (args) => {
         const { action, type, uuid, delete_volumes, ...dbData } = args;
@@ -827,6 +836,7 @@ export class CoolifyMcpServer extends McpServer {
                 mysql_user: dbData.mysql_user,
                 mysql_password: dbData.mysql_password,
                 mysql_database: dbData.mysql_database,
+                mysql_conf: dbData.mysql_conf,
                 mariadb_root_password: dbData.mariadb_root_password,
                 mariadb_user: dbData.mariadb_user,
                 mariadb_password: dbData.mariadb_password,
