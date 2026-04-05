@@ -747,7 +747,7 @@ export interface CreateServiceRequest {
   server_uuid: string;
   destination_uuid?: string;
   instant_deploy?: boolean;
-  docker_compose_raw?: string; // Raw or base64 docker-compose YAML (auto-encoded by client)
+  docker_compose_raw?: string; // Pass raw YAML — client always base64-encodes before sending to API
 }
 
 /**
@@ -773,7 +773,7 @@ export interface CreateServiceRequest {
 export interface UpdateServiceRequest {
   name?: string;
   description?: string;
-  docker_compose_raw?: string; // Raw or base64 docker-compose YAML (auto-encoded by client)
+  docker_compose_raw?: string; // Pass raw YAML — client always base64-encodes before sending to API
 }
 
 export interface ServiceCreateResponse {

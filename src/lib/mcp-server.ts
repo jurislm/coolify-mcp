@@ -1602,6 +1602,10 @@ export class CoolifyMcpServer extends McpServer {
                   },
                 ],
               };
+            if (type === 'file' && is_directory === true && !fs_path)
+              return {
+                content: [{ type: 'text' as const, text: 'Error: fs_path required when is_directory=true' }],
+              };
             const createData =
               type === 'persistent'
                 ? {
@@ -1853,7 +1857,11 @@ export class CoolifyMcpServer extends McpServer {
       'stop_all_apps',
       'EMERGENCY: Stop all running apps',
       { confirm_stop_all_apps: z.literal(true) },
-      async () => wrap(() => this.client.stopAllApps()),
+      async ({ confirm_stop_all_apps }) => {
+        if (confirm_stop_all_apps !== true)
+          return { content: [{ type: 'text' as const, text: 'Error: confirm_stop_all_apps=true required' }] };
+        return wrap(() => this.client.stopAllApps());
+      },
     );
 
     this.tool(

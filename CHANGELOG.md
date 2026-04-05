@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `createApplicationDockerfile` now correctly maps `fqdn` → `domains` (consistent with other create methods)
-- `application` update no longer incorrectly forwards `build_pack`, `git_repository`, `git_branch` to PATCH endpoint (these fields are not in `UpdateApplicationRequest`)
+- `application` update no longer incorrectly forwards `build_pack` to PATCH endpoint (`build_pack` is create-only and is not in `UpdateApplicationRequest`)
 
 ## [2.6.2] - 2026-01-31
 
