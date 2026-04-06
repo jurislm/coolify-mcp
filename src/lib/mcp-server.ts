@@ -164,7 +164,7 @@ function wrapWithActions<T>(
 }
 
 export class CoolifyMcpServer extends McpServer {
-  protected readonly client: CoolifyClient;
+  private readonly client: CoolifyClient;
 
   constructor(config: CoolifyConfig) {
     super({ name: 'coolify', version: VERSION });
@@ -505,10 +505,10 @@ export class CoolifyMcpServer extends McpServer {
         health_check_return_code: z.number().optional(),
         health_check_scheme: z.string().optional(),
         health_check_response_text: z.string().optional(),
-        health_check_interval: z.number().optional(),
-        health_check_timeout: z.number().optional(),
-        health_check_retries: z.number().optional(),
-        health_check_start_period: z.number().optional(),
+        health_check_interval: z.number().int().min(1).max(3600).optional(),
+        health_check_timeout: z.number().int().min(1).max(3600).optional(),
+        health_check_retries: z.number().int().min(0).max(100).optional(),
+        health_check_start_period: z.number().int().min(0).max(3600).optional(),
         // Docker Compose update field
         docker_compose_raw: z
           .string()
