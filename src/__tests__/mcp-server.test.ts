@@ -15,12 +15,29 @@ import {
   getDeploymentActions,
   getPagination,
 } from '../lib/mcp-server.js';
+import { CoolifyClient } from '../lib/coolify-client.js';
+import type {
+  Server,
+  Application,
+  Database,
+  UuidResponse,
+  MessageResponse,
+  GitHubAppUpdateResponse,
+  BatchOperationResult,
+  CloudTokenValidation,
+} from '../types/coolify.js';
+
+class TestableMcpServer extends CoolifyMcpServer {
+  getClient(): CoolifyClient {
+    return this.client;
+  }
+}
 
 describe('CoolifyMcpServer v2', () => {
-  let server: CoolifyMcpServer;
+  let server: TestableMcpServer;
 
   beforeEach(() => {
-    server = new CoolifyMcpServer({
+    server = new TestableMcpServer({
       baseUrl: 'http://localhost:3000',
       accessToken: 'test-token',
     });
@@ -444,10 +461,10 @@ async function callHandler(
 }
 
 describe('update handler allowlist — create-only fields must not be forwarded', () => {
-  let server: CoolifyMcpServer;
+  let server: TestableMcpServer;
 
   beforeEach(() => {
-    server = new CoolifyMcpServer({
+    server = new TestableMcpServer({
       baseUrl: 'http://localhost:3000',
       accessToken: 'test-token',
     });
@@ -455,8 +472,7 @@ describe('update handler allowlist — create-only fields must not be forwarded'
 
   describe('server update', () => {
     it('should not forward instant_validate to updateServer', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const spy = jest.spyOn(server['client'] as any, 'updateServer').mockResolvedValue({});
+      const spy = jest.spyOn(server.getClient(), 'updateServer').mockResolvedValue({} as Server);
       await callHandler(server, 'server', {
         action: 'update',
         uuid: 'srv-uuid',
@@ -472,8 +488,9 @@ describe('update handler allowlist — create-only fields must not be forwarded'
 
   describe('server create handler dispatch', () => {
     it('should return error when create missing required fields', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const spy = jest.spyOn(server['client'] as any, 'createServer').mockResolvedValue({});
+      const spy = jest
+        .spyOn(server.getClient(), 'createServer')
+        .mockResolvedValue({ uuid: 'mock-uuid' } as UuidResponse);
       const result = (await callHandler(server, 'server', {
         action: 'create',
         name: 'my-server',
@@ -484,8 +501,9 @@ describe('update handler allowlist — create-only fields must not be forwarded'
     });
 
     it('should call createServer with valid args', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const spy = jest.spyOn(server['client'] as any, 'createServer').mockResolvedValue({});
+      const spy = jest
+        .spyOn(server.getClient(), 'createServer')
+        .mockResolvedValue({ uuid: 'mock-uuid' } as UuidResponse);
       await callHandler(server, 'server', {
         action: 'create',
         name: 'my-server',
@@ -498,8 +516,9 @@ describe('update handler allowlist — create-only fields must not be forwarded'
 
   describe('server delete handler dispatch', () => {
     it('should call deleteServer with uuid', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const spy = jest.spyOn(server['client'] as any, 'deleteServer').mockResolvedValue({});
+      const spy = jest
+        .spyOn(server.getClient(), 'deleteServer')
+        .mockResolvedValue({ message: 'ok' } as MessageResponse);
       await callHandler(server, 'server', {
         action: 'delete',
         uuid: 'srv-uuid',
@@ -510,8 +529,9 @@ describe('update handler allowlist — create-only fields must not be forwarded'
 
   describe('application update', () => {
     it('should not forward project_uuid to updateApplication', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const spy = jest.spyOn(server['client'] as any, 'updateApplication').mockResolvedValue({});
+      const spy = jest
+        .spyOn(server.getClient(), 'updateApplication')
+        .mockResolvedValue({} as Application);
       await callHandler(server, 'application', {
         action: 'update',
         uuid: 'app-uuid',
@@ -525,8 +545,9 @@ describe('update handler allowlist — create-only fields must not be forwarded'
     });
 
     it('should not forward server_uuid to updateApplication', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const spy = jest.spyOn(server['client'] as any, 'updateApplication').mockResolvedValue({});
+      const spy = jest
+        .spyOn(server.getClient(), 'updateApplication')
+        .mockResolvedValue({} as Application);
       await callHandler(server, 'application', {
         action: 'update',
         uuid: 'app-uuid',
@@ -542,8 +563,9 @@ describe('update handler allowlist — create-only fields must not be forwarded'
 
   describe('database update', () => {
     it('should not forward server_uuid to updateDatabase', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const spy = jest.spyOn(server['client'] as any, 'updateDatabase').mockResolvedValue({});
+      const spy = jest
+        .spyOn(server.getClient(), 'updateDatabase')
+        .mockResolvedValue({} as Database);
       await callHandler(server, 'database', {
         action: 'update',
         uuid: 'db-uuid',
@@ -557,8 +579,9 @@ describe('update handler allowlist — create-only fields must not be forwarded'
     });
 
     it('should not forward project_uuid to updateDatabase', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const spy = jest.spyOn(server['client'] as any, 'updateDatabase').mockResolvedValue({});
+      const spy = jest
+        .spyOn(server.getClient(), 'updateDatabase')
+        .mockResolvedValue({} as Database);
       await callHandler(server, 'database', {
         action: 'update',
         uuid: 'db-uuid',
@@ -576,8 +599,9 @@ describe('update handler allowlist — create-only fields must not be forwarded'
     // github_apps has no create-only fields to exclude; this test verifies
     // that all valid update fields are forwarded via the allowlist.
     it('should call updateGitHubApp with update fields', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const spy = jest.spyOn(server['client'] as any, 'updateGitHubApp').mockResolvedValue({});
+      const spy = jest
+        .spyOn(server.getClient(), 'updateGitHubApp')
+        .mockResolvedValue({ message: 'ok', data: {} } as GitHubAppUpdateResponse);
       await callHandler(server, 'github_apps', {
         action: 'update',
         id: 42,
@@ -592,8 +616,9 @@ describe('update handler allowlist — create-only fields must not be forwarded'
     });
 
     it('should not forward server_uuid or project_uuid to updateGitHubApp', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const spy = jest.spyOn(server['client'] as any, 'updateGitHubApp').mockResolvedValue({});
+      const spy = jest
+        .spyOn(server.getClient(), 'updateGitHubApp')
+        .mockResolvedValue({ message: 'ok', data: {} } as GitHubAppUpdateResponse);
       await callHandler(server, 'github_apps', {
         action: 'update',
         id: 42,
@@ -609,10 +634,10 @@ describe('update handler allowlist — create-only fields must not be forwarded'
 });
 
 describe('application create_dockerfile handler dispatch', () => {
-  let server: CoolifyMcpServer;
+  let server: TestableMcpServer;
 
   beforeEach(() => {
-    server = new CoolifyMcpServer({
+    server = new TestableMcpServer({
       baseUrl: 'http://localhost:3000',
       accessToken: 'test-token',
     });
@@ -620,8 +645,7 @@ describe('application create_dockerfile handler dispatch', () => {
 
   it('should call createApplicationDockerfile with correct args', async () => {
     const spy = jest
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .spyOn(server['client'] as any, 'createApplicationDockerfile')
+      .spyOn(server.getClient(), 'createApplicationDockerfile')
       .mockResolvedValue({ uuid: 'new-app-uuid' });
     await callHandler(server, 'application', {
       action: 'create_dockerfile',
@@ -642,8 +666,7 @@ describe('application create_dockerfile handler dispatch', () => {
 
   it('should forward instant_deploy in create_dockerimage', async () => {
     const spy = jest
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .spyOn(server['client'] as any, 'createApplicationDockerImage')
+      .spyOn(server.getClient(), 'createApplicationDockerImage')
       .mockResolvedValue({ uuid: 'new-app-uuid' });
     await callHandler(server, 'application', {
       action: 'create_dockerimage',
@@ -654,16 +677,16 @@ describe('application create_dockerfile handler dispatch', () => {
       instant_deploy: true,
     });
     expect(spy).toHaveBeenCalledTimes(1);
-    const [payload] = spy.mock.calls[0] as [Record<string, unknown>];
+    const [payload] = spy.mock.calls[0] as unknown as [Record<string, unknown>];
     expect(payload).toHaveProperty('instant_deploy', true);
   });
 });
 
 describe('env_vars bulk_create service runtime guard', () => {
-  let server: CoolifyMcpServer;
+  let server: TestableMcpServer;
 
   beforeEach(() => {
-    server = new CoolifyMcpServer({
+    server = new TestableMcpServer({
       baseUrl: 'http://localhost:3000',
       accessToken: 'test-token',
     });
@@ -681,25 +704,35 @@ describe('env_vars bulk_create service runtime guard', () => {
 });
 
 describe('stop_all_apps confirmation', () => {
-  let server: CoolifyMcpServer;
+  let server: TestableMcpServer;
 
   beforeEach(() => {
-    server = new CoolifyMcpServer({
+    server = new TestableMcpServer({
       baseUrl: 'http://localhost:3000',
       accessToken: 'test-token',
     });
   });
 
   it('should call stopAllApps when confirm_stop_all_apps=true', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const spy = jest.spyOn(server['client'] as any, 'stopAllApps').mockResolvedValue([]);
+    const spy = jest
+      .spyOn(server.getClient(), 'stopAllApps')
+      .mockResolvedValue({
+        summary: { total: 0, succeeded: 0, failed: 0 },
+        succeeded: [],
+        failed: [],
+      } as BatchOperationResult);
     await callHandler(server, 'stop_all_apps', { confirm_stop_all_apps: true });
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
   it('should return error and not call stopAllApps when confirm_stop_all_apps=false', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const spy = jest.spyOn(server['client'] as any, 'stopAllApps').mockResolvedValue([]);
+    const spy = jest
+      .spyOn(server.getClient(), 'stopAllApps')
+      .mockResolvedValue({
+        summary: { total: 0, succeeded: 0, failed: 0 },
+        succeeded: [],
+        failed: [],
+      } as BatchOperationResult);
     const result = (await callHandler(server, 'stop_all_apps', {
       confirm_stop_all_apps: false,
     })) as { content: Array<{ text: string }> };
@@ -709,10 +742,10 @@ describe('stop_all_apps confirmation', () => {
 });
 
 describe('cloud_tokens handler dispatch', () => {
-  let server: CoolifyMcpServer;
+  let server: TestableMcpServer;
 
   beforeEach(() => {
-    server = new CoolifyMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
   });
 
   it('should return error when create missing required fields', async () => {
@@ -731,20 +764,19 @@ describe('cloud_tokens handler dispatch', () => {
   });
 
   it('should route validate to validateCloudToken', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const spy = jest
-      .spyOn(server['client'] as any, 'validateCloudToken')
-      .mockResolvedValue({ valid: true });
+      .spyOn(server.getClient(), 'validateCloudToken')
+      .mockResolvedValue({ valid: true, message: 'ok' } as CloudTokenValidation);
     await callHandler(server, 'cloud_tokens', { action: 'validate', uuid: 'token-uuid' });
     expect(spy).toHaveBeenCalledWith('token-uuid');
   });
 });
 
 describe('scheduled_tasks handler dispatch', () => {
-  let server: CoolifyMcpServer;
+  let server: TestableMcpServer;
 
   beforeEach(() => {
-    server = new CoolifyMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
   });
 
   it('should return error when create missing required fields', async () => {
