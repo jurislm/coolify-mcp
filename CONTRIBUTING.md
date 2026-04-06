@@ -1,117 +1,117 @@
-# Contributing to Coolify MCP
+# 貢獻指南
 
-Thanks for your interest in contributing! This document covers how the project maintains itself and how you can help.
+感謝你有興趣為本專案貢獻！本文件說明專案的維護機制以及如何參與。
 
-## Project Maintenance
+## 專案維護
 
-This project is designed to be low-maintenance while staying secure and up-to-date.
+本專案設計為低維護成本，同時保持安全且持續更新。
 
-### Automated Security & Dependencies
+### 自動化安全與依賴管理
 
-**Dependabot** runs daily to keep dependencies secure:
+**Dependabot** 每日執行，維持依賴項安全：
 
-- **Patch/Minor updates** → Auto-merged after CI passes
-- **Major updates** → PR created with review checklist, requires manual approval
-- **GitHub Actions** → Weekly updates on Mondays
+- **修補版/次要版本更新** → CI 通過後自動合併
+- **主要版本更新** → 建立 PR 並附上審查清單，需人工核准
+- **GitHub Actions** → 每週一更新
 
-Configuration: [`.github/dependabot.yml`](.github/dependabot.yml)
+設定檔：[`.github/dependabot.yml`](.github/dependabot.yml)
 
-### API Drift Detection
+### API 差異偵測
 
-**Weekly OpenAPI Drift Check** monitors Coolify's API for changes:
+**每週 OpenAPI 差異檢查**監控 Coolify API 的變動：
 
-- Runs every Monday at 7am UK time
-- Compares current Coolify OpenAPI spec against our baseline
-- Creates GitHub issues when changes are detected
-- Labels issues with `api-drift` and `maintenance`
+- 每週一早上 7 點（UTC）執行
+- 比對目前的 Coolify OpenAPI 規格與我們的基準版本
+- 偵測到變動時自動建立 GitHub Issue
+- 以 `api-drift` 和 `maintenance` 標籤標記 Issue
 
-This ensures we know when Coolify adds/removes/changes endpoints so we can update our tools accordingly.
+這確保我們能即時得知 Coolify 新增、移除或變更端點，以便更新對應的工具。
 
-Configuration: [`.github/workflows/openapi-drift.yml`](.github/workflows/openapi-drift.yml)
+設定檔：[`.github/workflows/openapi-drift.yml`](.github/workflows/openapi-drift.yml)
 
-### Branch Protection
+### 分支保護
 
-The `main` branch is protected:
+`main` 分支受到保護：
 
-- All CI checks must pass (Node 20.x, 22.x, 24.x)
-- Admin bypass enabled for maintainers
-- No force pushes (except admins)
+- 所有 CI 檢查必須通過（Node 20.x、22.x、24.x）
+- 維護者可以 bypass
+- 禁止 force push（維護者除外）
 
-### CI Pipeline
+### CI 流程
 
-Every PR runs:
+每個 PR 會執行：
 
-1. **Security audit** - `npm audit`
-2. **Format check** - Prettier
-3. **Lint** - ESLint
-4. **Build** - TypeScript compilation
-5. **Test** - Jest with coverage
+1. **安全稽核** — `npm audit`
+2. **格式檢查** — Prettier
+3. **靜態分析** — ESLint
+4. **建置** — TypeScript 編譯
+5. **測試** — Jest（含覆蓋率報告）
 
-## How to Contribute
+## 如何貢獻
 
-### Reporting Issues
+### 回報問題
 
-- **Bugs**: Open an issue with reproduction steps
-- **Feature requests**: Open an issue describing the use case
-- **API drift**: Check existing `api-drift` issues before reporting
+- **Bug** — 開一個 Issue 並附上重現步驟
+- **功能需求** — 開一個 Issue 描述使用情境
+- **API 差異** — 回報前請先檢查是否已有 `api-drift` 標籤的 Issue
 
-### Making Changes
+### 提交變更
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Make your changes
-4. Run tests: `npm test`
-5. Run lint: `npm run lint`
-6. Commit with conventional commits: `feat:`, `fix:`, `chore:`, etc.
-7. Open a PR against `main`
+1. Fork 本儲存庫
+2. 建立功能分支：`git checkout -b feature/your-feature`
+3. 進行修改
+4. 執行測試：`npm test`
+5. 執行靜態分析：`npm run lint`
+6. 使用 Conventional Commits 格式提交：`feat:`、`fix:`、`chore:` 等
+7. 對 `main` 分支建立 PR
 
-### Adding New Tools
+### 新增工具
 
-When Coolify adds new API endpoints:
+當 Coolify 新增 API 端點時：
 
-1. Check the [Coolify OpenAPI spec](https://github.com/coollabsio/coolify/blob/main/openapi.yaml)
-2. Add the client method in `src/lib/coolify-client.ts`
-3. Add the MCP tool in `src/lib/mcp-server.ts`
-4. Add tests in `src/__tests__/`
-5. Update tool count in README.md and CLAUDE.md
-6. Add changelog entry
+1. 查閱 [Coolify OpenAPI 規格](https://github.com/coollabsio/coolify/blob/main/openapi.yaml)
+2. 在 `src/lib/coolify-client.ts` 新增客戶端方法
+3. 在 `src/lib/mcp-server.ts` 新增 MCP 工具定義
+4. 在 `src/__tests__/` 新增測試
+5. 更新 README.md 和 CLAUDE.md 中的工具數量
+6. 新增 CHANGELOG 條目
 
-### Code Style
+### 程式碼規範
 
-- TypeScript strict mode
-- Prettier for formatting
-- ESLint for linting
-- Conventional commits
+- TypeScript 嚴格模式
+- Prettier 格式化
+- ESLint 靜態分析
+- Conventional Commits 提交格式
 
-## Architecture Overview
+## 架構概覽
 
 ```text
 src/
-├── index.ts              # Entry point
+├── index.ts              # 進入點
 ├── lib/
-│   ├── coolify-client.ts # HTTP client for Coolify API
-│   └── mcp-server.ts     # MCP server with tool definitions
+│   ├── coolify-client.ts # Coolify API 的 HTTP 客戶端
+│   └── mcp-server.ts     # MCP 伺服器與工具定義
 ├── types/
-│   └── coolify.ts        # TypeScript types
-└── __tests__/            # Jest tests
+│   └── coolify.ts        # TypeScript 型別定義
+└── __tests__/            # Jest 測試
 ```
 
-### Key Patterns
+### 核心設計模式
 
-- **Summary mode**: List operations return minimal fields to reduce token usage
-- **Smart lookup**: Diagnostic tools accept name/domain/IP, not just UUIDs
-- **Context-optimized**: Responses are trimmed to essential fields
-- **Batch operations**: Use `Promise.allSettled` for partial failure handling
+- **摘要模式**：列表操作僅回傳最少欄位以減少 Token 使用量
+- **智慧查詢**：診斷工具接受名稱/網域/IP，不限 UUID
+- **Context 優化**：回應精簡至必要欄位
+- **批次操作**：使用 `Promise.allSettled` 處理部分失敗情境
 
-## Release Process
+## 發布流程
 
-1. Update version in `package.json`
-2. Update `VERSION` constant in `src/lib/mcp-server.ts`
-3. Add changelog entry
-4. Merge to main
-5. GitHub Actions auto-publishes to npm on version bump
+本專案使用 [Release Please](https://github.com/googleapis/release-please) 自動管理版本與發布：
 
-## Questions?
+1. 依循 Conventional Commits 格式提交（`feat:` → MINOR、`fix:` → PATCH、`feat!:` → MAJOR）
+2. Release Please 自動建立版本 PR
+3. 合併版本 PR 後，GitHub Actions 自動發布至 npm
 
-- Open a [GitHub Issue](https://github.com/jurislm/coolify-mcp/issues)
-- Check the [Coolify Community](https://coolify.io/docs/contact)
+## 問題與討論
+
+- [GitHub Issues](https://github.com/jurislm/coolify-mcp/issues)
+- [Coolify 社群](https://coolify.io/docs/contact)
