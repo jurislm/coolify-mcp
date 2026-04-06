@@ -34,7 +34,7 @@ type RegisteredToolMap = Record<
 
 class TestableMcpServer extends CoolifyMcpServer {
   getClient(): CoolifyClient {
-    return (this as unknown as { client: CoolifyClient }).client;
+    return this.client;
   }
 
   /** Access a registered MCP tool handler by name for dispatch testing. */

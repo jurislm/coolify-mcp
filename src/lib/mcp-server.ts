@@ -164,7 +164,7 @@ function wrapWithActions<T>(
 }
 
 export class CoolifyMcpServer extends McpServer {
-  private readonly client: CoolifyClient;
+  protected readonly client: CoolifyClient;
 
   constructor(config: CoolifyConfig) {
     super({ name: 'coolify', version: VERSION });
