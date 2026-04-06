@@ -4225,7 +4225,10 @@ describe('CoolifyClient', () => {
       it('should use String(error) when resolveApplicationUuid throws a non-Error (line 1646 false branch)', async () => {
         // Spy directly to throw a plain string — HTTP mock wraps in Error, so spy is required
         jest
-          .spyOn(client as unknown as { resolveApplicationUuid: (q: string) => Promise<string> }, 'resolveApplicationUuid')
+          .spyOn(
+            client as unknown as { resolveApplicationUuid: (q: string) => Promise<string> },
+            'resolveApplicationUuid',
+          )
           .mockRejectedValueOnce('plain string rejection');
 
         const result = await client.diagnoseApplication('any-query');
@@ -4426,7 +4429,10 @@ describe('CoolifyClient', () => {
       it('should use String(error) when resolveServerUuid throws a non-Error (line 1752 false branch)', async () => {
         // Spy directly to throw a plain string — HTTP mock wraps in Error, so spy is required
         jest
-          .spyOn(client as unknown as { resolveServerUuid: (q: string) => Promise<string> }, 'resolveServerUuid')
+          .spyOn(
+            client as unknown as { resolveServerUuid: (q: string) => Promise<string> },
+            'resolveServerUuid',
+          )
           .mockRejectedValueOnce('plain string rejection');
 
         const result = await client.diagnoseServer('any-query');
@@ -4434,7 +4440,6 @@ describe('CoolifyClient', () => {
         expect(result.server).toBeNull();
         expect(result.errors).toEqual(['plain string rejection']);
       });
-
 
       it('should handle non-Error rejection in extract helper', async () => {
         const minimalServer = {
