@@ -1430,7 +1430,9 @@ describe('CoolifyClient', () => {
         argsFromMcpTool as unknown as Parameters<typeof client.createApplicationPublic>[0],
       );
 
-      // This assertion proves the bug: 'action' IS included in the request body
+      // Client passes args through as-is — intentional design.
+      // Filtering of create-only fields (e.g. 'action') is the MCP handler's responsibility via allowlists.
+      // See mcp-server.ts update handlers for the allowlist enforcement.
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/applications/public',
         expect.objectContaining({
@@ -1499,8 +1501,9 @@ describe('CoolifyClient', () => {
         argsFromMcpTool as unknown as Parameters<typeof client.updateApplication>[1],
       );
 
-      // This assertion proves the bug: 'action' IS included in the request body
-      // The Coolify API will reject this with "action: This field is not allowed"
+      // Client passes args through as-is — intentional design.
+      // Filtering of create-only fields (e.g. 'action') is the MCP handler's responsibility via allowlists.
+      // See mcp-server.ts update handlers for the allowlist enforcement.
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/applications/app-uuid',
         expect.objectContaining({

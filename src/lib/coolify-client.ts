@@ -321,7 +321,7 @@ function toGitHubRepoSummary(repo: GitHubRepository): GitHubRepositorySummary {
   return {
     name: repo.name,
     full_name: repo.full_name,
-    owner: repo.owner?.login ?? '',
+    owner: repo.owner?.login ?? 'unknown',
     private: repo.private,
     default_branch: repo.default_branch,
   };
