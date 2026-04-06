@@ -29,8 +29,8 @@ npm run format:check  # Prettier check
 
 ## Project Structure
 
-- `src/lib/coolify-client.ts` — HTTP client wrapping Coolify REST API (~2100 lines)
-- `src/lib/mcp-server.ts` — MCP tool definitions and handlers (~2000 lines)
+- `src/lib/coolify-client.ts` — HTTP client wrapping Coolify REST API
+- `src/lib/mcp-server.ts` — MCP tool definitions and handlers
 - `src/types/coolify.ts` — TypeScript type definitions (public API)
 - `src/index.ts` — Entry point
 - `src/__tests__/` — Jest tests (mocked, no live server required)

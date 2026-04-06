@@ -319,9 +319,6 @@ function toGitHubAppSummary(app: GitHubApp): GitHubAppSummary {
 }
 
 function toGitHubRepoSummary(repo: GitHubRepository): GitHubRepositorySummary {
-  if (!repo.owner?.login) {
-    console.warn('[coolify-mcp] toGitHubRepoSummary: owner missing for repo', repo.full_name);
-  }
   return {
     name: repo.name,
     full_name: repo.full_name,

@@ -1520,9 +1520,9 @@ export class CoolifyMcpServer extends McpServer {
           .string()
           .optional()
           .describe('Cron expression for task schedule (e.g. "0 * * * *" for hourly)'),
-        enabled: z.boolean().optional(),
-        save_s3: z.boolean().optional(),
-        s3_storage_uuid: z.string().optional(),
+        enabled: z.boolean().optional().describe('Enable or disable the scheduled backup task'),
+        save_s3: z.boolean().optional().describe('Whether to save the backup to S3 storage'),
+        s3_storage_uuid: z.string().optional().describe('UUID of the S3 storage destination'),
         databases_to_backup: z.string().optional(),
         dump_all: z.boolean().optional(),
         database_backup_retention_days_locally: z.number().optional(),

@@ -4222,7 +4222,7 @@ describe('CoolifyClient', () => {
         expect(result.errors).toHaveLength(1);
       });
 
-      it('should use String(error) when resolveApplicationUuid throws a non-Error (line 1646 false branch)', async () => {
+      it('should handle non-Error rejection in diagnoseApplication', async () => {
         // Spy directly to throw a plain string — HTTP mock wraps in Error, so spy is required
         jest
           .spyOn(
@@ -4426,7 +4426,7 @@ describe('CoolifyClient', () => {
         expect(result.errors).toHaveLength(1);
       });
 
-      it('should use String(error) when resolveServerUuid throws a non-Error (line 1752 false branch)', async () => {
+      it('should handle non-Error rejection in diagnoseServer', async () => {
         // Spy directly to throw a plain string — HTTP mock wraps in Error, so spy is required
         jest
           .spyOn(
