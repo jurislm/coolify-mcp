@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MCP (Model Context Protocol) server for Coolify that provides 40 token-optimized tools for AI assistants to manage infrastructure through natural language. Tools cover servers, projects, environments, applications, databases, services, deployments, private keys, storages, scheduled tasks, cloud tokens, smart diagnostics, and batch operations. v2.0.0 reduced token usage by 85% (from ~43,000 to ~6,600 tokens) by consolidating related operations into single tools with action parameters.
+MCP (Model Context Protocol) server for Coolify that provides 39 token-optimized tools for AI assistants to manage infrastructure through natural language. Tools cover servers, projects, environments, applications, databases, services, deployments, private keys, storages, scheduled tasks, cloud tokens, smart diagnostics, and batch operations. v2.0.0 reduced token usage by 85% (from ~43,000 to ~6,600 tokens) by consolidating related operations into single tools with action parameters.
 
 ## Commands
 
@@ -138,12 +138,13 @@ Commit after each independent task:
 
 ## Publishing
 
-CI auto-publishes to npm via trusted publishing on version bump. Use:
+Versioning is managed automatically by [Release Please](https://github.com/googleapis/release-please). **Do NOT manually bump the version in `package.json`.**
 
-```bash
-npm version patch|minor|major
-git push origin main --tags
-```
+- Release Please reads conventional commits (via `[feat]`, `[fix]`, etc.) and determines the correct semver bump automatically.
+- When `develop` is merged into `main`, Release Please opens a release PR with the updated version and CHANGELOG.
+- Merging the Release Please PR triggers npm publish via CI trusted publishing.
+
+To trigger a release, merge `develop` → `main` via PR. Release Please handles the rest.
 
 ## Documentation Standards
 
@@ -156,11 +157,11 @@ When making changes to the codebase, ensure documentation is updated:
    - Follow [Keep a Changelog](https://keepachangelog.com/) format
 
 2. **README.md** - Update if:
-   - Tool count changes (update "40 tools" in Features section)
+   - Tool count changes (update "39 tools" in Features section)
    - New tools added (add to appropriate category in Available Tools)
    - New example prompts needed
    - Response size improvements made (update comparison table)
 
-3. **This file (CLAUDE.md)** - Update tool count if changed (currently 40 tools)
+3. **This file (CLAUDE.md)** - Update tool count if changed (currently 39 tools)
 
 Always work on a feature branch and include documentation updates in the same PR as code changes.
