@@ -1515,7 +1515,10 @@ export class CoolifyMcpServer extends McpServer {
           .optional()
           .describe('Also delete backup file from S3 (for delete_execution)'),
         // Backup configuration parameters
-        frequency: z.string().optional(),
+        frequency: z
+          .string()
+          .optional()
+          .describe('Cron expression for task schedule (e.g. "0 * * * *" for hourly)'),
         enabled: z.boolean().optional(),
         save_s3: z.boolean().optional(),
         s3_storage_uuid: z.string().optional(),

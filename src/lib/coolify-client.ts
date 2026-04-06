@@ -248,6 +248,7 @@ function toDatabaseSummary(db: Database): DatabaseSummary {
   return {
     uuid: db.uuid,
     name: db.name,
+    // Coolify API <beta.300 returns `database_type`; >=beta.300 returns `type`
     type: db.type || (raw.database_type as string),
     status: db.status,
     is_public: db.is_public,
@@ -318,6 +319,9 @@ function toGitHubAppSummary(app: GitHubApp): GitHubAppSummary {
 }
 
 function toGitHubRepoSummary(repo: GitHubRepository): GitHubRepositorySummary {
+  if (!repo.owner?.login) {
+    console.warn('[coolify-mcp] toGitHubRepoSummary: owner missing for repo', repo.full_name);
+  }
   return {
     name: repo.name,
     full_name: repo.full_name,
