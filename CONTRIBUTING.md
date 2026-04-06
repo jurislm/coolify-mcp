@@ -113,5 +113,5 @@ src/
 
 ## Questions?
 
-- Open a [GitHub Issue](https://github.com/stumason/coolify-mcp/issues)
+- Open a [GitHub Issue](https://github.com/jurislm/coolify-mcp/issues)
 - Check the [Coolify Community](https://coolify.io/docs/contact)
