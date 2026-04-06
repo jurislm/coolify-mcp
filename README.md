@@ -8,50 +8,50 @@
 [![CI](https://github.com/jurislm/coolify-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/jurislm/coolify-mcp/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/jurislm/coolify-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/jurislm/coolify-mcp)
 
-> **The most comprehensive MCP server for Coolify** - 40 token-optimized tools, smart diagnostics, and batch operations for managing your self-hosted PaaS through AI assistants.
+> **最完整的 Coolify MCP 伺服器** — 40 個 Token 優化工具、智慧診斷與批次操作，透過 AI 助理管理你的自架 PaaS 平台。
 
-A Model Context Protocol (MCP) server for [Coolify](https://coolify.io/), enabling AI assistants to manage and debug your Coolify instances through natural language.
+[Coolify](https://coolify.io/) 的 Model Context Protocol (MCP) 伺服器，讓 AI 助理能以自然語言管理和除錯 Coolify 實例。
 
-## Features
+## 功能特色
 
-This MCP server provides **40 token-optimized tools** for **debugging, management, and deployment**:
+本 MCP 伺服器提供 **40 個 Token 優化工具**，涵蓋**除錯、管理與部署**：
 
-| Category             | Tools                                                                                                                                      |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Infrastructure**   | `get_infrastructure_overview`, `get_mcp_version`, `get_version`                                                                            |
-| **Diagnostics**      | `diagnose_app`, `diagnose_server`, `find_issues`                                                                                           |
-| **Batch Operations** | `restart_project_apps`, `bulk_env_update`, `stop_all_apps`, `redeploy_project`                                                             |
-| **Servers**          | `list_servers`, `get_server`, `server` (create, update, delete), `validate_server`, `server_resources`, `server_domains`                   |
-| **Projects**         | `projects` (list, get, create, update, delete via action param)                                                                            |
-| **Environments**     | `environments` (list, get, create, delete via action param)                                                                                |
-| **Applications**     | `list_applications`, `get_application`, `application` (5 create types, update, delete), `application_logs`                                 |
-| **Databases**        | `list_databases`, `get_database`, `database` (create 8 types, update, delete), `database_backups` (CRUD schedules, view/delete executions) |
-| **Services**         | `list_services`, `get_service`, `service` (create, update, delete)                                                                         |
-| **Control**          | `control` (start/stop/restart for apps, databases, services)                                                                               |
-| **Env Vars**         | `env_vars` (CRUD for application, service, and database env vars)                                                                          |
-| **Deployments**      | `list_deployments`, `deploy`, `deployment` (get, cancel, list_for_app)                                                                     |
-| **Private Keys**     | `private_keys` (list, get, create, update, delete via action param)                                                                        |
-| **GitHub Apps**      | `github_apps` (list, get, create, update, delete, list_repositories, list_branches)                                                        |
-| **Storages**         | `storages` (list, create, update, delete for applications, databases, services)                                                            |
-| **Scheduled Tasks**  | `scheduled_tasks` (list, create, update, delete, list_executions for applications & services)                                              |
-| **Cloud Tokens**     | `cloud_tokens` (list, get, create, update, delete, validate for Hetzner/DigitalOcean)                                                      |
-| **Teams**            | `teams` (list, current, current_members, get, members)                                                                                     |
+| 分類            | 工具                                                                                                             |
+| --------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **基礎設施**    | `get_infrastructure_overview`, `get_mcp_version`, `get_version`                                                  |
+| **智慧診斷**    | `diagnose_app`, `diagnose_server`, `find_issues`                                                                 |
+| **批次操作**    | `restart_project_apps`, `bulk_env_update`, `stop_all_apps`, `redeploy_project`                                   |
+| **伺服器**      | `list_servers`, `get_server`, `server` (建立/更新/刪除), `validate_server`, `server_resources`, `server_domains` |
+| **專案**        | `projects` (列表/取得/建立/更新/刪除)                                                                            |
+| **環境**        | `environments` (列表/取得/建立/刪除)                                                                             |
+| **應用程式**    | `list_applications`, `get_application`, `application` (5 種建立方式/更新/刪除), `application_logs`               |
+| **資料庫**      | `list_databases`, `get_database`, `database` (8 種類型建立/更新/刪除), `database_backups` (排程 CRUD/執行記錄)   |
+| **服務**        | `list_services`, `get_service`, `service` (建立/更新/刪除)                                                       |
+| **控制**        | `control` (啟動/停止/重啟應用程式、資料庫、服務)                                                                 |
+| **環境變數**    | `env_vars` (應用程式/服務/資料庫的 CRUD)                                                                         |
+| **部署**        | `list_deployments`, `deploy`, `deployment` (取得/取消/列出應用部署)                                              |
+| **私鑰**        | `private_keys` (列表/取得/建立/更新/刪除)                                                                        |
+| **GitHub Apps** | `github_apps` (列表/取得/建立/更新/刪除/列出儲存庫/列出分支)                                                     |
+| **儲存空間**    | `storages` (應用程式/資料庫/服務的持久化磁碟區與檔案儲存)                                                        |
+| **排程任務**    | `scheduled_tasks` (應用程式/服務的 cron 任務管理)                                                                |
+| **雲端 Token**  | `cloud_tokens` (Hetzner/DigitalOcean 供應商 Token 管理)                                                          |
+| **團隊**        | `teams` (列表/目前團隊/成員查詢)                                                                                 |
 
-### Token-Optimized Design
+### Token 優化設計
 
-The server uses **85% fewer tokens** than a naive implementation (6,600 vs 43,000) by consolidating related operations into single tools with action parameters. This prevents context window exhaustion in AI assistants.
+透過將相關操作整合為帶有 action 參數的單一工具，Token 使用量比原始實作**減少 85%**（從約 43,000 降至約 6,600 Token），有效防止 AI 助理的 Context Window 耗盡。
 
-## Installation
+## 安裝
 
-### Prerequisites
+### 前置需求
 
 - Node.js >= 18
-- A running Coolify instance (tested with v4.0.0-beta.460)
-- Coolify API access token (generate in Coolify Settings > API)
+- 運作中的 Coolify 實例（已測試 v4.0.0-beta.460）
+- Coolify API Token（於 Coolify 設定 > API 中產生）
 
 ### Claude Desktop
 
-Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+新增至 Claude Desktop 設定檔（macOS：`~/Library/Application Support/Claude/claude_desktop_config.json`）：
 
 ```json
 {
@@ -77,7 +77,7 @@ claude mcp add coolify \
   -- npx @jurislm/coolify-mcp@latest
 ```
 
-> **Note:** Use `@latest` tag (not `-y` flag) for reliable startup in Claude Code CLI.
+> **注意：** 在 Claude Code CLI 中請使用 `@latest` 標籤（而非 `-y` 旗標）以確保穩定啟動。
 
 ### Cursor
 
@@ -85,277 +85,276 @@ claude mcp add coolify \
 env COOLIFY_ACCESS_TOKEN=your-api-token COOLIFY_BASE_URL=https://your-coolify-instance.com npx -y @jurislm/coolify-mcp
 ```
 
-## Context-Optimized Responses
+## Context 優化回應
 
-### Why This Matters
+### 為什麼這很重要
 
-The Coolify API returns extremely verbose responses - a single application can contain 91 fields including embedded 3KB server objects and 47KB docker-compose files. When listing 20+ applications, responses can exceed 200KB, which quickly exhausts the context window of AI assistants like Claude Desktop.
+Coolify API 回傳的資料極為冗長——單一應用程式可能包含 91 個欄位，內嵌 3KB 的伺服器物件和 47KB 的 docker-compose 檔案。列出 20 個以上的應用程式時，回應可能超過 200KB，會迅速耗盡 AI 助理的 Context Window。
 
-**This MCP server solves this by returning optimized summaries by default.**
+**本 MCP 伺服器預設回傳優化摘要來解決此問題。**
 
-### How It Works
+### 運作方式
 
-| Tool Type                     | Returns                                  | Use Case                            |
-| ----------------------------- | ---------------------------------------- | ----------------------------------- |
-| `list_*`                      | Summaries only (uuid, name, status, etc) | Discovery, finding resources        |
-| `get_*`                       | Full details for a single resource       | Deep inspection, debugging          |
-| `get_infrastructure_overview` | All resources summarized in one call     | Start here to understand your setup |
+| 工具類型                      | 回傳內容                     | 使用情境                   |
+| ----------------------------- | ---------------------------- | -------------------------- |
+| `list_*`                      | 僅摘要（uuid、名稱、狀態等） | 探索、尋找資源             |
+| `get_*`                       | 單一資源的完整詳情           | 深入檢查、除錯             |
+| `get_infrastructure_overview` | 所有資源的一次性摘要         | 從這裡開始了解你的基礎設施 |
 
-### Response Size Comparison
+### 回應大小比較
 
-| Endpoint              | Full Response | Summary Response | Reduction |
-| --------------------- | ------------- | ---------------- | --------- |
-| list_applications     | ~170KB        | ~4.4KB           | **97%**   |
-| list_services         | ~367KB        | ~1.2KB           | **99%**   |
-| list_servers          | ~4KB          | ~0.4KB           | **90%**   |
-| list_application_envs | ~3KB/var      | ~0.1KB/var       | **97%**   |
-| deployment get        | ~13KB         | ~1KB             | **92%**   |
+| 端點                  | 完整回應 | 摘要回應   | 縮減幅度 |
+| --------------------- | -------- | ---------- | -------- |
+| list_applications     | ~170KB   | ~4.4KB     | **97%**  |
+| list_services         | ~367KB   | ~1.2KB     | **99%**  |
+| list_servers          | ~4KB     | ~0.4KB     | **90%**  |
+| list_application_envs | ~3KB/var | ~0.1KB/var | **97%**  |
+| deployment get        | ~13KB    | ~1KB       | **92%**  |
 
-### HATEOAS-style Response Actions
+### HATEOAS 風格的回應動作
 
-Responses include contextual `_actions` suggesting relevant next steps:
+回應中包含建議下一步操作的 `_actions`：
 
 ```json
 {
   "data": { "uuid": "abc123", "status": "running" },
   "_actions": [
-    { "tool": "application_logs", "args": { "uuid": "abc123" }, "hint": "View logs" },
+    { "tool": "application_logs", "args": { "uuid": "abc123" }, "hint": "查看日誌" },
     {
       "tool": "control",
       "args": { "resource": "application", "action": "restart", "uuid": "abc123" },
-      "hint": "Restart"
+      "hint": "重新啟動"
     }
   ],
   "_pagination": { "next": { "tool": "list_applications", "args": { "page": 2 } } }
 }
 ```
 
-This helps AI assistants understand logical next steps without consuming extra tokens.
+這有助於 AI 助理理解邏輯上的下一步操作，而不消耗額外 Token。
 
-### Recommended Workflow
+### 建議工作流程
 
-1. **Start with overview**: `get_infrastructure_overview` - see everything at once
-2. **Find your target**: `list_applications` - get UUIDs of what you need
-3. **Dive deep**: `get_application(uuid)` - full details for one resource
-4. **Take action**: `control(resource: 'application', action: 'restart')`, `application_logs(uuid)`, etc.
+1. **從總覽開始**：`get_infrastructure_overview` — 一次查看所有資源
+2. **尋找目標**：`list_applications` — 取得所需資源的 UUID
+3. **深入了解**：`get_application(uuid)` — 單一資源的完整詳情
+4. **執行操作**：`control(resource: 'application', action: 'restart')`、`application_logs(uuid)` 等
 
-### Pagination
+### 分頁
 
-All list endpoints still support optional pagination for very large deployments:
+所有列表端點支援可選的分頁功能，適用於大型部署環境：
 
 ```bash
-# Get page 2 with 10 items per page
+# 取得第 2 頁，每頁 10 筆
 list_applications(page=2, per_page=10)
 ```
 
-## Example Prompts
+## 使用範例
 
-### Getting Started
-
-```text
-Give me an overview of my infrastructure
-Show me all my applications
-What's running on my servers?
-```
-
-### Debugging & Monitoring
+### 入門
 
 ```text
-Diagnose my stuartmason.co.uk app
-What's wrong with my-api application?
-Check the status of server 192.168.1.100
-Find any issues in my infrastructure
-Get the logs for application {uuid}
-What environment variables are set for application {uuid}?
-Show me recent deployments for application {uuid}
-What resources are running on server {uuid}?
+顯示我的基礎設施總覽
+列出所有應用程式
+我的伺服器上有什麼在運行？
 ```
 
-### Application Management
+### 除錯與監控
 
 ```text
-Restart application {uuid}
-Stop the database {uuid}
-Start service {uuid}
-Deploy application {uuid} with force rebuild
-Update the DATABASE_URL env var for application {uuid}
+診斷 my-app 應用程式
+檢查伺服器 192.168.1.100 的狀態
+掃描基礎設施中的問題
+取得應用程式 {uuid} 的日誌
+顯示應用程式 {uuid} 的環境變數
+顯示應用程式 {uuid} 的最近部署記錄
+伺服器 {uuid} 上運行了哪些資源？
 ```
 
-### Project Setup
+### 應用程式管理
 
 ```text
-Create a new project called "my-app"
-Create a staging environment in project {uuid}
-Deploy my app from private GitHub repo org/repo on branch main
-Deploy nginx:latest from Docker Hub
-Deploy from public repo https://github.com/org/repo
+重啟應用程式 {uuid}
+停止資料庫 {uuid}
+啟動服務 {uuid}
+強制重建並部署應用程式 {uuid}
+更新應用程式 {uuid} 的 DATABASE_URL 環境變數
 ```
 
-## Environment Variables
+### 專案設定
 
-| Variable               | Required | Default                 | Description               |
-| ---------------------- | -------- | ----------------------- | ------------------------- |
-| `COOLIFY_ACCESS_TOKEN` | Yes      | -                       | Your Coolify API token    |
-| `COOLIFY_BASE_URL`     | No       | `http://localhost:3000` | Your Coolify instance URL |
+```text
+建立一個名為「my-app」的新專案
+在專案 {uuid} 中建立 staging 環境
+從私有 GitHub 儲存庫 org/repo 的 main 分支部署應用程式
+部署 Docker Hub 上的 nginx:latest
+從公開儲存庫 https://github.com/org/repo 部署
+```
 
-## Development
+## 環境變數
+
+| 變數                   | 必填 | 預設值                  | 說明               |
+| ---------------------- | ---- | ----------------------- | ------------------ |
+| `COOLIFY_ACCESS_TOKEN` | 是   | -                       | Coolify API Token  |
+| `COOLIFY_BASE_URL`     | 否   | `http://localhost:3000` | Coolify 實例的網址 |
+
+## 開發
 
 ```bash
-# Clone and install
+# 複製與安裝
 git clone https://github.com/jurislm/coolify-mcp.git
 cd coolify-mcp
 npm install
 
-# Build
+# 建置
 npm run build
 
-# Test
+# 測試
 npm test
 
-# Run locally
+# 本機執行
 COOLIFY_BASE_URL="https://your-coolify.com" \
 COOLIFY_ACCESS_TOKEN="your-token" \
 node dist/index.js
 ```
 
-## Available Tools
+## 可用工具
 
-### Infrastructure
+### 基礎設施
 
-- `get_version` - Get Coolify API version
-- `get_mcp_version` - Get coolify-mcp server version (useful to verify which version is installed)
-- `get_infrastructure_overview` - Get a high-level overview of all infrastructure (servers, projects, applications, databases, services)
+- `get_version` — 取得 Coolify API 版本
+- `get_mcp_version` — 取得 coolify-mcp 伺服器版本（用於確認安裝版本）
+- `get_infrastructure_overview` — 取得所有基礎設施的概覽（伺服器、專案、應用程式、資料庫、服務）
 
-### Diagnostics (Smart Lookup)
+### 智慧診斷
 
-These tools accept human-friendly identifiers instead of just UUIDs:
+這些工具接受人類友善的識別碼，而不僅限 UUID：
 
-- `diagnose_app` - Get comprehensive app diagnostics (status, logs, env vars, deployments). Accepts UUID, name, or domain (e.g., "stuartmason.co.uk" or "my-app")
-- `diagnose_server` - Get server diagnostics (status, resources, domains, validation). Accepts UUID, name, or IP address (e.g., "coolify-apps" or "192.168.1.100")
-- `find_issues` - Scan entire infrastructure for unhealthy apps, databases, services, and unreachable servers
+- `diagnose_app` — 取得應用程式的全面診斷（狀態、日誌、環境變數、部署記錄）。接受 UUID、名稱或網域（例如 `my-app.example.com` 或 `my-app`）
+- `diagnose_server` — 取得伺服器診斷（狀態、資源、網域、驗證結果）。接受 UUID、名稱或 IP 位址（例如 `coolify-apps` 或 `192.168.1.100`）
+- `find_issues` — 掃描整個基礎設施，找出不健康的應用程式、資料庫、服務和無法連線的伺服器
 
-### Servers
+### 伺服器
 
-- `list_servers` - List all servers (returns summary)
-- `get_server` - Get server details
-- `server` - Create, update, or delete servers with `action: create|update|delete`
-- `server_resources` - Get resources running on a server
-- `server_domains` - Get domains configured on a server
-- `validate_server` - Validate server connection
+- `list_servers` — 列出所有伺服器（回傳摘要）
+- `get_server` — 取得伺服器詳情
+- `server` — 建立、更新或刪除伺服器（`action: create|update|delete`）
+- `server_resources` — 取得伺服器上運行的資源
+- `server_domains` — 取得伺服器設定的網域
+- `validate_server` — 驗證伺服器連線
 
-### Projects
+### 專案
 
-- `projects` - Manage projects with `action: list|get|create|update|delete`
+- `projects` — 管理專案（`action: list|get|create|update|delete`）
 
-### Environments
+### 環境
 
-- `environments` - Manage environments with `action: list|get|create|delete`
+- `environments` — 管理環境（`action: list|get|create|delete`）
 
-### Applications
+### 應用程式
 
-- `list_applications` - List all applications (returns summary)
-- `get_application` - Get application details
-- `application_logs` - Get application logs
-- `application` - Create, update, or delete apps with `action: create_public|create_github|create_key|create_dockerimage|create_dockerfile|update|delete`
-  - Deploy from public repos, private GitHub, SSH keys, Docker images, or Dockerfiles
-  - Configure health checks (path, interval, retries, etc.)
-- `env_vars` - Manage env vars with `resource: application, action: list|create|bulk_create|update|delete`
-- `control` - Start/stop/restart with `resource: application, action: start|stop|restart`
+- `list_applications` — 列出所有應用程式（回傳摘要）
+- `get_application` — 取得應用程式詳情
+- `application_logs` — 取得應用程式日誌
+- `application` — 建立、更新或刪除應用程式（`action: create_public|create_github|create_key|create_dockerimage|create_dockerfile|update|delete`）
+  - 支援從公開儲存庫、私有 GitHub、SSH 金鑰、Docker 映像或 Dockerfile 部署
+  - 可設定健康檢查（路徑、間隔、重試次數等）
+- `env_vars` — 管理環境變數（`resource: application, action: list|create|bulk_create|update|delete`）
+- `control` — 啟動/停止/重啟（`resource: application, action: start|stop|restart`）
 
-### Databases
+### 資料庫
 
-- `list_databases` - List all databases (returns summary)
-- `get_database` - Get database details
-- `database` - Create, update, or delete databases with `action: create|update|delete, type: postgresql|mysql|mariadb|mongodb|redis|keydb|clickhouse|dragonfly`
-- `database_backups` - Manage backup schedules with `action: list_schedules|get_schedule|create|update|delete|list_executions|get_execution|delete_execution`
-  - Configure frequency, retention policies, S3 storage
-  - Enable/disable schedules without deletion
-  - View backup execution history
-- `env_vars` - Manage env vars with `resource: database, action: list|create|bulk_create|update|delete`
-- `control` - Start/stop/restart with `resource: database, action: start|stop|restart`
+- `list_databases` — 列出所有資料庫（回傳摘要）
+- `get_database` — 取得資料庫詳情
+- `database` — 建立、更新或刪除資料庫（`action: create|update|delete, type: postgresql|mysql|mariadb|mongodb|redis|keydb|clickhouse|dragonfly`）
+- `database_backups` — 管理備份排程（`action: list_schedules|get_schedule|create|update|delete|list_executions|get_execution|delete_execution`）
+  - 可設定備份頻率、保留策略、S3 儲存
+  - 可啟用/停用排程而不刪除
+  - 查看備份執行歷史記錄
+- `env_vars` — 管理環境變數（`resource: database, action: list|create|bulk_create|update|delete`）
+- `control` — 啟動/停止/重啟（`resource: database, action: start|stop|restart`）
 
-### Services
+### 服務
 
-- `list_services` - List all services (returns summary)
-- `get_service` - Get service details
-- `service` - Create, update, or delete services with `action: create|update|delete`
-- `env_vars` - Manage env vars with `resource: service, action: list|create|delete`
-- `control` - Start/stop/restart with `resource: service, action: start|stop|restart`
+- `list_services` — 列出所有服務（回傳摘要）
+- `get_service` — 取得服務詳情
+- `service` — 建立、更新或刪除服務（`action: create|update|delete`）
+- `env_vars` — 管理環境變數（`resource: service, action: list|create|delete`）
+- `control` — 啟動/停止/重啟（`resource: service, action: start|stop|restart`）
 
-### Storages
+### 儲存空間
 
-- `storages` - Manage persistent volumes & file storages with `action: list|create|update|delete, resource_type: application|database|service`
-  - Persistent volumes: named Docker volumes with optional host path
-  - File storages: mounted config files or directories with optional content
-  - Service storages require `service_resource_uuid` for create to target a sub-resource
+- `storages` — 管理持久化磁碟區與檔案儲存（`action: list|create|update|delete, resource_type: application|database|service`）
+  - 持久化磁碟區：具名 Docker volume，可選主機路徑
+  - 檔案儲存：掛載的設定檔或目錄，可選內容
+  - 服務儲存需要 `service_resource_uuid` 來指定子資源
 
-### Deployments
+### 部署
 
-- `list_deployments` - List running deployments (returns summary)
-- `deploy` - Deploy by tag or UUID
-- `deployment` - Manage deployments with `action: get|cancel|list_for_app` (supports `lines` param to limit log output)
+- `list_deployments` — 列出執行中的部署（回傳摘要）
+- `deploy` — 依標籤或 UUID 部署
+- `deployment` — 管理部署（`action: get|cancel|list_for_app`，支援 `lines` 參數限制日誌輸出量）
 
-### Private Keys
+### 私鑰
 
-- `private_keys` - Manage SSH keys with `action: list|get|create|update|delete`
+- `private_keys` — 管理 SSH 金鑰（`action: list|get|create|update|delete`）
 
 ### GitHub Apps
 
-- `github_apps` - Manage GitHub App integrations with `action: list|get|create|update|delete|list_repositories|list_branches`
+- `github_apps` — 管理 GitHub App 整合（`action: list|get|create|update|delete|list_repositories|list_branches`）
 
-### Scheduled Tasks
+### 排程任務
 
-- `scheduled_tasks` - Manage cron tasks with `action: list|create|update|delete|list_executions, resource_type: application|service`
-  - Configure cron schedule, command, container, and enabled state
-  - View execution history for debugging
+- `scheduled_tasks` — 管理 cron 任務（`action: list|create|update|delete|list_executions, resource_type: application|service`）
+  - 可設定 cron 排程、指令、容器及啟用狀態
+  - 查看執行歷史記錄以協助除錯
 
-### Cloud Tokens
+### 雲端 Token
 
-- `cloud_tokens` - Manage cloud provider tokens with `action: list|get|create|update|delete|validate`
-  - Supports Hetzner and DigitalOcean provider tokens
+- `cloud_tokens` — 管理雲端供應商 Token（`action: list|get|create|update|delete|validate`）
+  - 支援 Hetzner 和 DigitalOcean 供應商 Token
 
-### Teams
+### 團隊
 
-- `teams` - Inspect team membership with `action: list|current|current_members|get|members`
+- `teams` — 查詢團隊成員資訊（`action: list|current|current_members|get|members`）
 
-### Batch Operations
+### 批次操作
 
-Power user tools for operating on multiple resources at once:
+進階工具，可一次操作多個資源：
 
-- `restart_project_apps` - Restart all applications in a project
-- `bulk_env_update` - Update or create an environment variable across multiple applications (upsert behavior)
-- `stop_all_apps` - Emergency stop all running applications (requires confirmation)
-- `redeploy_project` - Redeploy all applications in a project with force rebuild
+- `restart_project_apps` — 重啟專案中的所有應用程式
+- `bulk_env_update` — 跨多個應用程式更新或建立環境變數（upsert 行為）
+- `stop_all_apps` — 緊急停止所有運行中的應用程式（需確認）
+- `redeploy_project` — 強制重建並重新部署專案中的所有應用程式
 
-## Why Coolify MCP?
+## 為什麼選擇 Coolify MCP？
 
-- **Context-Optimized**: Responses are 90-99% smaller than raw API, preventing context window exhaustion
-- **Smart Lookup**: Find apps by domain (`stuartmason.co.uk`), servers by IP, not just UUIDs
-- **Batch Operations**: Restart entire projects, bulk update env vars, emergency stop all apps
-- **Production Ready**: 100% test coverage, TypeScript strict mode, comprehensive error handling
-- **Always Current**: Weekly OpenAPI drift detection ensures the server stays in sync with Coolify
+- **Context 優化**：回應比原始 API 小 90-99%，防止 Context Window 耗盡
+- **智慧查詢**：可用網域、IP 尋找資源，不限 UUID
+- **批次操作**：重啟整個專案、批次更新環境變數、緊急停止所有應用程式
+- **正式環境就緒**：完整的自動化測試、TypeScript 嚴格模式、完整的錯誤處理
+- **持續同步**：持續追蹤 Coolify API 變更，協助維持相容性
 
-## Related Links
+## 相關連結
 
-- [Coolify](https://coolify.io/) - The open-source & self-hostable Heroku/Netlify/Vercel alternative
-- [Model Context Protocol](https://modelcontextprotocol.io/) - The protocol powering AI tool integrations
-- [MCP Server Registry](https://github.com/modelcontextprotocol/servers) - Official MCP server directory
+- [Coolify](https://coolify.io/) — 開源自架的 Heroku/Netlify/Vercel 替代方案
+- [Model Context Protocol](https://modelcontextprotocol.io/) — 驅動 AI 工具整合的協定
+- [MCP Server Registry](https://github.com/modelcontextprotocol/servers) — 官方 MCP 伺服器目錄
 
-## Contributing
+## 貢獻
 
-Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+歡迎貢獻！請參閱 [CONTRIBUTING.md](CONTRIBUTING.md) 了解詳細指南。
 
-## License
+## 授權
 
-MIT - see [LICENSE](LICENSE) for details.
+MIT 授權 — 詳見 [LICENSE](LICENSE)。
 
-## Support
+## 支援
 
 - [GitHub Issues](https://github.com/jurislm/coolify-mcp/issues)
-- [Coolify Community](https://coolify.io/docs/contact)
+- [Coolify 社群](https://coolify.io/docs/contact)
 
 ---
 
 <p align="center">
-  <strong>If you find this useful, please ⭐ star the repo!</strong>
+  <strong>如果覺得好用，請給專案一顆星星！</strong>
 </p>
