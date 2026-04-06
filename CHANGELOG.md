@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.2](https://github.com/jurislm/coolify-mcp/compare/v2.6.2...v2.7.2) (2026-04-06)
+
+### Features
+
+- add storages tool for persistent volumes and file storage management ([b9afc38](https://github.com/jurislm/coolify-mcp/commit/b9afc387e128c9bf5fbb5a8ec5cb6cefef4f9164))
+- expand MCP server from 35 to 40 tools with security hardening ([6c76f15](https://github.com/jurislm/coolify-mcp/commit/6c76f15dd141e0f71cc26d59179e649eee35490a))
+
+### Bug Fixes
+
+- Add fqdn support for Service updates ([7b65c3f](https://github.com/jurislm/coolify-mcp/commit/7b65c3fdae3bd2943ed56be164fea3a25e68a927))
+- correct API path for listing application deployments ([#120](https://github.com/jurislm/coolify-mcp/issues/120)) ([2fba62c](https://github.com/jurislm/coolify-mcp/commit/2fba62c03427167a5ecfd8676eaba6381c628ee9))
+- Map fqdn to domains for Coolify API compatibility ([5f0483b](https://github.com/jurislm/coolify-mcp/commit/5f0483bb8b92cc332c3c05340d57058d86e03a21))
+
 ## [Unreleased]
 
 ### Added

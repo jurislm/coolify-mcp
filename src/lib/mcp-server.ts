@@ -683,8 +683,8 @@ export class CoolifyMcpServer extends McpServer {
           case 'update':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            // Explicit allowlist: only UpdateApplicationRequest fields forwarded
-            // Excluded create-only fields: project_uuid, server_uuid, environment_uuid, build_pack
+            // Forward only the subset of application update fields supported by this MCP handler.
+            // Create-only fields (project_uuid, server_uuid, environment_uuid, build_pack) are excluded.
             return wrap(() =>
               this.client.updateApplication(uuid, {
                 name: args.name,
@@ -829,7 +829,8 @@ export class CoolifyMcpServer extends McpServer {
           case 'update':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            // Explicit allowlist: only UpdateDatabaseRequest fields forwarded
+            // Forward only the subset of database update fields supported by this MCP handler.
+            // Fields not present in UpdateDatabaseRequest (e.g. server_uuid) are excluded.
             return wrap(() =>
               this.client.updateDatabase(uuid, {
                 name: dbData.name,

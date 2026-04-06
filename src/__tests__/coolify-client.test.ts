@@ -4435,6 +4435,7 @@ describe('CoolifyClient', () => {
         expect(result.errors).toEqual(['plain string rejection']);
       });
 
+
       it('should handle non-Error rejection in extract helper', async () => {
         const minimalServer = {
           id: 1,
