@@ -27,9 +27,20 @@ import type {
   CloudTokenValidation,
 } from '../types/coolify.js';
 
+type RegisteredToolMap = Record<
+  string,
+  { handler: (args: Record<string, unknown>) => Promise<unknown> }
+>;
+
 class TestableMcpServer extends CoolifyMcpServer {
   getClient(): CoolifyClient {
     return this.client;
+  }
+
+  /** Access a registered MCP tool handler by name for dispatch testing. */
+  getHandler(toolName: string): ((args: Record<string, unknown>) => Promise<unknown>) | undefined {
+    const tools = (this as unknown as { _registeredTools: RegisteredToolMap })['_registeredTools'];
+    return tools[toolName]?.handler;
   }
 }
 
@@ -450,14 +461,13 @@ describe('getPagination', () => {
  * Bypasses MCP transport layer; args are passed as plain object.
  */
 async function callHandler(
-  server: CoolifyMcpServer,
+  server: TestableMcpServer,
   toolName: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const registeredTool = (server as any)['_registeredTools'][toolName];
-  if (!registeredTool) throw new Error(`Tool "${toolName}" not registered`);
-  return registeredTool.handler(args);
+  const handler = server.getHandler(toolName);
+  if (!handler) throw new Error(`Tool "${toolName}" not registered`);
+  return handler(args);
 }
 
 describe('update handler allowlist — create-only fields must not be forwarded', () => {

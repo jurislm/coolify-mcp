@@ -478,6 +478,45 @@ describe('CoolifyClient', () => {
 
       expect(result).toEqual(mockTeam);
     });
+
+    it('should get team by id', async () => {
+      const mockTeam = { id: 42, name: 'team-42', personal_team: false };
+      mockFetch.mockResolvedValueOnce(mockResponse(mockTeam));
+
+      const result = await client.getTeam(42);
+
+      expect(result).toEqual(mockTeam);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/teams/42',
+        expect.any(Object),
+      );
+    });
+
+    it('should get team members by id', async () => {
+      const mockMembers = [{ id: 1, name: 'Alice' }];
+      mockFetch.mockResolvedValueOnce(mockResponse(mockMembers));
+
+      const result = await client.getTeamMembers(42);
+
+      expect(result).toEqual(mockMembers);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/teams/42/members',
+        expect.any(Object),
+      );
+    });
+
+    it('should get current team members', async () => {
+      const mockMembers = [{ id: 2, name: 'Bob' }];
+      mockFetch.mockResolvedValueOnce(mockResponse(mockMembers));
+
+      const result = await client.getCurrentTeamMembers();
+
+      expect(result).toEqual(mockMembers);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/teams/current/members',
+        expect.any(Object),
+      );
+    });
   });
 
   describe('deployments', () => {
