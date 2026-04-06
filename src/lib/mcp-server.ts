@@ -676,6 +676,7 @@ export class CoolifyMcpServer extends McpServer {
                 name: args.name,
                 description: args.description,
                 fqdn: args.fqdn,
+                instant_deploy: args.instant_deploy,
               }),
             );
           case 'update':

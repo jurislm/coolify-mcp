@@ -470,6 +470,43 @@ describe('update handler allowlist — create-only fields must not be forwarded'
     });
   });
 
+  describe('server create handler dispatch', () => {
+    it('should return error when create missing required fields', async () => {
+      const result = (await callHandler(server, 'server', {
+        action: 'create',
+        name: 'my-server',
+        // missing ip and private_key_uuid
+      })) as { content: Array<{ text: string }> };
+      expect(result.content[0].text).toContain('Error');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(jest.spyOn(server['client'] as any, 'createServer')).not.toHaveBeenCalled();
+    });
+
+    it('should call createServer with valid args', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const spy = jest.spyOn(server['client'] as any, 'createServer').mockResolvedValue({});
+      await callHandler(server, 'server', {
+        action: 'create',
+        name: 'my-server',
+        ip: '1.2.3.4',
+        private_key_uuid: 'key-uuid',
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('server delete handler dispatch', () => {
+    it('should call deleteServer with uuid', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const spy = jest.spyOn(server['client'] as any, 'deleteServer').mockResolvedValue({});
+      await callHandler(server, 'server', {
+        action: 'delete',
+        uuid: 'srv-uuid',
+      });
+      expect(spy).toHaveBeenCalledWith('srv-uuid');
+    });
+  });
+
   describe('application update', () => {
     it('should not forward project_uuid to updateApplication', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
