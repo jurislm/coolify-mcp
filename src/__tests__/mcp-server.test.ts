@@ -472,14 +472,15 @@ describe('update handler allowlist — create-only fields must not be forwarded'
 
   describe('server create handler dispatch', () => {
     it('should return error when create missing required fields', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const spy = jest.spyOn(server['client'] as any, 'createServer').mockResolvedValue({});
       const result = (await callHandler(server, 'server', {
         action: 'create',
         name: 'my-server',
         // missing ip and private_key_uuid
       })) as { content: Array<{ text: string }> };
       expect(result.content[0].text).toContain('Error');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(jest.spyOn(server['client'] as any, 'createServer')).not.toHaveBeenCalled();
+      expect(spy).not.toHaveBeenCalled();
     });
 
     it('should call createServer with valid args', async () => {
@@ -637,6 +638,24 @@ describe('application create_dockerfile handler dispatch', () => {
       action: 'create_dockerfile',
     })) as { content: Array<{ text: string }> };
     expect(result.content[0].text).toContain('required');
+  });
+
+  it('should forward instant_deploy in create_dockerimage', async () => {
+    const spy = jest
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .spyOn(server['client'] as any, 'createApplicationDockerImage')
+      .mockResolvedValue({ uuid: 'new-app-uuid' });
+    await callHandler(server, 'application', {
+      action: 'create_dockerimage',
+      project_uuid: 'proj-uuid',
+      server_uuid: 'server-uuid',
+      docker_registry_image_name: 'nginx',
+      ports_exposes: '80',
+      instant_deploy: true,
+    });
+    expect(spy).toHaveBeenCalledTimes(1);
+    const [payload] = spy.mock.calls[0] as [Record<string, unknown>];
+    expect(payload).toHaveProperty('instant_deploy', true);
   });
 });
 
