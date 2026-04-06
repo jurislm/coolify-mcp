@@ -111,15 +111,15 @@ The Coolify OpenAPI docs are unreliable — always test against the real API. Kn
 
 ### Commit Message Format
 
-Use bracketed type prefix:
+Use Conventional Commits format (required for Release Please version automation):
 
 ```
-[feat] add storages tool for persistent volume management
-[fix] correct fqdn mapping to domains field
-[refactor] consolidate env var client methods
-[chore] update tool count in README
-[docs] add scheduled tasks to Available Tools
-[test] add method existence checks for storage client
+feat: add storages tool for persistent volume management
+fix: correct fqdn mapping to domains field
+refactor: consolidate env var client methods
+chore: update tool count in README
+docs: add scheduled tasks to Available Tools
+test: add method existence checks for storage client
 ```
 
 ### Commit Timing
@@ -140,7 +140,7 @@ Commit after each independent task:
 
 Versioning is managed automatically by [Release Please](https://github.com/googleapis/release-please). **Do NOT manually bump the version in `package.json`.**
 
-- Release Please reads conventional commits (via `[feat]`, `[fix]`, etc.) and determines the correct semver bump automatically.
+- Release Please reads conventional commits (`feat:`, `fix:`, etc.) and determines the correct semver bump automatically.
 - When `develop` is merged into `main`, Release Please opens a release PR with the updated version and CHANGELOG.
 - Merging the Release Please PR triggers npm publish via CI trusted publishing.
 
