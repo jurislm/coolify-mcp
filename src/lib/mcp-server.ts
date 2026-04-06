@@ -164,6 +164,7 @@ function wrapWithActions<T>(
 }
 
 export class CoolifyMcpServer extends McpServer {
+  /** @internal Exposed as protected for TestableMcpServer in tests only. Not part of the public API. */
   protected readonly client: CoolifyClient;
 
   constructor(config: CoolifyConfig) {

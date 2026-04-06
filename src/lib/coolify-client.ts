@@ -1046,11 +1046,11 @@ export class CoolifyClient {
   }
 
   async getTeam(id: number): Promise<Team> {
-    return this.request<Team>(`/teams/${encodeURIComponent(String(id))}`);
+    return this.request<Team>(`/teams/${String(id)}`);
   }
 
   async getTeamMembers(id: number): Promise<TeamMember[]> {
-    return this.request<TeamMember[]>(`/teams/${encodeURIComponent(String(id))}/members`);
+    return this.request<TeamMember[]>(`/teams/${String(id)}/members`);
   }
 
   async getCurrentTeam(): Promise<Team> {
