@@ -714,25 +714,21 @@ describe('stop_all_apps confirmation', () => {
   });
 
   it('should call stopAllApps when confirm_stop_all_apps=true', async () => {
-    const spy = jest
-      .spyOn(server.getClient(), 'stopAllApps')
-      .mockResolvedValue({
-        summary: { total: 0, succeeded: 0, failed: 0 },
-        succeeded: [],
-        failed: [],
-      } as BatchOperationResult);
+    const spy = jest.spyOn(server.getClient(), 'stopAllApps').mockResolvedValue({
+      summary: { total: 0, succeeded: 0, failed: 0 },
+      succeeded: [],
+      failed: [],
+    } as BatchOperationResult);
     await callHandler(server, 'stop_all_apps', { confirm_stop_all_apps: true });
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
   it('should return error and not call stopAllApps when confirm_stop_all_apps=false', async () => {
-    const spy = jest
-      .spyOn(server.getClient(), 'stopAllApps')
-      .mockResolvedValue({
-        summary: { total: 0, succeeded: 0, failed: 0 },
-        succeeded: [],
-        failed: [],
-      } as BatchOperationResult);
+    const spy = jest.spyOn(server.getClient(), 'stopAllApps').mockResolvedValue({
+      summary: { total: 0, succeeded: 0, failed: 0 },
+      succeeded: [],
+      failed: [],
+    } as BatchOperationResult);
     const result = (await callHandler(server, 'stop_all_apps', {
       confirm_stop_all_apps: false,
     })) as { content: Array<{ text: string }> };
