@@ -138,12 +138,13 @@ Commit after each independent task:
 
 ## Publishing
 
-CI auto-publishes to npm via trusted publishing on version bump. Use:
+Versioning is managed automatically by [Release Please](https://github.com/googleapis/release-please). **Do NOT manually bump the version in `package.json`.**
 
-```bash
-npm version patch|minor|major
-git push origin main --tags
-```
+- Release Please reads conventional commits (via `[feat]`, `[fix]`, etc.) and determines the correct semver bump automatically.
+- When `develop` is merged into `main`, Release Please opens a release PR with the updated version and CHANGELOG.
+- Merging the Release Please PR triggers npm publish via CI trusted publishing.
+
+To trigger a release, merge `develop` → `main` via PR. Release Please handles the rest.
 
 ## Documentation Standards
 

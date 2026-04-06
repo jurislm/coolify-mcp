@@ -8,7 +8,7 @@
 [![CI](https://github.com/jurislm/coolify-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/jurislm/coolify-mcp/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/jurislm/coolify-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/jurislm/coolify-mcp)
 
-> **The most comprehensive MCP server for Coolify** - 40 optimized tools, smart diagnostics, and batch operations for managing your self-hosted PaaS through AI assistants.
+> **The most comprehensive MCP server for Coolify** - 40 token-optimized tools, smart diagnostics, and batch operations for managing your self-hosted PaaS through AI assistants.
 
 A Model Context Protocol (MCP) server for [Coolify](https://coolify.io/), enabling AI assistants to manage and debug your Coolify instances through natural language.
 
@@ -332,7 +332,7 @@ Power user tools for operating on multiple resources at once:
 - **Context-Optimized**: Responses are 90-99% smaller than raw API, preventing context window exhaustion
 - **Smart Lookup**: Find apps by domain (`stuartmason.co.uk`), servers by IP, not just UUIDs
 - **Batch Operations**: Restart entire projects, bulk update env vars, emergency stop all apps
-- **Production Ready**: 98%+ test coverage, TypeScript strict mode, comprehensive error handling
+- **Production Ready**: 100% test coverage, TypeScript strict mode, comprehensive error handling
 - **Always Current**: Weekly OpenAPI drift detection ensures the server stays in sync with Coolify
 
 ## Related Links

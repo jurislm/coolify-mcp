@@ -707,7 +707,7 @@ describe('env_vars bulk_create service runtime guard', () => {
       resource: 'service',
       action: 'bulk_create',
       uuid: 'svc-uuid',
-      env_vars: [{ key: 'FOO', value: 'bar' }],
+      bulk_data: [{ key: 'FOO', value: 'bar' }],
     })) as { content: Array<{ text: string }> };
     expect(result.content[0].text).toContain('bulk_create not supported for service');
   });

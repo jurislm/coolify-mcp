@@ -683,8 +683,8 @@ export class CoolifyMcpServer extends McpServer {
           case 'update':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            // Explicit allowlist: only UpdateApplicationRequest fields forwarded
-            // Excluded create-only fields: project_uuid, server_uuid, environment_uuid, build_pack
+            // Forward only the subset of application update fields supported by this MCP handler.
+            // Create-only fields (project_uuid, server_uuid, environment_uuid, build_pack) are excluded.
             return wrap(() =>
               this.client.updateApplication(uuid, {
                 name: args.name,
@@ -829,7 +829,8 @@ export class CoolifyMcpServer extends McpServer {
           case 'update':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            // Explicit allowlist: only UpdateDatabaseRequest fields forwarded
+            // Forward only the subset of database update fields supported by this MCP handler.
+            // Fields not present in UpdateDatabaseRequest (e.g. server_uuid) are excluded.
             return wrap(() =>
               this.client.updateDatabase(uuid, {
                 name: dbData.name,
@@ -1393,8 +1394,14 @@ export class CoolifyMcpServer extends McpServer {
         app_id: z.number().optional(),
         installation_id: z.number().optional(),
         client_id: z.string().optional(),
-        client_secret: z.string().optional(),
-        webhook_secret: z.string().optional(),
+        client_secret: z
+          .string()
+          .optional()
+          .describe('Sensitive — treat as a secret; do not echo or log'),
+        webhook_secret: z
+          .string()
+          .optional()
+          .describe('Sensitive — treat as a secret; do not echo or log'),
         private_key_uuid: z.string().optional(),
         is_system_wide: z.boolean().optional(),
       },
@@ -1515,10 +1522,13 @@ export class CoolifyMcpServer extends McpServer {
           .optional()
           .describe('Also delete backup file from S3 (for delete_execution)'),
         // Backup configuration parameters
-        frequency: z.string().optional(),
-        enabled: z.boolean().optional(),
-        save_s3: z.boolean().optional(),
-        s3_storage_uuid: z.string().optional(),
+        frequency: z
+          .string()
+          .optional()
+          .describe('Cron expression for task schedule (e.g. "0 * * * *" for hourly)'),
+        enabled: z.boolean().optional().describe('Enable or disable the scheduled backup task'),
+        save_s3: z.boolean().optional().describe('Whether to save the backup to S3 storage'),
+        s3_storage_uuid: z.string().optional().describe('UUID of the S3 storage destination'),
         databases_to_backup: z.string().optional(),
         dump_all: z.boolean().optional(),
         database_backup_retention_days_locally: z.number().optional(),
