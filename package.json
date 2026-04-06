@@ -15,7 +15,10 @@
     "coolify-mcp": "dist/index.js"
   },
   "files": [
-    "dist"
+    "dist/index.js",
+    "dist/index.d.ts",
+    "dist/lib/",
+    "dist/types/"
   ],
   "scripts": {
     "build": "tsc && shx chmod +x dist/*.js",
