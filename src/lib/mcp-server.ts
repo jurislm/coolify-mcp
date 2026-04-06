@@ -1394,8 +1394,14 @@ export class CoolifyMcpServer extends McpServer {
         app_id: z.number().optional(),
         installation_id: z.number().optional(),
         client_id: z.string().optional(),
-        client_secret: z.string().optional(),
-        webhook_secret: z.string().optional(),
+        client_secret: z
+          .string()
+          .optional()
+          .describe('Sensitive — treat as a secret; do not echo or log'),
+        webhook_secret: z
+          .string()
+          .optional()
+          .describe('Sensitive — treat as a secret; do not echo or log'),
         private_key_uuid: z.string().optional(),
         is_system_wide: z.boolean().optional(),
       },
