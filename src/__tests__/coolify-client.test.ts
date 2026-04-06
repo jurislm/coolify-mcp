@@ -1000,7 +1000,7 @@ describe('CoolifyClient', () => {
 
       expect(result).toEqual(mockEnvironment);
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/v1/projects/proj-uuid/production',
+        'http://localhost:3000/api/v1/projects/proj-uuid/environments/production',
         expect.any(Object),
       );
     });
@@ -1937,6 +1937,20 @@ describe('CoolifyClient', () => {
         expect.objectContaining({
           method: 'DELETE',
           body: JSON.stringify({ delete_s3: true }),
+        }),
+      );
+    });
+
+    it('should delete a backup execution with delete_s3=false', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Backup execution deleted.' }));
+
+      await client.deleteBackupExecution('db-uuid', 'backup-uuid', 'exec-uuid', false);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/databases/db-uuid/backups/backup-uuid/executions/exec-uuid',
+        expect.objectContaining({
+          method: 'DELETE',
+          body: JSON.stringify({ delete_s3: false }),
         }),
       );
     });

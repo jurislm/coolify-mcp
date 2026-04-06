@@ -310,7 +310,7 @@ export class CoolifyMcpServer extends McpServer {
         user: z.string().optional(),
         private_key_uuid: z.string().optional().describe('SSH key UUID (required for create)'),
         is_build_server: z.boolean().optional(),
-        instant_validate: z.boolean().optional(),
+        instant_validate: z.boolean().optional().describe('(create only)'),
       },
       async (args) => {
         const { action, uuid, ...serverData } = args;
@@ -1937,17 +1937,17 @@ export class CoolifyMcpServer extends McpServer {
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
             return wrap(() => this.client.getCloudToken(uuid));
           case 'create':
-            if (!provider || !token || !name)
+            if (!provider || !token || !name?.trim())
               return {
                 content: [{ type: 'text' as const, text: 'Error: provider, token, name required' }],
               };
-            return wrap(() => this.client.createCloudToken({ provider, token, name }));
+            return wrap(() => this.client.createCloudToken({ provider, token, name: name.trim() }));
           case 'update':
-            if (!uuid || !name)
+            if (!uuid || !name?.trim())
               return {
                 content: [{ type: 'text' as const, text: 'Error: uuid, name required' }],
               };
-            return wrap(() => this.client.updateCloudToken(uuid, { name }));
+            return wrap(() => this.client.updateCloudToken(uuid, { name: name!.trim() }));
           case 'delete':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
