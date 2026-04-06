@@ -248,6 +248,7 @@ function toDatabaseSummary(db: Database): DatabaseSummary {
   return {
     uuid: db.uuid,
     name: db.name,
+    // Coolify API <beta.300 returns `database_type`; >=beta.300 returns `type`
     type: db.type || (raw.database_type as string),
     status: db.status,
     is_public: db.is_public,
