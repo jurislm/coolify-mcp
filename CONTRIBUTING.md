@@ -14,26 +14,15 @@
 - **主要版本更新** → 建立 PR 並附上審查清單，需人工核准
 - **GitHub Actions** → 每週一更新
 
-設定檔：[`.github/dependabot.yml`](.github/dependabot.yml)
+### API 相容性追蹤
 
-### API 差異偵測
-
-**每週 OpenAPI 差異檢查**監控 Coolify API 的變動：
-
-- 每週一早上 7 點（UTC）執行
-- 比對目前的 Coolify OpenAPI 規格與我們的基準版本
-- 偵測到變動時自動建立 GitHub Issue
-- 以 `api-drift` 和 `maintenance` 標籤標記 Issue
-
-這確保我們能即時得知 Coolify 新增、移除或變更端點，以便更新對應的工具。
-
-設定檔：[`.github/workflows/openapi-drift.yml`](.github/workflows/openapi-drift.yml)
+本專案持續追蹤 Coolify API 的變動，以維持與最新版本的相容性。當 Coolify 新增、移除或變更端點時，請開 Issue 回報以便更新對應的工具。
 
 ### 分支保護
 
 `main` 分支受到保護：
 
-- 所有 CI 檢查必須通過（Node 20.x、22.x、24.x）
+- 所有 CI 檢查必須通過（Node 20.x）
 - 維護者可以 bypass
 - 禁止 force push（維護者除外）
 
@@ -41,11 +30,10 @@
 
 每個 PR 會執行：
 
-1. **安全稽核** — `npm audit`
-2. **格式檢查** — Prettier
-3. **靜態分析** — ESLint
-4. **建置** — TypeScript 編譯
-5. **測試** — Jest（含覆蓋率報告）
+1. **格式檢查** — Prettier
+2. **靜態分析** — ESLint
+3. **建置** — TypeScript 編譯
+4. **測試** — Jest（`npm test`）
 
 ## 如何貢獻
 
