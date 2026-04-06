@@ -17,6 +17,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Service storages require `service_resource_uuid` to target a specific sub-resource
   - 12 new client methods across all resource types
 
+- **Server CRUD** - New `server` tool for create/update/delete server management
+- **Database Update** - Extended `database` tool with `update` action for modifying database configuration
+- **Application Dockerfile** - Extended `application` tool with `create_dockerfile` action
+- **Teams** - New `teams` tool for team management (list, current, members)
+
+- **Backup Execution Deletion** - Extended `database_backups` tool with `delete_execution` action:
+  - Delete individual backup execution records
+  - Optional `delete_s3` parameter to also remove S3 backup files
+
+- **Cloud Provider Tokens** - New `cloud_tokens` tool for managing Hetzner/DigitalOcean credentials:
+  - Actions: `list`, `get`, `create`, `update`, `delete`, `validate`
+  - `name` is required for `update` action; optional in the TypeScript type to allow partial construction
+
+- **GitHub Apps Repositories** - Extended `github_apps` tool with repository and branch listing:
+  - `list_repositories` action: browse repositories accessible to a GitHub App
+  - `list_branches` action: list branches of a specific repository
+  - Repository responses are context-optimized (5 fields per repo)
+
+- **Scheduled Tasks** - New `scheduled_tasks` tool for managing cron-based tasks:
+  - Supports applications and services via `resource_type` parameter
+  - Actions: `list`, `create`, `update`, `delete`, `list_executions`
+  - 10 new client methods across application and service resource types
+
+- **Database Environment Variables** - Extended `env_vars` tool to support `resource: 'database'`:
+  - Actions: `list`, `create`, `update`, `delete`, `bulk_create`
+  - 5 new client methods: `listDatabaseEnvVars`, `createDatabaseEnvVar`, `updateDatabaseEnvVar`, `bulkUpdateDatabaseEnvVars`, `deleteDatabaseEnvVar`
+
+### Changed
+
+- **BREAKING: `docker_compose_raw` always base64-encoded**: The `docker_compose_raw` field is now always base64-encoded by the client (`toBase64()` no longer passes through already-encoded content). **Migration**: Pass raw (unencoded) YAML strings — the client handles base64 encoding automatically. If you were previously passing a base64 string, decode it to raw YAML first.
+- **BREAKING: `stop_all_apps` confirmation parameter renamed** - The `confirm` parameter is now `confirm_stop_all_apps`. Update any existing automation passing `confirm: true` to use `confirm_stop_all_apps: true`.
+- **Security: update handlers now use explicit allowlists** - `server`, `application`, `database`, and `github_apps` update actions build payloads from explicit field allowlists rather than spreading the full args object. Create-only fields (`project_uuid`, `server_uuid`, etc.) are no longer forwarded to PATCH endpoints.
+- **BREAKING**: Package renamed from `@masonator/coolify-mcp` to `@jurislm/coolify-mcp` — update your `package.json` dependency name accordingly
+- **BREAKING: `UpdateServiceRequest.fqdn` removed** — The `fqdn` field is now typed as `never`. Any TypeScript code passing `fqdn` to service update calls will get a compile error. Update service domains via Traefik labels in `docker_compose_raw` instead.
+
+### Fixed
+
+- `createApplicationDockerfile` now correctly maps `fqdn` → `domains` (consistent with other create methods)
+- `application` update no longer incorrectly forwards `build_pack` to PATCH endpoint (`build_pack` is create-only and is not in `UpdateApplicationRequest`)
+- `deployByTagOrUuid` no longer unnecessarily applies `encodeURIComponent` to static key name (`'uuid'`/`'tag'`) and boolean `force` value
+
+### Known Limitations
+
+- **Service domain updates not supported via API**: The Coolify `PATCH /services/{uuid}` endpoint only accepts `name`, `description`, and `docker_compose_raw`. Domain changes for services must be applied by updating the Traefik labels inside `docker_compose_raw`.
+
 ## [2.6.2] - 2026-01-31
 
 ### Fixed

@@ -6,7 +6,7 @@
  * These tests verify MCP server instantiation and structure.
  */
 import { createRequire } from 'module';
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import {
   CoolifyMcpServer,
   VERSION,
@@ -15,12 +15,40 @@ import {
   getDeploymentActions,
   getPagination,
 } from '../lib/mcp-server.js';
+import { CoolifyClient } from '../lib/coolify-client.js';
+import type {
+  Server,
+  Application,
+  Database,
+  UuidResponse,
+  MessageResponse,
+  GitHubAppUpdateResponse,
+  BatchOperationResult,
+  CloudTokenValidation,
+} from '../types/coolify.js';
+
+type RegisteredToolMap = Record<
+  string,
+  { handler: (args: Record<string, unknown>) => Promise<unknown> }
+>;
+
+class TestableMcpServer extends CoolifyMcpServer {
+  getClient(): CoolifyClient {
+    return this.client;
+  }
+
+  /** Access a registered MCP tool handler by name for dispatch testing. */
+  getHandler(toolName: string): ((args: Record<string, unknown>) => Promise<unknown>) | undefined {
+    const tools = (this as unknown as { _registeredTools: RegisteredToolMap })['_registeredTools'];
+    return tools[toolName]?.handler;
+  }
+}
 
 describe('CoolifyMcpServer v2', () => {
-  let server: CoolifyMcpServer;
+  let server: TestableMcpServer;
 
   beforeEach(() => {
-    server = new CoolifyMcpServer({
+    server = new TestableMcpServer({
       baseUrl: 'http://localhost:3000',
       accessToken: 'test-token',
     });
@@ -57,9 +85,19 @@ describe('CoolifyMcpServer v2', () => {
       // Server operations
       expect(typeof client.listServers).toBe('function');
       expect(typeof client.getServer).toBe('function');
+      expect(typeof client.createServer).toBe('function');
+      expect(typeof client.updateServer).toBe('function');
+      expect(typeof client.deleteServer).toBe('function');
       expect(typeof client.getServerResources).toBe('function');
       expect(typeof client.getServerDomains).toBe('function');
       expect(typeof client.validateServer).toBe('function');
+
+      // Team operations
+      expect(typeof client.listTeams).toBe('function');
+      expect(typeof client.getCurrentTeam).toBe('function');
+      expect(typeof client.getCurrentTeamMembers).toBe('function');
+      expect(typeof client.getTeam).toBe('function');
+      expect(typeof client.getTeamMembers).toBe('function');
 
       // Project operations
       expect(typeof client.listProjects).toBe('function');
@@ -81,6 +119,7 @@ describe('CoolifyMcpServer v2', () => {
       expect(typeof client.createApplicationPublic).toBe('function');
       expect(typeof client.createApplicationPrivateGH).toBe('function');
       expect(typeof client.createApplicationPrivateKey).toBe('function');
+      expect(typeof client.createApplicationDockerfile).toBe('function');
       expect(typeof client.createApplicationDockerImage).toBe('function');
       expect(typeof client.updateApplication).toBe('function');
       expect(typeof client.deleteApplication).toBe('function');
@@ -100,6 +139,7 @@ describe('CoolifyMcpServer v2', () => {
       // Database operations
       expect(typeof client.listDatabases).toBe('function');
       expect(typeof client.getDatabase).toBe('function');
+      expect(typeof client.updateDatabase).toBe('function');
       expect(typeof client.deleteDatabase).toBe('function');
       expect(typeof client.createPostgresql).toBe('function');
       expect(typeof client.createMysql).toBe('function');
@@ -125,6 +165,11 @@ describe('CoolifyMcpServer v2', () => {
       expect(typeof client.listServiceEnvVars).toBe('function');
       expect(typeof client.createServiceEnvVar).toBe('function');
       expect(typeof client.deleteServiceEnvVar).toBe('function');
+      expect(typeof client.listDatabaseEnvVars).toBe('function');
+      expect(typeof client.createDatabaseEnvVar).toBe('function');
+      expect(typeof client.updateDatabaseEnvVar).toBe('function');
+      expect(typeof client.bulkUpdateDatabaseEnvVars).toBe('function');
+      expect(typeof client.deleteDatabaseEnvVar).toBe('function');
 
       // Deployment operations
       expect(typeof client.listDeployments).toBe('function');
@@ -145,6 +190,8 @@ describe('CoolifyMcpServer v2', () => {
       expect(typeof client.createGitHubApp).toBe('function');
       expect(typeof client.updateGitHubApp).toBe('function');
       expect(typeof client.deleteGitHubApp).toBe('function');
+      expect(typeof client.listGitHubAppRepositories).toBe('function');
+      expect(typeof client.listGitHubAppBranches).toBe('function');
 
       // Backup operations
       expect(typeof client.listDatabaseBackups).toBe('function');
@@ -154,6 +201,19 @@ describe('CoolifyMcpServer v2', () => {
       expect(typeof client.deleteDatabaseBackup).toBe('function');
       expect(typeof client.listBackupExecutions).toBe('function');
       expect(typeof client.getBackupExecution).toBe('function');
+      expect(typeof client.deleteBackupExecution).toBe('function');
+
+      // Scheduled task operations
+      expect(typeof client.listApplicationScheduledTasks).toBe('function');
+      expect(typeof client.createApplicationScheduledTask).toBe('function');
+      expect(typeof client.updateApplicationScheduledTask).toBe('function');
+      expect(typeof client.deleteApplicationScheduledTask).toBe('function');
+      expect(typeof client.listApplicationScheduledTaskExecutions).toBe('function');
+      expect(typeof client.listServiceScheduledTasks).toBe('function');
+      expect(typeof client.createServiceScheduledTask).toBe('function');
+      expect(typeof client.updateServiceScheduledTask).toBe('function');
+      expect(typeof client.deleteServiceScheduledTask).toBe('function');
+      expect(typeof client.listServiceScheduledTaskExecutions).toBe('function');
 
       // Storage operations
       expect(typeof client.listApplicationStorages).toBe('function');
@@ -168,6 +228,14 @@ describe('CoolifyMcpServer v2', () => {
       expect(typeof client.createServiceStorage).toBe('function');
       expect(typeof client.updateServiceStorage).toBe('function');
       expect(typeof client.deleteServiceStorage).toBe('function');
+
+      // Cloud token operations
+      expect(typeof client.listCloudTokens).toBe('function');
+      expect(typeof client.getCloudToken).toBe('function');
+      expect(typeof client.createCloudToken).toBe('function');
+      expect(typeof client.updateCloudToken).toBe('function');
+      expect(typeof client.deleteCloudToken).toBe('function');
+      expect(typeof client.validateCloudToken).toBe('function');
 
       // Diagnostic operations
       expect(typeof client.diagnoseApplication).toBe('function');
@@ -381,5 +449,367 @@ describe('getPagination', () => {
   it('should return undefined when count is undefined', () => {
     const result = getPagination('list_apps', 1, 50, undefined);
     expect(result).toBeUndefined();
+  });
+});
+
+// =============================================================================
+// Update Handler Allowlist Tests (RED phase — verify create-only fields excluded)
+// =============================================================================
+
+/**
+ * Helper to invoke a registered tool handler directly.
+ * Bypasses MCP transport layer; args are passed as plain object.
+ */
+async function callHandler(
+  server: TestableMcpServer,
+  toolName: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const handler = server.getHandler(toolName);
+  if (!handler) throw new Error(`Tool "${toolName}" not registered`);
+  return handler(args);
+}
+
+describe('update handler allowlist — create-only fields must not be forwarded', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  describe('server update', () => {
+    it('should not forward instant_validate to updateServer', async () => {
+      const spy = jest.spyOn(server.getClient(), 'updateServer').mockResolvedValue({} as Server);
+      await callHandler(server, 'server', {
+        action: 'update',
+        uuid: 'srv-uuid',
+        name: 'my-server',
+        instant_validate: true,
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [, updatePayload] = spy.mock.calls[0] as [string, Record<string, unknown>];
+      expect(updatePayload).not.toHaveProperty('instant_validate');
+      expect(updatePayload).toHaveProperty('name', 'my-server');
+    });
+  });
+
+  describe('server create handler dispatch', () => {
+    it('should return error when create missing required fields', async () => {
+      const spy = jest
+        .spyOn(server.getClient(), 'createServer')
+        .mockResolvedValue({ uuid: 'mock-uuid' } as UuidResponse);
+      const result = (await callHandler(server, 'server', {
+        action: 'create',
+        name: 'my-server',
+        // missing ip and private_key_uuid
+      })) as { content: Array<{ text: string }> };
+      expect(result.content[0].text).toContain('Error');
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('should call createServer with valid args', async () => {
+      const spy = jest
+        .spyOn(server.getClient(), 'createServer')
+        .mockResolvedValue({ uuid: 'mock-uuid' } as UuidResponse);
+      await callHandler(server, 'server', {
+        action: 'create',
+        name: 'my-server',
+        ip: '1.2.3.4',
+        private_key_uuid: 'key-uuid',
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('server delete handler dispatch', () => {
+    it('should call deleteServer with uuid', async () => {
+      const spy = jest
+        .spyOn(server.getClient(), 'deleteServer')
+        .mockResolvedValue({ message: 'ok' } as MessageResponse);
+      await callHandler(server, 'server', {
+        action: 'delete',
+        uuid: 'srv-uuid',
+      });
+      expect(spy).toHaveBeenCalledWith('srv-uuid');
+    });
+  });
+
+  describe('application update', () => {
+    it('should not forward project_uuid to updateApplication', async () => {
+      const spy = jest
+        .spyOn(server.getClient(), 'updateApplication')
+        .mockResolvedValue({} as Application);
+      await callHandler(server, 'application', {
+        action: 'update',
+        uuid: 'app-uuid',
+        name: 'my-app',
+        project_uuid: 'proj-123',
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [, updatePayload] = spy.mock.calls[0] as [string, Record<string, unknown>];
+      expect(updatePayload).not.toHaveProperty('project_uuid');
+      expect(updatePayload).toHaveProperty('name', 'my-app');
+    });
+
+    it('should not forward server_uuid to updateApplication', async () => {
+      const spy = jest
+        .spyOn(server.getClient(), 'updateApplication')
+        .mockResolvedValue({} as Application);
+      await callHandler(server, 'application', {
+        action: 'update',
+        uuid: 'app-uuid',
+        fqdn: 'https://app.example.com',
+        server_uuid: 'srv-456',
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [, updatePayload] = spy.mock.calls[0] as [string, Record<string, unknown>];
+      expect(updatePayload).not.toHaveProperty('server_uuid');
+      expect(updatePayload).toHaveProperty('fqdn', 'https://app.example.com');
+    });
+  });
+
+  describe('database update', () => {
+    it('should not forward server_uuid to updateDatabase', async () => {
+      const spy = jest
+        .spyOn(server.getClient(), 'updateDatabase')
+        .mockResolvedValue({} as Database);
+      await callHandler(server, 'database', {
+        action: 'update',
+        uuid: 'db-uuid',
+        name: 'my-db',
+        server_uuid: 'srv-789',
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [, updatePayload] = spy.mock.calls[0] as [string, Record<string, unknown>];
+      expect(updatePayload).not.toHaveProperty('server_uuid');
+      expect(updatePayload).toHaveProperty('name', 'my-db');
+    });
+
+    it('should not forward project_uuid to updateDatabase', async () => {
+      const spy = jest
+        .spyOn(server.getClient(), 'updateDatabase')
+        .mockResolvedValue({} as Database);
+      await callHandler(server, 'database', {
+        action: 'update',
+        uuid: 'db-uuid',
+        description: 'my desc',
+        project_uuid: 'proj-abc',
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [, updatePayload] = spy.mock.calls[0] as [string, Record<string, unknown>];
+      expect(updatePayload).not.toHaveProperty('project_uuid');
+      expect(updatePayload).toHaveProperty('description', 'my desc');
+    });
+  });
+
+  describe('github_apps update', () => {
+    // github_apps has no create-only fields to exclude; this test verifies
+    // that all valid update fields are forwarded via the allowlist.
+    it('should call updateGitHubApp with update fields', async () => {
+      const spy = jest
+        .spyOn(server.getClient(), 'updateGitHubApp')
+        .mockResolvedValue({ message: 'ok', data: {} } as GitHubAppUpdateResponse);
+      await callHandler(server, 'github_apps', {
+        action: 'update',
+        id: 42,
+        name: 'my-github-app',
+        organization: 'my-org',
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [id, updatePayload] = spy.mock.calls[0] as [number, Record<string, unknown>];
+      expect(id).toBe(42);
+      expect(updatePayload).toHaveProperty('name', 'my-github-app');
+      expect(updatePayload).toHaveProperty('organization', 'my-org');
+    });
+
+    it('should not forward server_uuid or project_uuid to updateGitHubApp', async () => {
+      const spy = jest
+        .spyOn(server.getClient(), 'updateGitHubApp')
+        .mockResolvedValue({ message: 'ok', data: {} } as GitHubAppUpdateResponse);
+      await callHandler(server, 'github_apps', {
+        action: 'update',
+        id: 42,
+        name: 'test-app',
+      });
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [, updatePayload] = spy.mock.calls[0] as [number, Record<string, unknown>];
+      expect(updatePayload).not.toHaveProperty('server_uuid');
+      expect(updatePayload).not.toHaveProperty('project_uuid');
+      expect(updatePayload).toHaveProperty('name', 'test-app');
+    });
+  });
+});
+
+describe('application create_dockerfile handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should call createApplicationDockerfile with correct args', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createApplicationDockerfile')
+      .mockResolvedValue({ uuid: 'new-app-uuid' });
+    await callHandler(server, 'application', {
+      action: 'create_dockerfile',
+      project_uuid: 'proj-uuid',
+      server_uuid: 'server-uuid',
+      dockerfile: 'FROM node:18',
+      ports_exposes: '3000',
+    });
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should return error when required fields missing for create_dockerfile', async () => {
+    const result = (await callHandler(server, 'application', {
+      action: 'create_dockerfile',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('required');
+  });
+
+  it('should forward instant_deploy in create_dockerimage', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createApplicationDockerImage')
+      .mockResolvedValue({ uuid: 'new-app-uuid' });
+    await callHandler(server, 'application', {
+      action: 'create_dockerimage',
+      project_uuid: 'proj-uuid',
+      server_uuid: 'server-uuid',
+      docker_registry_image_name: 'nginx',
+      ports_exposes: '80',
+      instant_deploy: true,
+    });
+    expect(spy).toHaveBeenCalledTimes(1);
+    const [payload] = spy.mock.calls[0] as unknown as [Record<string, unknown>];
+    expect(payload).toHaveProperty('instant_deploy', true);
+  });
+});
+
+describe('env_vars bulk_create service runtime guard', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should return error for service + bulk_create combination', async () => {
+    const result = (await callHandler(server, 'env_vars', {
+      resource: 'service',
+      action: 'bulk_create',
+      uuid: 'svc-uuid',
+      env_vars: [{ key: 'FOO', value: 'bar' }],
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('bulk_create not supported for service');
+  });
+});
+
+describe('stop_all_apps confirmation', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should call stopAllApps when confirm_stop_all_apps=true', async () => {
+    const spy = jest.spyOn(server.getClient(), 'stopAllApps').mockResolvedValue({
+      summary: { total: 0, succeeded: 0, failed: 0 },
+      succeeded: [],
+      failed: [],
+    } as BatchOperationResult);
+    await callHandler(server, 'stop_all_apps', { confirm_stop_all_apps: true });
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should return error and not call stopAllApps when confirm_stop_all_apps=false', async () => {
+    const spy = jest.spyOn(server.getClient(), 'stopAllApps').mockResolvedValue({
+      summary: { total: 0, succeeded: 0, failed: 0 },
+      succeeded: [],
+      failed: [],
+    } as BatchOperationResult);
+    const result = (await callHandler(server, 'stop_all_apps', {
+      confirm_stop_all_apps: false,
+    })) as { content: Array<{ text: string }> };
+    expect(spy).not.toHaveBeenCalled();
+    expect(result.content[0].text).toContain('confirm_stop_all_apps=true required');
+  });
+});
+
+describe('cloud_tokens handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('should return error when create missing required fields', async () => {
+    const result = (await callHandler(server, 'cloud_tokens', {
+      action: 'create',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('required');
+  });
+
+  it('should return error when update missing uuid', async () => {
+    const result = (await callHandler(server, 'cloud_tokens', {
+      action: 'update',
+      name: 'new-name',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('required');
+  });
+
+  it('should route validate to validateCloudToken', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'validateCloudToken')
+      .mockResolvedValue({ valid: true, message: 'ok' } as CloudTokenValidation);
+    await callHandler(server, 'cloud_tokens', { action: 'validate', uuid: 'token-uuid' });
+    expect(spy).toHaveBeenCalledWith('token-uuid');
+  });
+});
+
+describe('scheduled_tasks handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('should return error when create missing required fields', async () => {
+    const result = (await callHandler(server, 'scheduled_tasks', {
+      action: 'create',
+      resource_type: 'application',
+      uuid: 'app-uuid',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('required');
+  });
+
+  it('should return error when update has no updatable fields', async () => {
+    const result = (await callHandler(server, 'scheduled_tasks', {
+      action: 'update',
+      resource_type: 'application',
+      uuid: 'app-uuid',
+      task_uuid: 'task-uuid',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('at least one field required');
+  });
+
+  it('should return error when list_executions missing task_uuid', async () => {
+    const result = (await callHandler(server, 'scheduled_tasks', {
+      action: 'list_executions',
+      resource_type: 'application',
+      uuid: 'app-uuid',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('required');
   });
 });

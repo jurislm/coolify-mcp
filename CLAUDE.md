@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MCP (Model Context Protocol) server for Coolify that provides 35 token-optimized tools for AI assistants to manage infrastructure through natural language. Tools cover servers, projects, environments, applications, databases, services, deployments, private keys, smart diagnostics, and batch operations. v2.0.0 reduced token usage by 85% (from ~43,000 to ~6,600 tokens) by consolidating related operations into single tools with action parameters.
+MCP (Model Context Protocol) server for Coolify that provides 40 token-optimized tools for AI assistants to manage infrastructure through natural language. Tools cover servers, projects, environments, applications, databases, services, deployments, private keys, storages, scheduled tasks, cloud tokens, smart diagnostics, and batch operations. v2.0.0 reduced token usage by 85% (from ~43,000 to ~6,600 tokens) by consolidating related operations into single tools with action parameters.
 
 ## Commands
 
@@ -109,10 +109,32 @@ The Coolify OpenAPI docs are unreliable — always test against the real API. Kn
 
 ## Git Workflow
 
-- Commit frequently to trigger pre-commit hooks (linting, formatting, tests)
-- Always stage all modified files after making changes
-- Push changes to remote after committing
-- Work on feature branches, not main
+### Commit Message Format
+
+Use bracketed type prefix:
+
+```
+[feat] add storages tool for persistent volume management
+[fix] correct fqdn mapping to domains field
+[refactor] consolidate env var client methods
+[chore] update tool count in README
+[docs] add scheduled tasks to Available Tools
+[test] add method existence checks for storage client
+```
+
+### Commit Timing
+
+Commit after each independent task:
+
+- Feature module complete
+- Major bug fixed
+- Architecture adjusted
+- Config updated
+
+### Branch Rule
+
+**All development must happen in `.worktrees/develop`**, never directly on `main`.
+`main` only receives changes via PR/merge from `develop`.
 
 ## Publishing
 
@@ -134,11 +156,11 @@ When making changes to the codebase, ensure documentation is updated:
    - Follow [Keep a Changelog](https://keepachangelog.com/) format
 
 2. **README.md** - Update if:
-   - Tool count changes (update "34 tools" in Features section)
+   - Tool count changes (update "40 tools" in Features section)
    - New tools added (add to appropriate category in Available Tools)
    - New example prompts needed
    - Response size improvements made (update comparison table)
 
-3. **This file (CLAUDE.md)** - Update tool count if changed (currently 36 tools)
+3. **This file (CLAUDE.md)** - Update tool count if changed (currently 40 tools)
 
 Always work on a feature branch and include documentation updates in the same PR as code changes.

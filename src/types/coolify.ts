@@ -544,6 +544,7 @@ export interface UpdateDatabaseRequest {
   mysql_user?: string;
   mysql_password?: string;
   mysql_database?: string;
+  mysql_conf?: string;
   // MariaDB specific
   mariadb_root_password?: string;
   mariadb_user?: string;
@@ -747,7 +748,7 @@ export interface CreateServiceRequest {
   server_uuid: string;
   destination_uuid?: string;
   instant_deploy?: boolean;
-  docker_compose_raw?: string; // Raw or base64 docker-compose YAML (auto-encoded by client)
+  docker_compose_raw?: string; // Pass raw YAML — client always base64-encodes before sending to API
 }
 
 /**
@@ -770,11 +771,14 @@ export interface CreateServiceRequest {
  *   - Replace $ with $$ in the hash
  *   - Disable label escaping in Coolify UI (manual step!)
  */
+// Note: fqdn is not supported for service updates — configure domains via docker_compose_raw Traefik labels instead
 export interface UpdateServiceRequest {
   name?: string;
   description?: string;
-  fqdn?: string; // Domain - will be mapped to 'domains' by client
-  docker_compose_raw?: string; // Raw or base64 docker-compose YAML (auto-encoded by client)
+  /** Pass raw YAML — client always base64-encodes before sending to API. To update domains, modify Traefik labels inside docker_compose_raw. */
+  docker_compose_raw?: string;
+  /** @deprecated Not supported by the API. Update domains via Traefik labels in docker_compose_raw instead. */
+  fqdn?: never;
 }
 
 export interface ServiceCreateResponse {
@@ -936,6 +940,31 @@ export interface UpdateGitHubAppRequest {
 export interface GitHubAppUpdateResponse {
   message: string;
   data: GitHubApp;
+}
+
+export interface GitHubRepository {
+  id: number;
+  name: string;
+  full_name: string;
+  owner?: { login: string };
+  private: boolean;
+  default_branch: string;
+  html_url?: string;
+  description?: string | null;
+}
+
+export interface GitHubRepositorySummary {
+  name: string;
+  full_name: string;
+  owner: string;
+  private: boolean;
+  default_branch: string;
+}
+
+export interface GitHubBranch {
+  name: string;
+  commit: { sha: string; url: string };
+  protected: boolean;
 }
 
 // =============================================================================
@@ -1170,4 +1199,50 @@ export interface UpdateStorageRequest {
   host_path?: string;
   content?: string;
   is_preview_suffix_enabled?: boolean;
+}
+
+// =============================================================================
+// Scheduled Task Types
+// =============================================================================
+
+export interface ScheduledTask {
+  uuid: string;
+  name: string;
+  command: string;
+  frequency: string;
+  container: string | null;
+  timeout: number;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScheduledTaskExecution {
+  uuid: string;
+  status: 'success' | 'failed' | 'running' | 'finished' | 'pending' | 'skipped';
+  message: string | null;
+  retry_count: number;
+  duration: number | null;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateScheduledTaskRequest {
+  name: string;
+  command: string;
+  frequency: string;
+  container?: string;
+  timeout?: number;
+  enabled?: boolean;
+}
+
+export interface UpdateScheduledTaskRequest {
+  name?: string;
+  command?: string;
+  frequency?: string;
+  container?: string;
+  timeout?: number;
+  enabled?: boolean;
 }

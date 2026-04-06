@@ -1,39 +1,41 @@
 # Coolify MCP Server
 
-[![npm version](https://img.shields.io/npm/v/@masonator/coolify-mcp.svg)](https://www.npmjs.com/package/@masonator/coolify-mcp)
-[![npm downloads](https://img.shields.io/npm/dm/@masonator/coolify-mcp.svg)](https://www.npmjs.com/package/@masonator/coolify-mcp)
+[![npm version](https://img.shields.io/npm/v/@jurislm/coolify-mcp.svg)](https://www.npmjs.com/package/@jurislm/coolify-mcp)
+[![npm downloads](https://img.shields.io/npm/dm/@jurislm/coolify-mcp.svg)](https://www.npmjs.com/package/@jurislm/coolify-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js Version](https://img.shields.io/node/v/@masonator/coolify-mcp.svg)](https://nodejs.org)
+[![Node.js Version](https://img.shields.io/node/v/@jurislm/coolify-mcp.svg)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
-[![CI](https://github.com/StuMason/coolify-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/StuMason/coolify-mcp/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/StuMason/coolify-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/StuMason/coolify-mcp)
-[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/stumason-coolify-mcp-badge.png)](https://mseep.ai/app/stumason-coolify-mcp)
+[![CI](https://github.com/jurislm/coolify-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/jurislm/coolify-mcp/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/jurislm/coolify-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/jurislm/coolify-mcp)
 
-> **The most comprehensive MCP server for Coolify** - 35 optimized tools, smart diagnostics, and batch operations for managing your self-hosted PaaS through AI assistants.
+> **The most comprehensive MCP server for Coolify** - 40 optimized tools, smart diagnostics, and batch operations for managing your self-hosted PaaS through AI assistants.
 
 A Model Context Protocol (MCP) server for [Coolify](https://coolify.io/), enabling AI assistants to manage and debug your Coolify instances through natural language.
 
 ## Features
 
-This MCP server provides **36 token-optimized tools** for **debugging, management, and deployment**:
+This MCP server provides **40 token-optimized tools** for **debugging, management, and deployment**:
 
-| Category             | Tools                                                                                                                       |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **Infrastructure**   | `get_infrastructure_overview`, `get_mcp_version`, `get_version`                                                             |
-| **Diagnostics**      | `diagnose_app`, `diagnose_server`, `find_issues`                                                                            |
-| **Batch Operations** | `restart_project_apps`, `bulk_env_update`, `stop_all_apps`, `redeploy_project`                                              |
-| **Servers**          | `list_servers`, `get_server`, `validate_server`, `server_resources`, `server_domains`                                       |
-| **Projects**         | `projects` (list, get, create, update, delete via action param)                                                             |
-| **Environments**     | `environments` (list, get, create, delete via action param)                                                                 |
-| **Applications**     | `list_applications`, `get_application`, `application` (CRUD), `application_logs`                                            |
-| **Databases**        | `list_databases`, `get_database`, `database` (create 8 types, delete), `database_backups` (CRUD schedules, view executions) |
-| **Services**         | `list_services`, `get_service`, `service` (create, update, delete)                                                          |
-| **Control**          | `control` (start/stop/restart for apps, databases, services)                                                                |
-| **Env Vars**         | `env_vars` (CRUD for application and service env vars)                                                                      |
-| **Deployments**      | `list_deployments`, `deploy`, `deployment` (get, cancel, list_for_app)                                                      |
-| **Private Keys**     | `private_keys` (list, get, create, update, delete via action param)                                                         |
-| **GitHub Apps**      | `github_apps` (list, get, create, update, delete via action param)                                                          |
-| **Storages**         | `storages` (list, create, update, delete for applications, databases, services)                                             |
+| Category             | Tools                                                                                                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Infrastructure**   | `get_infrastructure_overview`, `get_mcp_version`, `get_version`                                                                            |
+| **Diagnostics**      | `diagnose_app`, `diagnose_server`, `find_issues`                                                                                           |
+| **Batch Operations** | `restart_project_apps`, `bulk_env_update`, `stop_all_apps`, `redeploy_project`                                                             |
+| **Servers**          | `list_servers`, `get_server`, `server` (create, update, delete), `validate_server`, `server_resources`, `server_domains`                   |
+| **Projects**         | `projects` (list, get, create, update, delete via action param)                                                                            |
+| **Environments**     | `environments` (list, get, create, delete via action param)                                                                                |
+| **Applications**     | `list_applications`, `get_application`, `application` (5 create types, update, delete), `application_logs`                                 |
+| **Databases**        | `list_databases`, `get_database`, `database` (create 8 types, update, delete), `database_backups` (CRUD schedules, view/delete executions) |
+| **Services**         | `list_services`, `get_service`, `service` (create, update, delete)                                                                         |
+| **Control**          | `control` (start/stop/restart for apps, databases, services)                                                                               |
+| **Env Vars**         | `env_vars` (CRUD for application, service, and database env vars)                                                                          |
+| **Deployments**      | `list_deployments`, `deploy`, `deployment` (get, cancel, list_for_app)                                                                     |
+| **Private Keys**     | `private_keys` (list, get, create, update, delete via action param)                                                                        |
+| **GitHub Apps**      | `github_apps` (list, get, create, update, delete, list_repositories, list_branches)                                                        |
+| **Storages**         | `storages` (list, create, update, delete for applications, databases, services)                                                            |
+| **Scheduled Tasks**  | `scheduled_tasks` (list, create, update, delete, list_executions for applications & services)                                              |
+| **Cloud Tokens**     | `cloud_tokens` (list, get, create, update, delete, validate for Hetzner/DigitalOcean)                                                      |
+| **Teams**            | `teams` (list, current, current_members, get, members)                                                                                     |
 
 ### Token-Optimized Design
 
@@ -56,7 +58,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
   "mcpServers": {
     "coolify": {
       "command": "npx",
-      "args": ["-y", "@masonator/coolify-mcp"],
+      "args": ["-y", "@jurislm/coolify-mcp"],
       "env": {
         "COOLIFY_ACCESS_TOKEN": "your-api-token",
         "COOLIFY_BASE_URL": "https://your-coolify-instance.com"
@@ -72,7 +74,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 claude mcp add coolify \
   -e COOLIFY_BASE_URL="https://your-coolify-instance.com" \
   -e COOLIFY_ACCESS_TOKEN="your-api-token" \
-  -- npx @masonator/coolify-mcp@latest
+  -- npx @jurislm/coolify-mcp@latest
 ```
 
 > **Note:** Use `@latest` tag (not `-y` flag) for reliable startup in Claude Code CLI.
@@ -80,7 +82,7 @@ claude mcp add coolify \
 ### Cursor
 
 ```bash
-env COOLIFY_ACCESS_TOKEN=your-api-token COOLIFY_BASE_URL=https://your-coolify-instance.com npx -y @masonator/coolify-mcp
+env COOLIFY_ACCESS_TOKEN=your-api-token COOLIFY_BASE_URL=https://your-coolify-instance.com npx -y @jurislm/coolify-mcp
 ```
 
 ## Context-Optimized Responses
@@ -200,7 +202,7 @@ Deploy from public repo https://github.com/org/repo
 
 ```bash
 # Clone and install
-git clone https://github.com/stumason/coolify-mcp.git
+git clone https://github.com/jurislm/coolify-mcp.git
 cd coolify-mcp
 npm install
 
@@ -236,8 +238,9 @@ These tools accept human-friendly identifiers instead of just UUIDs:
 
 - `list_servers` - List all servers (returns summary)
 - `get_server` - Get server details
-- `get_server_resources` - Get resources running on a server
-- `get_server_domains` - Get domains configured on a server
+- `server` - Create, update, or delete servers with `action: create|update|delete`
+- `server_resources` - Get resources running on a server
+- `server_domains` - Get domains configured on a server
 - `validate_server` - Validate server connection
 
 ### Projects
@@ -253,21 +256,22 @@ These tools accept human-friendly identifiers instead of just UUIDs:
 - `list_applications` - List all applications (returns summary)
 - `get_application` - Get application details
 - `application_logs` - Get application logs
-- `application` - Create, update, or delete apps with `action: create_public|create_github|create_key|create_dockerimage|update|delete`
-  - Deploy from public repos, private GitHub, SSH keys, or Docker images
+- `application` - Create, update, or delete apps with `action: create_public|create_github|create_key|create_dockerimage|create_dockerfile|update|delete`
+  - Deploy from public repos, private GitHub, SSH keys, Docker images, or Dockerfiles
   - Configure health checks (path, interval, retries, etc.)
-- `env_vars` - Manage env vars with `resource: application, action: list|create|update|delete`
+- `env_vars` - Manage env vars with `resource: application, action: list|create|bulk_create|update|delete`
 - `control` - Start/stop/restart with `resource: application, action: start|stop|restart`
 
 ### Databases
 
 - `list_databases` - List all databases (returns summary)
 - `get_database` - Get database details
-- `database` - Create or delete databases with `action: create|delete, type: postgresql|mysql|mariadb|mongodb|redis|keydb|clickhouse|dragonfly`
-- `database_backups` - Manage backup schedules with `action: list_schedules|get_schedule|create|update|delete|list_executions|get_execution`
+- `database` - Create, update, or delete databases with `action: create|update|delete, type: postgresql|mysql|mariadb|mongodb|redis|keydb|clickhouse|dragonfly`
+- `database_backups` - Manage backup schedules with `action: list_schedules|get_schedule|create|update|delete|list_executions|get_execution|delete_execution`
   - Configure frequency, retention policies, S3 storage
   - Enable/disable schedules without deletion
   - View backup execution history
+- `env_vars` - Manage env vars with `resource: database, action: list|create|bulk_create|update|delete`
 - `control` - Start/stop/restart with `resource: database, action: start|stop|restart`
 
 ### Services
@@ -294,6 +298,25 @@ These tools accept human-friendly identifiers instead of just UUIDs:
 ### Private Keys
 
 - `private_keys` - Manage SSH keys with `action: list|get|create|update|delete`
+
+### GitHub Apps
+
+- `github_apps` - Manage GitHub App integrations with `action: list|get|create|update|delete|list_repositories|list_branches`
+
+### Scheduled Tasks
+
+- `scheduled_tasks` - Manage cron tasks with `action: list|create|update|delete|list_executions, resource_type: application|service`
+  - Configure cron schedule, command, container, and enabled state
+  - View execution history for debugging
+
+### Cloud Tokens
+
+- `cloud_tokens` - Manage cloud provider tokens with `action: list|get|create|update|delete|validate`
+  - Supports Hetzner and DigitalOcean provider tokens
+
+### Teams
+
+- `teams` - Inspect team membership with `action: list|current|current_members|get|members`
 
 ### Batch Operations
 
@@ -328,7 +351,7 @@ MIT - see [LICENSE](LICENSE) for details.
 
 ## Support
 
-- [GitHub Issues](https://github.com/StuMason/coolify-mcp/issues)
+- [GitHub Issues](https://github.com/jurislm/coolify-mcp/issues)
 - [Coolify Community](https://coolify.io/docs/contact)
 
 ---

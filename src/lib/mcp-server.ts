@@ -164,7 +164,8 @@ function wrapWithActions<T>(
 }
 
 export class CoolifyMcpServer extends McpServer {
-  private readonly client: CoolifyClient;
+  /** @internal Exposed as protected for TestableMcpServer in tests only. Not part of the public API. */
+  protected readonly client: CoolifyClient;
 
   constructor(config: CoolifyConfig) {
     super({ name: 'coolify', version: VERSION });
@@ -188,7 +189,7 @@ export class CoolifyMcpServer extends McpServer {
       content: [
         {
           type: 'text' as const,
-          text: JSON.stringify({ version: VERSION, name: '@masonator/coolify-mcp' }),
+          text: JSON.stringify({ version: VERSION, name: '@jurislm/coolify-mcp' }),
         },
       ],
     }));
@@ -295,6 +296,72 @@ export class CoolifyMcpServer extends McpServer {
     );
 
     // =========================================================================
+    // Server CRUD (1 tool)
+    // =========================================================================
+    this.tool(
+      'server',
+      'Manage server: create/update/delete',
+      {
+        action: z.enum(['create', 'update', 'delete']),
+        uuid: z.string().optional().describe('Server UUID (required for update/delete)'),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        ip: z.string().optional().describe('Server IP (required for create)'),
+        port: z.number().optional(),
+        user: z.string().optional(),
+        private_key_uuid: z.string().optional().describe('SSH key UUID (required for create)'),
+        is_build_server: z.boolean().optional(),
+        instant_validate: z.boolean().optional().describe('(create only)'),
+      },
+      async (args) => {
+        const { action, uuid, ...serverData } = args;
+        switch (action) {
+          case 'create':
+            if (!serverData.ip || !serverData.private_key_uuid || !serverData.name)
+              return {
+                content: [
+                  {
+                    type: 'text' as const,
+                    text: 'Error: name, ip, private_key_uuid required',
+                  },
+                ],
+              };
+            return wrap(() =>
+              this.client.createServer({
+                name: serverData.name!,
+                ip: serverData.ip!,
+                private_key_uuid: serverData.private_key_uuid!,
+                description: serverData.description,
+                port: serverData.port,
+                user: serverData.user,
+                is_build_server: serverData.is_build_server,
+                instant_validate: serverData.instant_validate,
+              }),
+            );
+          case 'update':
+            if (!uuid)
+              return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
+            return wrap(() =>
+              this.client.updateServer(uuid, {
+                name: serverData.name,
+                description: serverData.description,
+                ip: serverData.ip,
+                port: serverData.port,
+                user: serverData.user,
+                private_key_uuid: serverData.private_key_uuid,
+                is_build_server: serverData.is_build_server,
+              }),
+            );
+          case 'delete':
+            if (!uuid)
+              return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
+            return wrap(() => this.client.deleteServer(uuid));
+        }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
+      },
+    );
+
+    // =========================================================================
     // Projects (1 tool - consolidated CRUD)
     // =========================================================================
     this.tool(
@@ -398,6 +465,7 @@ export class CoolifyMcpServer extends McpServer {
           'create_public',
           'create_github',
           'create_key',
+          'create_dockerfile',
           'create_dockerimage',
           'update',
           'delete',
@@ -414,6 +482,14 @@ export class CoolifyMcpServer extends McpServer {
         environment_uuid: z.string().optional(),
         build_pack: z.string().optional(),
         ports_exposes: z.string().optional(),
+        // Dockerfile fields
+        dockerfile: z
+          .string()
+          .optional()
+          .describe('Dockerfile content (required for create_dockerfile)'),
+        dockerfile_location: z.string().optional(),
+        base_directory: z.string().optional(),
+        instant_deploy: z.boolean().optional(),
         // Docker image fields
         docker_registry_image_name: z.string().optional(),
         docker_registry_image_tag: z.string().optional(),
@@ -430,10 +506,17 @@ export class CoolifyMcpServer extends McpServer {
         health_check_return_code: z.number().optional(),
         health_check_scheme: z.string().optional(),
         health_check_response_text: z.string().optional(),
-        health_check_interval: z.number().optional(),
-        health_check_timeout: z.number().optional(),
-        health_check_retries: z.number().optional(),
-        health_check_start_period: z.number().optional(),
+        health_check_interval: z.number().int().min(1).max(3600).optional(),
+        health_check_timeout: z.number().int().min(1).max(3600).optional(),
+        health_check_retries: z.number().int().min(0).max(100).optional(),
+        health_check_start_period: z.number().int().min(0).max(3600).optional(),
+        // Docker Compose update field
+        docker_compose_raw: z
+          .string()
+          .optional()
+          .describe(
+            'Raw (unencoded) docker-compose YAML to update (client auto base64-encodes; Docker Compose apps only)',
+          ),
         // Delete fields
         delete_volumes: z.boolean().optional(),
       },
@@ -539,6 +622,33 @@ export class CoolifyMcpServer extends McpServer {
                 fqdn: args.fqdn,
               }),
             );
+          case 'create_dockerfile':
+            if (!args.project_uuid || !args.server_uuid || !args.dockerfile) {
+              return {
+                content: [
+                  {
+                    type: 'text' as const,
+                    text: 'Error: project_uuid, server_uuid, dockerfile required',
+                  },
+                ],
+              };
+            }
+            return wrap(() =>
+              this.client.createApplicationDockerfile({
+                project_uuid: args.project_uuid!,
+                server_uuid: args.server_uuid!,
+                dockerfile: args.dockerfile!,
+                dockerfile_location: args.dockerfile_location,
+                base_directory: args.base_directory,
+                ports_exposes: args.ports_exposes,
+                instant_deploy: args.instant_deploy,
+                environment_name: args.environment_name,
+                environment_uuid: args.environment_uuid,
+                name: args.name,
+                description: args.description,
+                fqdn: args.fqdn,
+              }),
+            );
           case 'create_dockerimage':
             if (
               !args.project_uuid ||
@@ -567,15 +677,42 @@ export class CoolifyMcpServer extends McpServer {
                 name: args.name,
                 description: args.description,
                 fqdn: args.fqdn,
+                instant_deploy: args.instant_deploy,
               }),
             );
-          case 'update': {
+          case 'update':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { action: _, uuid: __, delete_volumes: ___, ...updateData } = args;
-            return wrap(() => this.client.updateApplication(uuid, updateData));
-          }
+            // Explicit allowlist: only UpdateApplicationRequest fields forwarded
+            // Excluded create-only fields: project_uuid, server_uuid, environment_uuid, build_pack
+            return wrap(() =>
+              this.client.updateApplication(uuid, {
+                name: args.name,
+                description: args.description,
+                fqdn: args.fqdn,
+                git_repository: args.git_repository,
+                git_branch: args.git_branch,
+                ports_exposes: args.ports_exposes,
+                dockerfile: args.dockerfile,
+                dockerfile_location: args.dockerfile_location,
+                docker_registry_image_name: args.docker_registry_image_name,
+                docker_registry_image_tag: args.docker_registry_image_tag,
+                base_directory: args.base_directory,
+                health_check_enabled: args.health_check_enabled,
+                health_check_path: args.health_check_path,
+                health_check_port: args.health_check_port,
+                health_check_host: args.health_check_host,
+                health_check_method: args.health_check_method,
+                health_check_return_code: args.health_check_return_code,
+                health_check_scheme: args.health_check_scheme,
+                health_check_response_text: args.health_check_response_text,
+                health_check_interval: args.health_check_interval,
+                health_check_timeout: args.health_check_timeout,
+                health_check_retries: args.health_check_retries,
+                health_check_start_period: args.health_check_start_period,
+                docker_compose_raw: args.docker_compose_raw,
+              }),
+            );
           case 'delete':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
@@ -583,13 +720,14 @@ export class CoolifyMcpServer extends McpServer {
               this.client.deleteApplication(uuid, { deleteVolumes: delete_volumes }),
             );
         }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
     );
 
     this.tool(
       'application_logs',
       'Get app logs',
-      { uuid: z.string(), lines: z.number().optional() },
+      { uuid: z.string(), lines: z.number().int().min(1).max(10000).optional() },
       async ({ uuid, lines }) => wrap(() => this.client.getApplicationLogs(uuid, lines)),
     );
 
@@ -610,9 +748,9 @@ export class CoolifyMcpServer extends McpServer {
 
     this.tool(
       'database',
-      'Manage database: create/delete',
+      'Manage database: create/update/delete',
       {
-        action: z.enum(['create', 'delete']),
+        action: z.enum(['create', 'update', 'delete']),
         type: z
           .enum([
             'postgresql',
@@ -629,6 +767,7 @@ export class CoolifyMcpServer extends McpServer {
         server_uuid: z.string().optional(),
         project_uuid: z.string().optional(),
         environment_name: z.string().optional(),
+        environment_uuid: z.string().optional(),
         name: z.string().optional(),
         description: z.string().optional(),
         image: z.string().optional(),
@@ -636,6 +775,13 @@ export class CoolifyMcpServer extends McpServer {
         public_port: z.number().optional(),
         instant_deploy: z.boolean().optional(),
         delete_volumes: z.boolean().optional(),
+        // Resource limit fields (update only)
+        limits_memory: z.string().optional(),
+        limits_memory_swap: z.string().optional(),
+        limits_memory_swappiness: z.number().optional(),
+        limits_memory_reservation: z.string().optional(),
+        limits_cpus: z.string().optional(),
+        limits_cpu_shares: z.number().optional(),
         // DB-specific optional fields
         postgres_user: z.string().optional(),
         postgres_password: z.string().optional(),
@@ -648,40 +794,183 @@ export class CoolifyMcpServer extends McpServer {
         mariadb_user: z.string().optional(),
         mariadb_password: z.string().optional(),
         mariadb_database: z.string().optional(),
+        mariadb_conf: z
+          .string()
+          .optional()
+          .describe('MariaDB config (plain text, e.g. "max_connections = 200")'),
         mongo_initdb_root_username: z.string().optional(),
         mongo_initdb_root_password: z.string().optional(),
         mongo_initdb_database: z.string().optional(),
+        mongo_conf: z.string().optional().describe('MongoDB config (plain text)'),
         redis_password: z.string().optional(),
+        redis_conf: z
+          .string()
+          .optional()
+          .describe('Redis config (plain text, e.g. "maxmemory 256mb")'),
         keydb_password: z.string().optional(),
         clickhouse_admin_user: z.string().optional(),
         clickhouse_admin_password: z.string().optional(),
         dragonfly_password: z.string().optional(),
+        postgres_conf: z
+          .string()
+          .optional()
+          .describe(
+            'PostgreSQL config (plain text, e.g. "max_connections = 200\\nshared_buffers = 256MB")',
+          ),
+        mysql_conf: z.string().optional().describe('MySQL config (plain text)'),
       },
       async (args) => {
         const { action, type, uuid, delete_volumes, ...dbData } = args;
-        if (action === 'delete') {
-          if (!uuid) return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-          return wrap(() => this.client.deleteDatabase(uuid, { deleteVolumes: delete_volumes }));
+        switch (action) {
+          case 'delete':
+            if (!uuid)
+              return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
+            return wrap(() => this.client.deleteDatabase(uuid, { deleteVolumes: delete_volumes }));
+          case 'update':
+            if (!uuid)
+              return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
+            // Explicit allowlist: only UpdateDatabaseRequest fields forwarded
+            return wrap(() =>
+              this.client.updateDatabase(uuid, {
+                name: dbData.name,
+                description: dbData.description,
+                image: dbData.image,
+                is_public: dbData.is_public,
+                public_port: dbData.public_port,
+                limits_memory: dbData.limits_memory,
+                limits_memory_swap: dbData.limits_memory_swap,
+                limits_memory_swappiness: dbData.limits_memory_swappiness,
+                limits_memory_reservation: dbData.limits_memory_reservation,
+                limits_cpus: dbData.limits_cpus,
+                limits_cpu_shares: dbData.limits_cpu_shares,
+                postgres_user: dbData.postgres_user,
+                postgres_password: dbData.postgres_password,
+                postgres_db: dbData.postgres_db,
+                postgres_conf: dbData.postgres_conf,
+                mysql_root_password: dbData.mysql_root_password,
+                mysql_user: dbData.mysql_user,
+                mysql_password: dbData.mysql_password,
+                mysql_database: dbData.mysql_database,
+                mysql_conf: dbData.mysql_conf,
+                mariadb_root_password: dbData.mariadb_root_password,
+                mariadb_user: dbData.mariadb_user,
+                mariadb_password: dbData.mariadb_password,
+                mariadb_database: dbData.mariadb_database,
+                mariadb_conf: dbData.mariadb_conf,
+                mongo_initdb_root_username: dbData.mongo_initdb_root_username,
+                mongo_initdb_root_password: dbData.mongo_initdb_root_password,
+                mongo_initdb_database: dbData.mongo_initdb_database,
+                mongo_conf: dbData.mongo_conf,
+                redis_password: dbData.redis_password,
+                redis_conf: dbData.redis_conf,
+                keydb_password: dbData.keydb_password,
+                clickhouse_admin_user: dbData.clickhouse_admin_user,
+                clickhouse_admin_password: dbData.clickhouse_admin_password,
+                dragonfly_password: dbData.dragonfly_password,
+              }),
+            );
+          case 'create': {
+            if (!type || !args.server_uuid || !args.project_uuid) {
+              return {
+                content: [
+                  {
+                    type: 'text' as const,
+                    text: 'Error: type, server_uuid, project_uuid required',
+                  },
+                ],
+              };
+            }
+            // Base fields shared by all DB create types
+            const base = {
+              server_uuid: args.server_uuid,
+              project_uuid: args.project_uuid,
+              environment_name: args.environment_name,
+              environment_uuid: args.environment_uuid,
+              name: args.name,
+              description: args.description,
+              image: args.image,
+              is_public: args.is_public,
+              public_port: args.public_port,
+              instant_deploy: args.instant_deploy,
+            };
+            // Dispatch with explicit per-type field picking to avoid cross-type credential leakage
+            switch (type) {
+              case 'postgresql':
+                return wrap(() =>
+                  this.client.createPostgresql({
+                    ...base,
+                    postgres_user: args.postgres_user,
+                    postgres_password: args.postgres_password,
+                    postgres_db: args.postgres_db,
+                    postgres_conf: args.postgres_conf,
+                  }),
+                );
+              case 'mysql':
+                return wrap(() =>
+                  this.client.createMysql({
+                    ...base,
+                    mysql_root_password: args.mysql_root_password,
+                    mysql_user: args.mysql_user,
+                    mysql_password: args.mysql_password,
+                    mysql_database: args.mysql_database,
+                    mysql_conf: args.mysql_conf,
+                  }),
+                );
+              case 'mariadb':
+                return wrap(() =>
+                  this.client.createMariadb({
+                    ...base,
+                    mariadb_root_password: args.mariadb_root_password,
+                    mariadb_user: args.mariadb_user,
+                    mariadb_password: args.mariadb_password,
+                    mariadb_database: args.mariadb_database,
+                    mariadb_conf: args.mariadb_conf,
+                  }),
+                );
+              case 'mongodb':
+                return wrap(() =>
+                  this.client.createMongodb({
+                    ...base,
+                    mongo_initdb_root_username: args.mongo_initdb_root_username,
+                    mongo_initdb_root_password: args.mongo_initdb_root_password,
+                    mongo_initdb_database: args.mongo_initdb_database,
+                    mongo_conf: args.mongo_conf,
+                  }),
+                );
+              case 'redis':
+                return wrap(() =>
+                  this.client.createRedis({
+                    ...base,
+                    redis_password: args.redis_password,
+                    redis_conf: args.redis_conf,
+                  }),
+                );
+              case 'keydb':
+                return wrap(() =>
+                  this.client.createKeydb({ ...base, keydb_password: args.keydb_password }),
+                );
+              case 'clickhouse':
+                return wrap(() =>
+                  this.client.createClickhouse({
+                    ...base,
+                    clickhouse_admin_user: args.clickhouse_admin_user,
+                    clickhouse_admin_password: args.clickhouse_admin_password,
+                  }),
+                );
+              case 'dragonfly':
+                return wrap(() =>
+                  this.client.createDragonfly({
+                    ...base,
+                    dragonfly_password: args.dragonfly_password,
+                  }),
+                );
+            }
+            return {
+              content: [{ type: 'text' as const, text: 'Error: unknown database type' }],
+            };
+          }
         }
-        // create
-        if (!type || !args.server_uuid || !args.project_uuid) {
-          return {
-            content: [
-              { type: 'text' as const, text: 'Error: type, server_uuid, project_uuid required' },
-            ],
-          };
-        }
-        const dbMethods: Record<string, (data: any) => Promise<any>> = {
-          postgresql: (d) => this.client.createPostgresql(d),
-          mysql: (d) => this.client.createMysql(d),
-          mariadb: (d) => this.client.createMariadb(d),
-          mongodb: (d) => this.client.createMongodb(d),
-          redis: (d) => this.client.createRedis(d),
-          keydb: (d) => this.client.createKeydb(d),
-          clickhouse: (d) => this.client.createClickhouse(d),
-          dragonfly: (d) => this.client.createDragonfly(d),
-        };
-        return wrap(() => dbMethods[type](dbData));
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
     );
 
@@ -716,7 +1005,9 @@ export class CoolifyMcpServer extends McpServer {
         docker_compose_raw: z
           .string()
           .optional()
-          .describe('Raw docker-compose YAML for custom services (auto base64-encoded)'),
+          .describe(
+            'Raw (unencoded) docker-compose YAML for custom services (client auto base64-encodes). To update domain, modify Traefik labels here — the API does not support direct domain updates for services.',
+          ),
         delete_volumes: z.boolean().optional(),
       },
       async (args) => {
@@ -745,15 +1036,21 @@ export class CoolifyMcpServer extends McpServer {
           case 'update': {
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { action: _, uuid: __, delete_volumes: ___, ...updateData } = args;
-            return wrap(() => this.client.updateService(uuid, updateData));
+            // Service update only accepts name, description, docker_compose_raw
+            return wrap(() =>
+              this.client.updateService(uuid, {
+                name: args.name,
+                description: args.description,
+                docker_compose_raw: args.docker_compose_raw,
+              }),
+            );
           }
           case 'delete':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
             return wrap(() => this.client.deleteService(uuid, { deleteVolumes: delete_volumes }));
         }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
     );
 
@@ -823,16 +1120,33 @@ export class CoolifyMcpServer extends McpServer {
     // =========================================================================
     this.tool(
       'env_vars',
-      'Manage env vars for app or service',
+      'Manage env vars for app, service, or database',
       {
-        resource: z.enum(['application', 'service']),
-        action: z.enum(['list', 'create', 'update', 'delete']),
+        resource: z.enum(['application', 'service', 'database']),
+        action: z
+          .enum(['list', 'create', 'update', 'delete', 'bulk_create'])
+          .describe(
+            'Action to perform. Note: bulk_create performs upsert (creates new keys or updates existing ones via PATCH /envs/bulk). Only supported for application and database resources, not service.',
+          ),
         uuid: z.string(),
         key: z.string().optional(),
         value: z.string().optional(),
         env_uuid: z.string().optional(),
+        bulk_data: z
+          .array(z.object({ key: z.string(), value: z.string() }))
+          .optional()
+          .describe('Array of {key, value} for bulk_create action (application and database only)'),
       },
-      async ({ resource, action, uuid, key, value, env_uuid }) => {
+      async ({ resource, action, uuid, key, value, env_uuid, bulk_data }) => {
+        if (resource === 'service' && action === 'bulk_create')
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: 'Error: bulk_create not supported for service resource',
+              },
+            ],
+          };
         if (resource === 'application') {
           switch (action) {
             case 'list':
@@ -850,6 +1164,37 @@ export class CoolifyMcpServer extends McpServer {
               if (!env_uuid)
                 return { content: [{ type: 'text' as const, text: 'Error: env_uuid required' }] };
               return wrap(() => this.client.deleteApplicationEnvVar(uuid, env_uuid));
+            case 'bulk_create':
+              if (!bulk_data?.length)
+                return {
+                  content: [{ type: 'text' as const, text: 'Error: bulk_data required' }],
+                };
+              return wrap(() =>
+                this.client.bulkUpdateApplicationEnvVars(uuid, { data: bulk_data }),
+              );
+          }
+        } else if (resource === 'database') {
+          switch (action) {
+            case 'list':
+              return wrap(() => this.client.listDatabaseEnvVars(uuid, { summary: true }));
+            case 'create':
+              if (!key || !value)
+                return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
+              return wrap(() => this.client.createDatabaseEnvVar(uuid, { key, value }));
+            case 'update':
+              if (!key || !value)
+                return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
+              return wrap(() => this.client.updateDatabaseEnvVar(uuid, { key, value }));
+            case 'delete':
+              if (!env_uuid)
+                return { content: [{ type: 'text' as const, text: 'Error: env_uuid required' }] };
+              return wrap(() => this.client.deleteDatabaseEnvVar(uuid, env_uuid));
+            case 'bulk_create':
+              if (!bulk_data?.length)
+                return {
+                  content: [{ type: 'text' as const, text: 'Error: bulk_data required' }],
+                };
+              return wrap(() => this.client.bulkUpdateDatabaseEnvVars(uuid, { data: bulk_data }));
           }
         } else {
           switch (action) {
@@ -871,6 +1216,9 @@ export class CoolifyMcpServer extends McpServer {
               return wrap(() => this.client.deleteServiceEnvVar(uuid, env_uuid));
           }
         }
+        return {
+          content: [{ type: 'text' as const, text: 'Error: unknown action/resource combination' }],
+        };
       },
     );
 
@@ -907,8 +1255,8 @@ export class CoolifyMcpServer extends McpServer {
       {
         action: z.enum(['get', 'cancel', 'list_for_app']),
         uuid: z.string(),
-        lines: z.number().optional(), // Include logs truncated to last N lines (omit for no logs)
-        max_chars: z.number().optional(), // Limit log output to last N chars (default: 50000)
+        lines: z.number().int().min(1).max(10000).optional(), // Include logs truncated to last N lines (omit for no logs)
+        max_chars: z.number().int().min(1).max(500000).optional(), // Limit log output to last N chars (default: 50000)
       },
       async ({ action, uuid, lines, max_chars }) => {
         switch (action) {
@@ -938,6 +1286,35 @@ export class CoolifyMcpServer extends McpServer {
           case 'list_for_app':
             return wrap(() => this.client.listApplicationDeployments(uuid));
         }
+      },
+    );
+
+    // =========================================================================
+    // Teams (1 tool)
+    // =========================================================================
+    this.tool(
+      'teams',
+      'Manage teams: list/current/current_members/get/members',
+      {
+        action: z.enum(['list', 'current', 'current_members', 'get', 'members']),
+        id: z.number().optional().describe('Team ID (required for get/members)'),
+      },
+      async ({ action, id }) => {
+        switch (action) {
+          case 'list':
+            return wrap(() => this.client.listTeams());
+          case 'current':
+            return wrap(() => this.client.getCurrentTeam());
+          case 'current_members':
+            return wrap(() => this.client.getCurrentTeamMembers());
+          case 'get':
+            if (!id) return { content: [{ type: 'text' as const, text: 'Error: id required' }] };
+            return wrap(() => this.client.getTeam(id));
+          case 'members':
+            if (!id) return { content: [{ type: 'text' as const, text: 'Error: id required' }] };
+            return wrap(() => this.client.getTeamMembers(id));
+        }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
     );
 
@@ -991,11 +1368,21 @@ export class CoolifyMcpServer extends McpServer {
     // =========================================================================
     this.tool(
       'github_apps',
-      'Manage GitHub Apps: list/get/create/update/delete',
+      'Manage GitHub Apps: list/get/create/update/delete/list_repositories/list_branches',
       {
-        action: z.enum(['list', 'get', 'create', 'update', 'delete']),
+        action: z.enum([
+          'list',
+          'get',
+          'create',
+          'update',
+          'delete',
+          'list_repositories',
+          'list_branches',
+        ]),
         // GitHub apps use integer id, not uuid
         id: z.number().optional(),
+        owner: z.string().optional().describe('Repository owner (required for list_branches)'),
+        repo: z.string().optional().describe('Repository name (required for list_branches)'),
         // Create/Update fields
         name: z.string().optional(),
         organization: z.string().optional(),
@@ -1012,7 +1399,7 @@ export class CoolifyMcpServer extends McpServer {
         is_system_wide: z.boolean().optional(),
       },
       async (args) => {
-        const { action, id, ...apiData } = args;
+        const { action, id, owner, repo, ...apiData } = args;
         switch (action) {
           case 'list':
             return wrap(async () => {
@@ -1068,11 +1455,38 @@ export class CoolifyMcpServer extends McpServer {
             );
           case 'update':
             if (!id) return { content: [{ type: 'text' as const, text: 'Error: id required' }] };
-            return wrap(() => this.client.updateGitHubApp(id, apiData));
+            // Explicit allowlist: only UpdateGitHubAppRequest fields forwarded
+            return wrap(() =>
+              this.client.updateGitHubApp(id, {
+                name: apiData.name,
+                organization: apiData.organization,
+                api_url: apiData.api_url,
+                html_url: apiData.html_url,
+                custom_user: apiData.custom_user,
+                custom_port: apiData.custom_port,
+                app_id: apiData.app_id,
+                installation_id: apiData.installation_id,
+                client_id: apiData.client_id,
+                client_secret: apiData.client_secret,
+                webhook_secret: apiData.webhook_secret,
+                private_key_uuid: apiData.private_key_uuid,
+                is_system_wide: apiData.is_system_wide,
+              }),
+            );
           case 'delete':
             if (!id) return { content: [{ type: 'text' as const, text: 'Error: id required' }] };
             return wrap(() => this.client.deleteGitHubApp(id));
+          case 'list_repositories':
+            if (!id) return { content: [{ type: 'text' as const, text: 'Error: id required' }] };
+            return wrap(() => this.client.listGitHubAppRepositories(id));
+          case 'list_branches':
+            if (!id || !owner || !repo)
+              return {
+                content: [{ type: 'text' as const, text: 'Error: id, owner, repo required' }],
+              };
+            return wrap(() => this.client.listGitHubAppBranches(id, owner, repo));
         }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
     );
 
@@ -1081,13 +1495,14 @@ export class CoolifyMcpServer extends McpServer {
     // =========================================================================
     this.tool(
       'database_backups',
-      'Manage backups: list_schedules/get_schedule/list_executions/get_execution/create/update/delete',
+      'Manage backups: list_schedules/get_schedule/list_executions/get_execution/delete_execution/create/update/delete',
       {
         action: z.enum([
           'list_schedules',
           'get_schedule',
           'list_executions',
           'get_execution',
+          'delete_execution',
           'create',
           'update',
           'delete',
@@ -1095,6 +1510,10 @@ export class CoolifyMcpServer extends McpServer {
         database_uuid: z.string(),
         backup_uuid: z.string().optional(),
         execution_uuid: z.string().optional(),
+        delete_s3: z
+          .boolean()
+          .optional()
+          .describe('Also delete backup file from S3 (for delete_execution)'),
         // Backup configuration parameters
         frequency: z.string().optional(),
         enabled: z.boolean().optional(),
@@ -1108,7 +1527,7 @@ export class CoolifyMcpServer extends McpServer {
         database_backup_retention_amount_s3: z.number().optional(),
       },
       async (args) => {
-        const { action, database_uuid, backup_uuid, execution_uuid, ...backupData } = args;
+        const { action, database_uuid, backup_uuid, execution_uuid, delete_s3 } = args;
         switch (action) {
           case 'list_schedules':
             return wrap(() => this.client.listDatabaseBackups(database_uuid));
@@ -1130,26 +1549,89 @@ export class CoolifyMcpServer extends McpServer {
             return wrap(() =>
               this.client.getBackupExecution(database_uuid, backup_uuid, execution_uuid),
             );
+          case 'delete_execution':
+            if (!backup_uuid || !execution_uuid)
+              return {
+                content: [
+                  { type: 'text' as const, text: 'Error: backup_uuid, execution_uuid required' },
+                ],
+              };
+            return wrap(() =>
+              this.client.deleteBackupExecution(
+                database_uuid,
+                backup_uuid,
+                execution_uuid,
+                delete_s3,
+              ),
+            );
           case 'create':
             if (!args.frequency)
               return { content: [{ type: 'text' as const, text: 'Error: frequency required' }] };
             return wrap(() =>
               this.client.createDatabaseBackup(database_uuid, {
-                ...backupData,
                 frequency: args.frequency!,
+                ...(args.enabled !== undefined && { enabled: args.enabled }),
+                ...(args.save_s3 !== undefined && { save_s3: args.save_s3 }),
+                ...(args.s3_storage_uuid !== undefined && {
+                  s3_storage_uuid: args.s3_storage_uuid,
+                }),
+                ...(args.databases_to_backup !== undefined && {
+                  databases_to_backup: args.databases_to_backup,
+                }),
+                ...(args.dump_all !== undefined && { dump_all: args.dump_all }),
+                ...(args.database_backup_retention_days_locally !== undefined && {
+                  database_backup_retention_days_locally:
+                    args.database_backup_retention_days_locally,
+                }),
+                ...(args.database_backup_retention_days_s3 !== undefined && {
+                  database_backup_retention_days_s3: args.database_backup_retention_days_s3,
+                }),
+                ...(args.database_backup_retention_amount_locally !== undefined && {
+                  database_backup_retention_amount_locally:
+                    args.database_backup_retention_amount_locally,
+                }),
+                ...(args.database_backup_retention_amount_s3 !== undefined && {
+                  database_backup_retention_amount_s3: args.database_backup_retention_amount_s3,
+                }),
               }),
             );
           case 'update':
             if (!backup_uuid)
               return { content: [{ type: 'text' as const, text: 'Error: backup_uuid required' }] };
             return wrap(() =>
-              this.client.updateDatabaseBackup(database_uuid, backup_uuid, backupData),
+              this.client.updateDatabaseBackup(database_uuid, backup_uuid, {
+                ...(args.frequency !== undefined && { frequency: args.frequency }),
+                ...(args.enabled !== undefined && { enabled: args.enabled }),
+                ...(args.save_s3 !== undefined && { save_s3: args.save_s3 }),
+                ...(args.s3_storage_uuid !== undefined && {
+                  s3_storage_uuid: args.s3_storage_uuid,
+                }),
+                ...(args.databases_to_backup !== undefined && {
+                  databases_to_backup: args.databases_to_backup,
+                }),
+                ...(args.dump_all !== undefined && { dump_all: args.dump_all }),
+                ...(args.database_backup_retention_days_locally !== undefined && {
+                  database_backup_retention_days_locally:
+                    args.database_backup_retention_days_locally,
+                }),
+                ...(args.database_backup_retention_days_s3 !== undefined && {
+                  database_backup_retention_days_s3: args.database_backup_retention_days_s3,
+                }),
+                ...(args.database_backup_retention_amount_locally !== undefined && {
+                  database_backup_retention_amount_locally:
+                    args.database_backup_retention_amount_locally,
+                }),
+                ...(args.database_backup_retention_amount_s3 !== undefined && {
+                  database_backup_retention_amount_s3: args.database_backup_retention_amount_s3,
+                }),
+              }),
             );
           case 'delete':
             if (!backup_uuid)
               return { content: [{ type: 'text' as const, text: 'Error: backup_uuid required' }] };
             return wrap(() => this.client.deleteDatabaseBackup(database_uuid, backup_uuid));
         }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
     );
 
@@ -1233,17 +1715,32 @@ export class CoolifyMcpServer extends McpServer {
                   },
                 ],
               };
-            const createData = {
-              type,
-              mount_path,
-              ...(name !== undefined && { name }),
-              ...(host_path !== undefined && { host_path }),
-              ...(content !== undefined && { content }),
-              ...(is_directory !== undefined && { is_directory }),
-              ...(fs_path !== undefined && { fs_path }),
-              ...(resource_type === 'service' &&
-                service_resource_uuid && { resource_uuid: service_resource_uuid }),
-            };
+            if (type === 'file' && is_directory === true && !fs_path)
+              return {
+                content: [
+                  { type: 'text' as const, text: 'Error: fs_path required when is_directory=true' },
+                ],
+              };
+            const createData =
+              type === 'persistent'
+                ? {
+                    type,
+                    mount_path,
+                    ...(name !== undefined && { name }),
+                    ...(host_path !== undefined && { host_path }),
+                    ...(resource_type === 'service' &&
+                      service_resource_uuid && { resource_uuid: service_resource_uuid }),
+                  }
+                : {
+                    type,
+                    mount_path,
+                    ...(name !== undefined && { name }),
+                    ...(content !== undefined && { content }),
+                    ...(is_directory !== undefined && { is_directory }),
+                    ...(fs_path !== undefined && { fs_path }),
+                    ...(resource_type === 'service' &&
+                      service_resource_uuid && { resource_uuid: service_resource_uuid }),
+                  };
             if (resource_type === 'application')
               return wrap(() => this.client.createApplicationStorage(uuid, createData));
             if (resource_type === 'database')
@@ -1291,6 +1788,177 @@ export class CoolifyMcpServer extends McpServer {
               return wrap(() => this.client.deleteDatabaseStorage(uuid, storage_uuid));
             return wrap(() => this.client.deleteServiceStorage(uuid, storage_uuid));
         }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
+      },
+    );
+
+    // =========================================================================
+    // Scheduled Tasks (1 tool)
+    // =========================================================================
+    this.tool(
+      'scheduled_tasks',
+      'Manage scheduled tasks: list/create/update/delete tasks and list_executions for applications & services',
+      {
+        action: z.enum(['list', 'create', 'update', 'delete', 'list_executions']),
+        resource_type: z.enum(['application', 'service']),
+        uuid: z.string().describe('Application or service UUID'),
+        task_uuid: z
+          .string()
+          .optional()
+          .describe('Task UUID (required for update/delete/list_executions)'),
+        name: z.string().optional().describe('Task name (required for create)'),
+        command: z.string().optional().describe('Command to execute (required for create)'),
+        frequency: z
+          .string()
+          .optional()
+          .describe('Cron expression (e.g., "0 * * * *" for hourly). Required for create.'),
+        container: z
+          .string()
+          .optional()
+          .describe(
+            'Target container name to run the command in. Leave empty to use the default application container.',
+          ),
+        timeout: z.number().optional().describe('Timeout in seconds (default 300)'),
+        enabled: z
+          .boolean()
+          .optional()
+          .describe(
+            'Enable or disable the task. Omit to keep existing value; new tasks default to enabled.',
+          ),
+      },
+      async (args) => {
+        const { action, resource_type, uuid, task_uuid, name, command, frequency } = args;
+
+        switch (action) {
+          case 'list':
+            return resource_type === 'application'
+              ? wrap(() => this.client.listApplicationScheduledTasks(uuid))
+              : wrap(() => this.client.listServiceScheduledTasks(uuid));
+
+          case 'create': {
+            if (!name || !command || !frequency)
+              return {
+                content: [
+                  { type: 'text' as const, text: 'Error: name, command, frequency required' },
+                ],
+              };
+            const createData = {
+              name,
+              command,
+              frequency,
+              ...(args.container !== undefined && { container: args.container }),
+              ...(args.timeout !== undefined && { timeout: args.timeout }),
+              ...(args.enabled !== undefined && { enabled: args.enabled }),
+            };
+            return resource_type === 'application'
+              ? wrap(() => this.client.createApplicationScheduledTask(uuid, createData))
+              : wrap(() => this.client.createServiceScheduledTask(uuid, createData));
+          }
+
+          case 'update': {
+            if (!task_uuid)
+              return {
+                content: [{ type: 'text' as const, text: 'Error: task_uuid required' }],
+              };
+            const updateData = {
+              ...(name !== undefined && { name }),
+              ...(command !== undefined && { command }),
+              ...(frequency !== undefined && { frequency }),
+              ...(args.container !== undefined && { container: args.container }),
+              ...(args.timeout !== undefined && { timeout: args.timeout }),
+              ...(args.enabled !== undefined && { enabled: args.enabled }),
+            };
+            if (Object.keys(updateData).length === 0)
+              return {
+                content: [
+                  {
+                    type: 'text' as const,
+                    text: 'Error: at least one field required for update (name, command, frequency, container, timeout, enabled)',
+                  },
+                ],
+              };
+            return resource_type === 'application'
+              ? wrap(() => this.client.updateApplicationScheduledTask(uuid, task_uuid, updateData))
+              : wrap(() => this.client.updateServiceScheduledTask(uuid, task_uuid, updateData));
+          }
+
+          case 'delete':
+            if (!task_uuid)
+              return {
+                content: [{ type: 'text' as const, text: 'Error: task_uuid required' }],
+              };
+            return resource_type === 'application'
+              ? wrap(() => this.client.deleteApplicationScheduledTask(uuid, task_uuid))
+              : wrap(() => this.client.deleteServiceScheduledTask(uuid, task_uuid));
+
+          case 'list_executions':
+            if (!task_uuid)
+              return {
+                content: [{ type: 'text' as const, text: 'Error: task_uuid required' }],
+              };
+            return resource_type === 'application'
+              ? wrap(() => this.client.listApplicationScheduledTaskExecutions(uuid, task_uuid))
+              : wrap(() => this.client.listServiceScheduledTaskExecutions(uuid, task_uuid));
+        }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
+      },
+    );
+
+    // =========================================================================
+    // Cloud Tokens (1 tool)
+    // =========================================================================
+    this.tool(
+      'cloud_tokens',
+      'Manage cloud provider tokens (Hetzner/DigitalOcean): list/get/create/update/delete/validate',
+      {
+        action: z.enum(['list', 'get', 'create', 'update', 'delete', 'validate']),
+        uuid: z
+          .string()
+          .optional()
+          .describe('Token UUID (required for get/update/delete/validate)'),
+        provider: z
+          .enum(['hetzner', 'digitalocean'])
+          .optional()
+          .describe('Cloud provider (required for create)'),
+        token: z
+          .string()
+          .optional()
+          .describe('API token (required for create, not updatable — rotate via delete+create)'),
+        name: z
+          .string()
+          .optional()
+          .describe('Token name (required for create and update — the only updatable field)'),
+      },
+      async ({ action, uuid, provider, token, name }) => {
+        switch (action) {
+          case 'list':
+            return wrap(() => this.client.listCloudTokens());
+          case 'get':
+            if (!uuid)
+              return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
+            return wrap(() => this.client.getCloudToken(uuid));
+          case 'create':
+            if (!provider || !token || !name?.trim())
+              return {
+                content: [{ type: 'text' as const, text: 'Error: provider, token, name required' }],
+              };
+            return wrap(() => this.client.createCloudToken({ provider, token, name: name.trim() }));
+          case 'update':
+            if (!uuid || !name?.trim())
+              return {
+                content: [{ type: 'text' as const, text: 'Error: uuid, name required' }],
+              };
+            return wrap(() => this.client.updateCloudToken(uuid, { name: name!.trim() }));
+          case 'delete':
+            if (!uuid)
+              return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
+            return wrap(() => this.client.deleteCloudToken(uuid));
+          case 'validate':
+            if (!uuid)
+              return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
+            return wrap(() => this.client.validateCloudToken(uuid));
+        }
+        return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
     );
 
@@ -1320,10 +1988,20 @@ export class CoolifyMcpServer extends McpServer {
     this.tool(
       'stop_all_apps',
       'EMERGENCY: Stop all running apps',
-      { confirm: z.literal(true) },
-      async ({ confirm }) => {
-        if (!confirm)
-          return { content: [{ type: 'text' as const, text: 'Error: confirm=true required' }] };
+      {
+        confirm_stop_all_apps: z
+          .literal(true)
+          .describe('Must be true to confirm stopping all apps'),
+      },
+      async ({ confirm_stop_all_apps }) => {
+        // Defense-in-depth: z.literal(true) enforces this at the MCP framework level,
+        // but we guard here too in case the handler is invoked outside normal schema validation.
+        if (confirm_stop_all_apps !== true)
+          return {
+            content: [
+              { type: 'text' as const, text: 'Error: confirm_stop_all_apps=true required' },
+            ],
+          };
         return wrap(() => this.client.stopAllApps());
       },
     );
