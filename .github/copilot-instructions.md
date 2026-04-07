@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-`@jurislm/coolify-mcp` is a TypeScript MCP (Model Context Protocol) server that wraps the Coolify REST API into 40 tools for AI assistants. Published to npm.
+`@jurislm/coolify-mcp` is a TypeScript MCP (Model Context Protocol) server that wraps the Coolify REST API into 43 tools for AI assistants. Published to npm.
 
 ## Git Workflow
 
@@ -20,11 +20,11 @@
 ## Build & Test
 
 ```bash
-npm install       # install dependencies
-npm run build     # compile TypeScript → dist/
-npm test          # run Jest tests (excludes integration/)
-npm run lint      # ESLint
-npm run format:check  # Prettier check
+bun install           # install dependencies
+bun run build         # compile TypeScript -> dist/
+bun run test          # run Jest tests (excludes integration/)
+bun run lint          # ESLint
+bun run format:check  # Prettier check
 ```
 
 ## Project Structure
