@@ -5074,14 +5074,30 @@ describe('CoolifyClient', () => {
   // Health check
   // ===========================================================================
   describe('getHealth', () => {
-    it('should call GET /health and return string response', async () => {
-      mockFetch.mockResolvedValueOnce(mockResponse('OK'));
+    it('should call GET /health and return plain text response', async () => {
+      // /health returns plain text "OK", not JSON — use custom mock with text()
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => 'OK',
+      } as Response);
       const result = await client.getHealth();
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/health'),
         expect.any(Object),
       );
       expect(result).toBe('OK');
+    });
+
+    it('should throw on non-ok response', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        statusText: 'Service Unavailable',
+        text: async () => '',
+      } as Response);
+      await expect(client.getHealth()).rejects.toThrow('HTTP 503');
     });
   });
 });

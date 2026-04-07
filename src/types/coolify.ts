@@ -1314,3 +1314,21 @@ export interface CreateHetznerServerResponse {
   hetzner_server_id: number;
   ip: string;
 }
+
+// ===========================================================================
+// Resources aggregation types
+// ===========================================================================
+
+/**
+ * Minimal common shape for resources returned by GET /resources.
+ * The Coolify API response format for this endpoint is not fully documented
+ * ("Content is very complex. Will be implemented later." per OpenAPI spec).
+ * Additional fields may be present in the response at runtime.
+ */
+export interface ResourceSummary {
+  id?: number;
+  uuid?: string;
+  name?: string;
+  type?: string;
+  status?: string;
+}

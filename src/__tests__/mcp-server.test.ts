@@ -844,6 +844,58 @@ describe('scheduled_tasks handler dispatch', () => {
   });
 });
 
+describe('list_resources handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('should call listResources when invoked', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listResources').mockResolvedValue([]);
+    await callHandler(server, 'list_resources', {});
+    expect(spy).toHaveBeenCalled();
+  });
+});
+
+describe('health handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('should call getHealth when invoked', async () => {
+    const spy = jest.spyOn(server.getClient(), 'getHealth').mockResolvedValue('OK');
+    await callHandler(server, 'health', {});
+    expect(spy).toHaveBeenCalled();
+  });
+});
+
+describe('deploy pr parameter dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('should pass pr to deployByTagOrUuid when provided', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deployByTagOrUuid')
+      .mockResolvedValue({ message: 'Deploying' } as MessageResponse);
+    await callHandler(server, 'deploy', { tag_or_uuid: 'app-uuid', pr: 42 });
+    expect(spy).toHaveBeenCalledWith('app-uuid', undefined, 42);
+  });
+
+  it('should pass undefined pr when not provided', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deployByTagOrUuid')
+      .mockResolvedValue({ message: 'Deploying' } as MessageResponse);
+    await callHandler(server, 'deploy', { tag_or_uuid: 'app-uuid' });
+    expect(spy).toHaveBeenCalledWith('app-uuid', undefined, undefined);
+  });
+});
+
 describe('hetzner handler dispatch', () => {
   let server: TestableMcpServer;
 

@@ -2105,6 +2105,10 @@ export class CoolifyMcpServer extends McpServer {
               }),
             );
           }
+          default:
+            return {
+              content: [{ type: 'text' as const, text: 'Error: unknown hetzner action' }],
+            };
         }
       },
     );

@@ -111,6 +111,8 @@ import type {
   HetznerSSHKey,
   CreateHetznerServerRequest,
   CreateHetznerServerResponse,
+  // Resources aggregation types
+  ResourceSummary,
 } from '../types/coolify.js';
 
 // =============================================================================
@@ -1041,7 +1043,7 @@ export class CoolifyClient {
     const param = this.isLikelyUuid(tagOrUuid) ? 'uuid' : 'tag';
     let url = `/deploy?${param}=${encodeURIComponent(tagOrUuid)}&force=${force}`;
     if (pr !== undefined) {
-      url += `&pr=${encodeURIComponent(String(pr))}`;
+      url += `&pr=${pr}`;
     }
     return this.request<MessageResponse>(url, { method: 'GET' });
   }
@@ -2134,32 +2136,34 @@ export class CoolifyClient {
   // Hetzner cloud endpoints
   // ===========================================================================
 
-  async getHetznerLocations(cloudProviderTokenUuid?: string): Promise<HetznerLocation[]> {
-    const query = cloudProviderTokenUuid
+  private hetznerQuery(cloudProviderTokenUuid?: string): string {
+    return cloudProviderTokenUuid
       ? `?cloud_provider_token_uuid=${encodeURIComponent(cloudProviderTokenUuid)}`
       : '';
-    return this.request<HetznerLocation[]>(`/hetzner/locations${query}`);
+  }
+
+  async getHetznerLocations(cloudProviderTokenUuid?: string): Promise<HetznerLocation[]> {
+    return this.request<HetznerLocation[]>(
+      `/hetzner/locations${this.hetznerQuery(cloudProviderTokenUuid)}`,
+    );
   }
 
   async getHetznerServerTypes(cloudProviderTokenUuid?: string): Promise<HetznerServerType[]> {
-    const query = cloudProviderTokenUuid
-      ? `?cloud_provider_token_uuid=${encodeURIComponent(cloudProviderTokenUuid)}`
-      : '';
-    return this.request<HetznerServerType[]>(`/hetzner/server-types${query}`);
+    return this.request<HetznerServerType[]>(
+      `/hetzner/server-types${this.hetznerQuery(cloudProviderTokenUuid)}`,
+    );
   }
 
   async getHetznerImages(cloudProviderTokenUuid?: string): Promise<HetznerImage[]> {
-    const query = cloudProviderTokenUuid
-      ? `?cloud_provider_token_uuid=${encodeURIComponent(cloudProviderTokenUuid)}`
-      : '';
-    return this.request<HetznerImage[]>(`/hetzner/images${query}`);
+    return this.request<HetznerImage[]>(
+      `/hetzner/images${this.hetznerQuery(cloudProviderTokenUuid)}`,
+    );
   }
 
   async getHetznerSSHKeys(cloudProviderTokenUuid?: string): Promise<HetznerSSHKey[]> {
-    const query = cloudProviderTokenUuid
-      ? `?cloud_provider_token_uuid=${encodeURIComponent(cloudProviderTokenUuid)}`
-      : '';
-    return this.request<HetznerSSHKey[]>(`/hetzner/ssh-keys${query}`);
+    return this.request<HetznerSSHKey[]>(
+      `/hetzner/ssh-keys${this.hetznerQuery(cloudProviderTokenUuid)}`,
+    );
   }
 
   async createHetznerServer(
@@ -2189,8 +2193,8 @@ export class CoolifyClient {
   // Resources aggregation
   // ===========================================================================
 
-  async listResources(): Promise<unknown> {
-    return this.request<unknown>('/resources');
+  async listResources(): Promise<ResourceSummary[]> {
+    return this.request<ResourceSummary[]>('/resources');
   }
 
   // ===========================================================================
@@ -2198,6 +2202,14 @@ export class CoolifyClient {
   // ===========================================================================
 
   async getHealth(): Promise<string> {
-    return this.request<string>('/health');
+    // /health returns plain text ("OK"), not JSON — bypass request() like getVersion()
+    const url = `${this.baseUrl}/api/v1/health`;
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${this.accessToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response.text();
   }
 }
