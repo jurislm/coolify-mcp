@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.1](https://github.com/jurislm/coolify-mcp/compare/v3.2.0...v3.2.1) (2026-04-07)
+
+
+### Bug Fixes
+
+* set explicit rootDir in tsconfig.json and migrate eslint to defineConfig ([438924a](https://github.com/jurislm/coolify-mcp/commit/438924a1d097564765688ae4ef5a33c99b2f937b))
+
 ## [3.2.0](https://github.com/jurislm/coolify-mcp/compare/v3.1.0...v3.2.0) (2026-04-07)
 
 
