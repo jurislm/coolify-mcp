@@ -1136,7 +1136,9 @@ export class CoolifyMcpServer extends McpServer {
         bulk_data: z
           .array(z.object({ key: z.string(), value: z.string() }))
           .optional()
-          .describe('Array of {key, value} for bulk_create action (application and database only)'),
+          .describe(
+            'Array of {key, value} for bulk_create action (application, database, and service)',
+          ),
       },
       async ({ resource, action, uuid, key, value, env_uuid, bulk_data }) => {
         if (resource === 'application') {

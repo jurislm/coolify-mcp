@@ -1041,7 +1041,7 @@ export class CoolifyClient {
     const param = this.isLikelyUuid(tagOrUuid) ? 'uuid' : 'tag';
     let url = `/deploy?${param}=${encodeURIComponent(tagOrUuid)}&force=${force}`;
     if (pr !== undefined) {
-      url += `&pr=${pr}`;
+      url += `&pr=${encodeURIComponent(String(pr))}`;
     }
     return this.request<MessageResponse>(url, { method: 'GET' });
   }

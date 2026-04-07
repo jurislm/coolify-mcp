@@ -1265,6 +1265,7 @@ export interface HetznerLocation {
   city: string;
   latitude: number;
   longitude: number;
+  network_zone?: string;
 }
 
 export interface HetznerServerType {

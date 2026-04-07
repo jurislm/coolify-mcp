@@ -25,6 +25,11 @@ import type {
   GitHubAppUpdateResponse,
   BatchOperationResult,
   CloudTokenValidation,
+  HetznerLocation,
+  HetznerServerType,
+  HetznerImage,
+  HetznerSSHKey,
+  CreateHetznerServerResponse,
 } from '../types/coolify.js';
 
 type RegisteredToolMap = Record<
@@ -823,5 +828,104 @@ describe('scheduled_tasks handler dispatch', () => {
       uuid: 'app-uuid',
     })) as { content: Array<{ text: string }> };
     expect(result.content[0].text).toContain('required');
+  });
+});
+
+describe('hetzner handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('should route locations action to getHetznerLocations', async () => {
+    const mockLocations: HetznerLocation[] = [
+      {
+        id: 1,
+        name: 'nbg1',
+        description: 'Nuremberg',
+        country: 'DE',
+        city: 'Nuremberg',
+        latitude: 49,
+        longitude: 11,
+      },
+    ];
+    const spy = jest
+      .spyOn(server.getClient(), 'getHetznerLocations')
+      .mockResolvedValue(mockLocations);
+    await callHandler(server, 'hetzner', { action: 'locations' });
+    expect(spy).toHaveBeenCalledWith(undefined);
+  });
+
+  it('should route server_types action to getHetznerServerTypes', async () => {
+    const mockTypes: HetznerServerType[] = [
+      { id: 1, name: 'cx11', description: 'CX11', cores: 1, memory: 2, disk: 20 },
+    ];
+    const spy = jest
+      .spyOn(server.getClient(), 'getHetznerServerTypes')
+      .mockResolvedValue(mockTypes);
+    await callHandler(server, 'hetzner', { action: 'server_types' });
+    expect(spy).toHaveBeenCalledWith(undefined);
+  });
+
+  it('should route images action to getHetznerImages', async () => {
+    const mockImages: HetznerImage[] = [
+      {
+        id: 1,
+        name: 'ubuntu-22.04',
+        description: 'Ubuntu 22.04',
+        type: 'system',
+        os_flavor: 'ubuntu',
+        os_version: '22.04',
+        architecture: 'x86',
+      },
+    ];
+    const spy = jest.spyOn(server.getClient(), 'getHetznerImages').mockResolvedValue(mockImages);
+    await callHandler(server, 'hetzner', { action: 'images' });
+    expect(spy).toHaveBeenCalledWith(undefined);
+  });
+
+  it('should route ssh_keys action to getHetznerSSHKeys', async () => {
+    const mockKeys: HetznerSSHKey[] = [
+      { id: 1, name: 'my-key', fingerprint: 'ab:cd', public_key: 'ssh-rsa AAAA' },
+    ];
+    const spy = jest.spyOn(server.getClient(), 'getHetznerSSHKeys').mockResolvedValue(mockKeys);
+    await callHandler(server, 'hetzner', { action: 'ssh_keys' });
+    expect(spy).toHaveBeenCalledWith(undefined);
+  });
+
+  it('should return error for create_server when required fields missing', async () => {
+    const result = (await callHandler(server, 'hetzner', {
+      action: 'create_server',
+      location: 'nbg1',
+      // server_type, image, private_key_uuid intentionally omitted
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('required');
+  });
+
+  it('should route create_server action to createHetznerServer', async () => {
+    const mockResponse: CreateHetznerServerResponse = {
+      uuid: 'srv-uuid',
+      hetzner_server_id: 12345,
+      ip: '1.2.3.4',
+    };
+    const spy = jest
+      .spyOn(server.getClient(), 'createHetznerServer')
+      .mockResolvedValue(mockResponse);
+    await callHandler(server, 'hetzner', {
+      action: 'create_server',
+      location: 'nbg1',
+      server_type: 'cx11',
+      image: 67890,
+      private_key_uuid: 'key-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        location: 'nbg1',
+        server_type: 'cx11',
+        image: 67890,
+        private_key_uuid: 'key-uuid',
+      }),
+    );
   });
 });
