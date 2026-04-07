@@ -142,9 +142,9 @@ Versioning is managed automatically by [Release Please](https://github.com/googl
 
 - Release Please reads conventional commits (`feat:`, `fix:`, etc.) and determines the correct semver bump automatically.
 - When `develop` is merged into `main`, Release Please opens a release PR with the updated version and CHANGELOG.
-- Merging the Release Please PR triggers npm publish via CI trusted publishing.
+- After merging the Release Please PR, **manually run `npm publish --access public`** from the `main` branch root.
 
-To trigger a release, merge `develop` → `main` via PR. Release Please handles the rest.
+To trigger a release: merge `develop` → `main` via PR → Release Please opens a version PR → merge it → `npm publish --access public`.
 
 ## Documentation Standards
 
