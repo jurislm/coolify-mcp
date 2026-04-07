@@ -5074,7 +5074,7 @@ describe('CoolifyClient', () => {
   // Health check
   // ===========================================================================
   describe('getHealth', () => {
-    it('should call GET /health and return plain text response', async () => {
+    it('should call GET /health and return structured status object', async () => {
       // /health returns plain text "OK", not JSON — use custom mock with text()
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -5087,7 +5087,7 @@ describe('CoolifyClient', () => {
         expect.stringContaining('/health'),
         expect.any(Object),
       );
-      expect(result).toBe('OK');
+      expect(result).toEqual({ status: 'OK' });
     });
 
     it('should throw on non-ok response', async () => {

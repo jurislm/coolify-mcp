@@ -33,7 +33,7 @@
 1. **格式檢查** — Prettier
 2. **靜態分析** — ESLint
 3. **建置** — TypeScript 編譯
-4. **測試** — Jest（`npm test`）
+4. **測試** — Jest（`bun run test`）
 
 ## 如何貢獻
 
@@ -48,8 +48,8 @@
 1. Fork 本儲存庫
 2. 建立功能分支：`git checkout -b feature/your-feature`
 3. 進行修改
-4. 執行測試：`npm test`
-5. 執行靜態分析：`npm run lint`
+4. 執行測試：`bun run test`
+5. 執行靜態分析：`bun run lint`
 6. 使用 Conventional Commits 格式提交：`feat:`、`fix:`、`chore:` 等
 7. 對 `main` 分支建立 PR
 
