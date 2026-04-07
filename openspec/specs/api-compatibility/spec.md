@@ -1,3 +1,9 @@
+---
+title: API Compatibility Specification
+version: 1.0.0
+date: 2026-04-07
+---
+
 ## Purpose
 
 Define client-side compatibility and payload normalization rules for Coolify API integration.

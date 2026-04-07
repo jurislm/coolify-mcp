@@ -1,3 +1,9 @@
+---
+title: Response Optimization Specification
+version: 1.0.0
+date: 2026-04-07
+---
+
 ## Purpose
 
 Define token-efficient response behavior and payload safety constraints for MCP responses.

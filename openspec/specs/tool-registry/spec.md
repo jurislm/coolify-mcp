@@ -1,3 +1,9 @@
+---
+title: Tool Registry Specification
+version: 1.0.0
+date: 2026-04-07
+---
+
 ## Purpose
 
 Define the required MCP tool surface for consolidated Coolify infrastructure management.
