@@ -40,6 +40,9 @@ coverage/
 # Optional npm cache directory
 .npm
 
+# Bun binary lockfile (text format bun.lock is committed instead)
+bun.lockb
+
 # Optional eslint cache
 .eslintcache
 

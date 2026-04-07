@@ -205,13 +205,13 @@ list_applications(page=2, per_page=10)
 # 複製與安裝
 git clone https://github.com/jurislm/coolify-mcp.git
 cd coolify-mcp
-npm install
+bun install
 
 # 建置
-npm run build
+bun run build
 
 # 測試
-npm test
+bun run test
 
 # 本機執行
 COOLIFY_BASE_URL="https://your-coolify.com" \
