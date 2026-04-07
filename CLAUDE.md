@@ -9,11 +9,11 @@ MCP (Model Context Protocol) server for Coolify that provides 43 token-optimized
 ## Commands
 
 ```bash
-npm install          # Install dependencies
-npm run build        # Build TypeScript to dist/
-npm test             # Run all tests
-npm run lint         # Run ESLint
-npm run format       # Run Prettier
+bun install          # Install dependencies
+bun run build        # Build TypeScript to dist/
+bun run test         # Run all tests
+bun run lint         # Run ESLint
+bun run format       # Run Prettier
 
 # Run locally
 COOLIFY_BASE_URL="https://your-coolify.com" COOLIFY_ACCESS_TOKEN="token" node dist/index.js
@@ -66,7 +66,7 @@ When adding new client methods, you must add:
    - Add `expect(typeof client.methodName).toBe('function');` in the appropriate section
    - Ensures the method is properly exported and accessible
 
-**codecov will fail PRs with uncovered lines.** Always run `npm test` before committing.
+**codecov will fail PRs with uncovered lines.** Always run `bun run test` before committing.
 
 ### Client Method Example
 
@@ -91,8 +91,8 @@ it('should call client method', async () => {
 After fixing bugs, always verify fixes work against the real Coolify instance — not just unit tests.
 
 - **`/smoke-test`** — Slash command that builds the project and runs integration smoke tests against the live server. Use this after any bug fix to confirm the fix works end-to-end.
-- **`npm run test:integration`** — Runs all integration tests (requires `.env` with `COOLIFY_URL` and `COOLIFY_TOKEN`).
-- Integration test files live in `src/__tests__/integration/` and are excluded from `npm test` (CI). Add new smoke tests there when fixing bugs that involve API interaction.
+- **`bun run test:integration`** — Runs all integration tests (requires `.env` with `COOLIFY_URL` and `COOLIFY_TOKEN`).
+- Integration test files live in `src/__tests__/integration/` and are excluded from `bun run test` (CI). Add new smoke tests there when fixing bugs that involve API interaction.
 
 ### Coolify API Gotchas
 
