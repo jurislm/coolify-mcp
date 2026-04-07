@@ -2201,7 +2201,7 @@ export class CoolifyClient {
   // Health check
   // ===========================================================================
 
-  async getHealth(): Promise<string> {
+  async getHealth(): Promise<{ status: string }> {
     // /health returns plain text ("OK"), not JSON — bypass request() like getVersion()
     const url = `${this.baseUrl}/api/v1/health`;
     const response = await fetch(url, {
@@ -2210,6 +2210,6 @@ export class CoolifyClient {
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    return response.text();
+    return { status: (await response.text()).trim() };
   }
 }

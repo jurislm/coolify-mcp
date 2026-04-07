@@ -1127,7 +1127,7 @@ export class CoolifyMcpServer extends McpServer {
         action: z
           .enum(['list', 'create', 'update', 'delete', 'bulk_create'])
           .describe(
-            "Action to perform. Note: bulk_create performs upsert via each resource's PATCH /{resource}/{uuid}/envs/bulk endpoint. Supported for application, database, and service resources.",
+            'Action to perform. Note: bulk_create performs upsert via the resource-specific PATCH bulk env endpoints: /applications/{uuid}/envs/bulk, /databases/{uuid}/envs/bulk, and /services/{uuid}/envs/bulk.',
           ),
         uuid: z.string(),
         key: z.string().optional(),
