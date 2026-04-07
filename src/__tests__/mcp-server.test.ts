@@ -866,7 +866,7 @@ describe('health handler dispatch', () => {
   });
 
   it('should call getHealth when invoked', async () => {
-    const spy = jest.spyOn(server.getClient(), 'getHealth').mockResolvedValue('OK');
+    const spy = jest.spyOn(server.getClient(), 'getHealth').mockResolvedValue({ status: 'OK' });
     await callHandler(server, 'health', {});
     expect(spy).toHaveBeenCalled();
   });
