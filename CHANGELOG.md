@@ -7,10 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.1.0](https://github.com/jurislm/coolify-mcp/compare/v3.0.0...v3.1.0) (2026-04-07)
 
-
 ### Features
 
-* add Hetzner, list_resources, health tools and enhance deploy/env_vars ([#9](https://github.com/jurislm/coolify-mcp/issues/9)) ([2d34c57](https://github.com/jurislm/coolify-mcp/commit/2d34c5726110df5eadf11dd6572343359ef19ab0))
+- add Hetzner, list_resources, health tools and enhance deploy/env_vars ([#9](https://github.com/jurislm/coolify-mcp/issues/9)) ([2d34c57](https://github.com/jurislm/coolify-mcp/commit/2d34c5726110df5eadf11dd6572343359ef19ab0))
 
 ## [Unreleased]
 
