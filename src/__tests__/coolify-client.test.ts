@@ -4881,4 +4881,207 @@ describe('CoolifyClient', () => {
       });
     });
   });
+
+  // ===========================================================================
+  // Hetzner endpoints
+  // ===========================================================================
+  describe('Hetzner endpoints', () => {
+    describe('getHetznerLocations', () => {
+      it('should call GET /hetzner/locations without token', async () => {
+        const mockLocations = [
+          {
+            id: 1,
+            name: 'nbg1',
+            description: 'Nuremberg DC Park 1',
+            country: 'DE',
+            city: 'Nuremberg',
+            latitude: 49.452,
+            longitude: 11.077,
+          },
+        ];
+        mockFetch.mockResolvedValueOnce(mockResponse(mockLocations));
+        const result = await client.getHetznerLocations();
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/hetzner/locations'),
+          expect.any(Object),
+        );
+        expect(result).toEqual(mockLocations);
+      });
+
+      it('should append cloud_provider_token_uuid when provided', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse([]));
+        await client.getHetznerLocations('token-uuid-123');
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('cloud_provider_token_uuid=token-uuid-123'),
+          expect.any(Object),
+        );
+      });
+    });
+
+    describe('getHetznerServerTypes', () => {
+      it('should call GET /hetzner/server-types', async () => {
+        const mockTypes = [
+          { id: 1, name: 'cx11', description: 'CX11', cores: 1, memory: 2, disk: 20 },
+        ];
+        mockFetch.mockResolvedValueOnce(mockResponse(mockTypes));
+        const result = await client.getHetznerServerTypes();
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/hetzner/server-types'),
+          expect.any(Object),
+        );
+        expect(result).toEqual(mockTypes);
+      });
+
+      it('should append cloud_provider_token_uuid when provided', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse([]));
+        await client.getHetznerServerTypes('token-uuid-456');
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('cloud_provider_token_uuid=token-uuid-456'),
+          expect.any(Object),
+        );
+      });
+    });
+
+    describe('getHetznerImages', () => {
+      it('should call GET /hetzner/images', async () => {
+        const mockImages = [
+          {
+            id: 1,
+            name: 'ubuntu-22.04',
+            description: 'Ubuntu 22.04',
+            type: 'system',
+            os_flavor: 'ubuntu',
+            os_version: '22.04',
+            architecture: 'x86',
+          },
+        ];
+        mockFetch.mockResolvedValueOnce(mockResponse(mockImages));
+        const result = await client.getHetznerImages();
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/hetzner/images'),
+          expect.any(Object),
+        );
+        expect(result).toEqual(mockImages);
+      });
+
+      it('should append cloud_provider_token_uuid when provided', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse([]));
+        await client.getHetznerImages('token-uuid-789');
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('cloud_provider_token_uuid=token-uuid-789'),
+          expect.any(Object),
+        );
+      });
+    });
+
+    describe('getHetznerSSHKeys', () => {
+      it('should call GET /hetzner/ssh-keys', async () => {
+        const mockKeys = [
+          { id: 1, name: 'my-key', fingerprint: 'ab:cd', public_key: 'ssh-rsa AAAA' },
+        ];
+        mockFetch.mockResolvedValueOnce(mockResponse(mockKeys));
+        const result = await client.getHetznerSSHKeys();
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/hetzner/ssh-keys'),
+          expect.any(Object),
+        );
+        expect(result).toEqual(mockKeys);
+      });
+
+      it('should append cloud_provider_token_uuid when provided', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse([]));
+        await client.getHetznerSSHKeys('token-uuid-abc');
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('cloud_provider_token_uuid=token-uuid-abc'),
+          expect.any(Object),
+        );
+      });
+    });
+
+    describe('createHetznerServer', () => {
+      it('should call POST /servers/hetzner with correct body', async () => {
+        const mockCreated = { uuid: 'new-server-uuid', hetzner_server_id: 12345, ip: '1.2.3.4' };
+        mockFetch.mockResolvedValueOnce(mockResponse(mockCreated));
+        const reqBody = {
+          location: 'nbg1',
+          server_type: 'cx11',
+          image: 67890,
+          private_key_uuid: 'key-uuid',
+        };
+        const result = await client.createHetznerServer(reqBody);
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/servers/hetzner'),
+          expect.objectContaining({
+            method: 'POST',
+            body: JSON.stringify(reqBody),
+          }),
+        );
+        expect(result).toEqual(mockCreated);
+      });
+    });
+  });
+
+  // ===========================================================================
+  // Enhanced deployByTagOrUuid with pr parameter
+  // ===========================================================================
+  describe('deployByTagOrUuid with pr parameter', () => {
+    it('should append pr to query string when provided', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Deploying' }));
+      await client.deployByTagOrUuid('app-uuid', false, 42);
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('pr=42'), expect.any(Object));
+    });
+
+    it('should not append pr when not provided', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Deploying' }));
+      await client.deployByTagOrUuid('app-uuid', false);
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).not.toContain('pr=');
+    });
+  });
+
+  // ===========================================================================
+  // Service bulk env vars
+  // ===========================================================================
+  describe('bulkUpdateServiceEnvVars', () => {
+    it('should call PATCH /services/{uuid}/envs/bulk', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Updated' }));
+      const data = { data: [{ key: 'FOO', value: 'bar' }] };
+      await client.bulkUpdateServiceEnvVars('svc-uuid', data);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/services/svc-uuid/envs/bulk'),
+        expect.objectContaining({ method: 'PATCH' }),
+      );
+    });
+  });
+
+  // ===========================================================================
+  // Resources aggregation
+  // ===========================================================================
+  describe('listResources', () => {
+    it('should call GET /resources', async () => {
+      const mockData = [{ id: 1, name: 'my-app', type: 'application' }];
+      mockFetch.mockResolvedValueOnce(mockResponse(mockData));
+      const result = await client.listResources();
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/resources'),
+        expect.any(Object),
+      );
+      expect(result).toEqual(mockData);
+    });
+  });
+
+  // ===========================================================================
+  // Health check
+  // ===========================================================================
+  describe('getHealth', () => {
+    it('should call GET /health and return string response', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse('OK'));
+      const result = await client.getHealth();
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/health'),
+        expect.any(Object),
+      );
+      expect(result).toBe('OK');
+    });
+  });
 });

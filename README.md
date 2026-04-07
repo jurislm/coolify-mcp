@@ -8,34 +8,36 @@
 [![CI](https://github.com/jurislm/coolify-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/jurislm/coolify-mcp/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/jurislm/coolify-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/jurislm/coolify-mcp)
 
-> **最完整的 Coolify MCP 伺服器** — 40 個 Token 優化工具、智慧診斷與批次操作，透過 AI 助理管理你的自架 PaaS 平台。
+> **最完整的 Coolify MCP 伺服器** — 43 個 Token 優化工具、智慧診斷與批次操作，透過 AI 助理管理你的自架 PaaS 平台。
 
 [Coolify](https://coolify.io/) 的 Model Context Protocol (MCP) 伺服器，讓 AI 助理能以自然語言管理和除錯 Coolify 實例。
 
 ## 功能特色
 
-本 MCP 伺服器提供 **40 個 Token 優化工具**，涵蓋**除錯、管理與部署**：
+本 MCP 伺服器提供 **43 個 Token 優化工具**，涵蓋**除錯、管理與部署**：
 
 | 分類            | 工具                                                                                                             |
 | --------------- | ---------------------------------------------------------------------------------------------------------------- |
-| **基礎設施**    | `get_infrastructure_overview`, `get_mcp_version`, `get_version`                                                  |
+| **基礎設施**    | `get_infrastructure_overview`, `get_mcp_version`, `get_version`, `health`                                        |
 | **智慧診斷**    | `diagnose_app`, `diagnose_server`, `find_issues`                                                                 |
 | **批次操作**    | `restart_project_apps`, `bulk_env_update`, `stop_all_apps`, `redeploy_project`                                   |
 | **伺服器**      | `list_servers`, `get_server`, `server` (建立/更新/刪除), `validate_server`, `server_resources`, `server_domains` |
+| **Hetzner**     | `hetzner` (查詢機房/規格/映像/SSH 金鑰，建立 Hetzner 雲端伺服器)                                                 |
 | **專案**        | `projects` (列表/取得/建立/更新/刪除)                                                                            |
 | **環境**        | `environments` (列表/取得/建立/刪除)                                                                             |
 | **應用程式**    | `list_applications`, `get_application`, `application` (5 種建立方式/更新/刪除), `application_logs`               |
 | **資料庫**      | `list_databases`, `get_database`, `database` (8 種類型建立/更新/刪除), `database_backups` (排程 CRUD/執行記錄)   |
 | **服務**        | `list_services`, `get_service`, `service` (建立/更新/刪除)                                                       |
 | **控制**        | `control` (啟動/停止/重啟應用程式、資料庫、服務)                                                                 |
-| **環境變數**    | `env_vars` (應用程式/服務/資料庫的 CRUD)                                                                         |
-| **部署**        | `list_deployments`, `deploy`, `deployment` (取得/取消/列出應用部署)                                              |
+| **環境變數**    | `env_vars` (應用程式/服務/資料庫的 CRUD 及批量更新)                                                              |
+| **部署**        | `list_deployments`, `deploy` (含 PR preview 支援), `deployment` (取得/取消/列出應用部署)                         |
 | **私鑰**        | `private_keys` (列表/取得/建立/更新/刪除)                                                                        |
 | **GitHub Apps** | `github_apps` (列表/取得/建立/更新/刪除/列出儲存庫/列出分支)                                                     |
 | **儲存空間**    | `storages` (應用程式/資料庫/服務的持久化磁碟區與檔案儲存)                                                        |
 | **排程任務**    | `scheduled_tasks` (應用程式/服務的 cron 任務管理)                                                                |
 | **雲端 Token**  | `cloud_tokens` (Hetzner/DigitalOcean 供應商 Token 管理)                                                          |
 | **團隊**        | `teams` (列表/目前團隊/成員查詢)                                                                                 |
+| **資源**        | `list_resources` (跨類型搜尋所有資源)                                                                            |
 
 ### Token 優化設計
 
@@ -46,7 +48,7 @@
 ### 前置需求
 
 - Node.js >= 18
-- 運作中的 Coolify 實例（已測試 v4.0.0-beta.460）
+- 運作中的 Coolify 實例（已測試 v4.0.0-beta.471）
 - Coolify API Token（於 Coolify 設定 > API 中產生）
 
 ### Claude Desktop

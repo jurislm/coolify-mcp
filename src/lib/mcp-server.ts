@@ -1127,7 +1127,7 @@ export class CoolifyMcpServer extends McpServer {
         action: z
           .enum(['list', 'create', 'update', 'delete', 'bulk_create'])
           .describe(
-            'Action to perform. Note: bulk_create performs upsert (creates new keys or updates existing ones via PATCH /envs/bulk). Only supported for application and database resources, not service.',
+            'Action to perform. Note: bulk_create performs upsert (creates new keys or updates existing ones via PATCH /envs/bulk). Supported for application, database, and service resources.',
           ),
         uuid: z.string(),
         key: z.string().optional(),
@@ -1139,15 +1139,6 @@ export class CoolifyMcpServer extends McpServer {
           .describe('Array of {key, value} for bulk_create action (application and database only)'),
       },
       async ({ resource, action, uuid, key, value, env_uuid, bulk_data }) => {
-        if (resource === 'service' && action === 'bulk_create')
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: 'Error: bulk_create not supported for service resource',
-              },
-            ],
-          };
         if (resource === 'application') {
           switch (action) {
             case 'list':
@@ -1215,6 +1206,12 @@ export class CoolifyMcpServer extends McpServer {
               if (!env_uuid)
                 return { content: [{ type: 'text' as const, text: 'Error: env_uuid required' }] };
               return wrap(() => this.client.deleteServiceEnvVar(uuid, env_uuid));
+            case 'bulk_create':
+              if (!bulk_data?.length)
+                return {
+                  content: [{ type: 'text' as const, text: 'Error: bulk_data required' }],
+                };
+              return wrap(() => this.client.bulkUpdateServiceEnvVars(uuid, { data: bulk_data }));
           }
         }
         return {
@@ -1241,11 +1238,20 @@ export class CoolifyMcpServer extends McpServer {
 
     this.tool(
       'deploy',
-      'Deploy by tag/UUID',
-      { tag_or_uuid: z.string(), force: z.boolean().optional() },
-      async ({ tag_or_uuid, force }) =>
+      'Deploy by tag/UUID. Use pr param for PR preview deployments (requires GitHub app integration).',
+      {
+        tag_or_uuid: z.string(),
+        force: z.boolean().optional(),
+        pr: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe('Pull Request number for PR preview deploy'),
+      },
+      async ({ tag_or_uuid, force, pr }) =>
         wrapWithActions(
-          () => this.client.deployByTagOrUuid(tag_or_uuid, force),
+          () => this.client.deployByTagOrUuid(tag_or_uuid, force, pr),
           () => [{ tool: 'list_deployments', args: {}, hint: 'Check deployment status' }],
         ),
     );
@@ -2022,6 +2028,100 @@ export class CoolifyMcpServer extends McpServer {
       { project_uuid: z.string(), force: z.boolean().optional() },
       async ({ project_uuid, force }) =>
         wrap(() => this.client.redeployProjectApps(project_uuid, force ?? true)),
+    );
+
+    // =========================================================================
+    // Hetzner cloud integration (1 tool)
+    // =========================================================================
+    this.tool(
+      'hetzner',
+      'Manage Hetzner cloud resources: list locations/server-types/images/ssh-keys, create server',
+      {
+        action: z.enum(['locations', 'server_types', 'images', 'ssh_keys', 'create_server']),
+        cloud_provider_token_uuid: z
+          .string()
+          .optional()
+          .describe('Hetzner cloud provider token UUID (uses default if omitted)'),
+        // create_server fields
+        location: z.string().optional().describe('Hetzner location name (e.g. nbg1)'),
+        server_type: z.string().optional().describe('Hetzner server type name (e.g. cx11)'),
+        image: z.number().int().optional().describe('Hetzner image ID'),
+        name: z.string().optional().describe('Server name'),
+        private_key_uuid: z.string().optional().describe('Coolify private key UUID for SSH access'),
+        enable_ipv4: z.boolean().optional(),
+        enable_ipv6: z.boolean().optional(),
+        hetzner_ssh_key_ids: z.array(z.number().int()).optional(),
+        cloud_init_script: z.string().optional(),
+        instant_validate: z.boolean().optional(),
+      },
+      async ({
+        action,
+        cloud_provider_token_uuid,
+        location,
+        server_type,
+        image,
+        name,
+        private_key_uuid,
+        enable_ipv4,
+        enable_ipv6,
+        hetzner_ssh_key_ids,
+        cloud_init_script,
+        instant_validate,
+      }) => {
+        switch (action) {
+          case 'locations':
+            return wrap(() => this.client.getHetznerLocations(cloud_provider_token_uuid));
+          case 'server_types':
+            return wrap(() => this.client.getHetznerServerTypes(cloud_provider_token_uuid));
+          case 'images':
+            return wrap(() => this.client.getHetznerImages(cloud_provider_token_uuid));
+          case 'ssh_keys':
+            return wrap(() => this.client.getHetznerSSHKeys(cloud_provider_token_uuid));
+          case 'create_server': {
+            if (!location || !server_type || image === undefined || !private_key_uuid)
+              return {
+                content: [
+                  {
+                    type: 'text' as const,
+                    text: 'Error: location, server_type, image, private_key_uuid required',
+                  },
+                ],
+              };
+            return wrap(() =>
+              this.client.createHetznerServer({
+                cloud_provider_token_uuid,
+                location,
+                server_type,
+                image,
+                name,
+                private_key_uuid,
+                enable_ipv4,
+                enable_ipv6,
+                hetzner_ssh_key_ids,
+                cloud_init_script,
+                instant_validate,
+              }),
+            );
+          }
+        }
+      },
+    );
+
+    // =========================================================================
+    // Resources aggregation (1 tool)
+    // =========================================================================
+    this.tool(
+      'list_resources',
+      'List all resources across all types (applications, databases, services)',
+      {},
+      async () => wrap(() => this.client.listResources()),
+    );
+
+    // =========================================================================
+    // Health check (1 tool)
+    // =========================================================================
+    this.tool('health', 'Check Coolify API health status', {}, async () =>
+      wrap(() => this.client.getHealth()),
     );
   }
 }

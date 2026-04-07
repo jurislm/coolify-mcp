@@ -104,6 +104,13 @@ import type {
   InfrastructureIssuesReport,
   // Batch operation types
   BatchOperationResult,
+  // Hetzner types
+  HetznerLocation,
+  HetznerServerType,
+  HetznerImage,
+  HetznerSSHKey,
+  CreateHetznerServerRequest,
+  CreateHetznerServerResponse,
 } from '../types/coolify.js';
 
 // =============================================================================
@@ -1025,13 +1032,18 @@ export class CoolifyClient {
     return options?.includeLogs ? deployment : toDeploymentEssential(deployment);
   }
 
-  async deployByTagOrUuid(tagOrUuid: string, force: boolean = false): Promise<MessageResponse> {
+  async deployByTagOrUuid(
+    tagOrUuid: string,
+    force: boolean = false,
+    pr?: number,
+  ): Promise<MessageResponse> {
     // Detect if the value looks like a UUID or a tag name
     const param = this.isLikelyUuid(tagOrUuid) ? 'uuid' : 'tag';
-    return this.request<MessageResponse>(
-      `/deploy?${param}=${encodeURIComponent(tagOrUuid)}&force=${force}`,
-      { method: 'GET' },
-    );
+    let url = `/deploy?${param}=${encodeURIComponent(tagOrUuid)}&force=${force}`;
+    if (pr !== undefined) {
+      url += `&pr=${pr}`;
+    }
+    return this.request<MessageResponse>(url, { method: 'GET' });
   }
 
   async listApplicationDeployments(appUuid: string): Promise<Deployment[]> {
@@ -2116,5 +2128,76 @@ export class CoolifyClient {
     );
 
     return this.aggregateBatchResults(projectApps, results);
+  }
+
+  // ===========================================================================
+  // Hetzner cloud endpoints
+  // ===========================================================================
+
+  async getHetznerLocations(cloudProviderTokenUuid?: string): Promise<HetznerLocation[]> {
+    const query = cloudProviderTokenUuid
+      ? `?cloud_provider_token_uuid=${encodeURIComponent(cloudProviderTokenUuid)}`
+      : '';
+    return this.request<HetznerLocation[]>(`/hetzner/locations${query}`);
+  }
+
+  async getHetznerServerTypes(cloudProviderTokenUuid?: string): Promise<HetznerServerType[]> {
+    const query = cloudProviderTokenUuid
+      ? `?cloud_provider_token_uuid=${encodeURIComponent(cloudProviderTokenUuid)}`
+      : '';
+    return this.request<HetznerServerType[]>(`/hetzner/server-types${query}`);
+  }
+
+  async getHetznerImages(cloudProviderTokenUuid?: string): Promise<HetznerImage[]> {
+    const query = cloudProviderTokenUuid
+      ? `?cloud_provider_token_uuid=${encodeURIComponent(cloudProviderTokenUuid)}`
+      : '';
+    return this.request<HetznerImage[]>(`/hetzner/images${query}`);
+  }
+
+  async getHetznerSSHKeys(cloudProviderTokenUuid?: string): Promise<HetznerSSHKey[]> {
+    const query = cloudProviderTokenUuid
+      ? `?cloud_provider_token_uuid=${encodeURIComponent(cloudProviderTokenUuid)}`
+      : '';
+    return this.request<HetznerSSHKey[]>(`/hetzner/ssh-keys${query}`);
+  }
+
+  async createHetznerServer(
+    data: CreateHetznerServerRequest,
+  ): Promise<CreateHetznerServerResponse> {
+    return this.request<CreateHetznerServerResponse>('/servers/hetzner', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ===========================================================================
+  // Service bulk env vars
+  // ===========================================================================
+
+  async bulkUpdateServiceEnvVars(
+    uuid: string,
+    data: BulkUpdateEnvVarsRequest,
+  ): Promise<MessageResponse> {
+    return this.request<MessageResponse>(`/services/${encodeURIComponent(uuid)}/envs/bulk`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ===========================================================================
+  // Resources aggregation
+  // ===========================================================================
+
+  async listResources(): Promise<unknown> {
+    return this.request<unknown>('/resources');
+  }
+
+  // ===========================================================================
+  // Health check
+  // ===========================================================================
+
+  async getHealth(): Promise<string> {
+    return this.request<string>('/health');
   }
 }

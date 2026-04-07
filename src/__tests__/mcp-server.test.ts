@@ -247,6 +247,18 @@ describe('CoolifyMcpServer v2', () => {
       expect(typeof client.bulkEnvUpdate).toBe('function');
       expect(typeof client.stopAllApps).toBe('function');
       expect(typeof client.redeployProjectApps).toBe('function');
+      // Hetzner endpoints
+      expect(typeof client.getHetznerLocations).toBe('function');
+      expect(typeof client.getHetznerServerTypes).toBe('function');
+      expect(typeof client.getHetznerImages).toBe('function');
+      expect(typeof client.getHetznerSSHKeys).toBe('function');
+      expect(typeof client.createHetznerServer).toBe('function');
+      // Service bulk env vars
+      expect(typeof client.bulkUpdateServiceEnvVars).toBe('function');
+      // Resources aggregation
+      expect(typeof client.listResources).toBe('function');
+      // Health check
+      expect(typeof client.getHealth).toBe('function');
     });
   });
 
@@ -692,7 +704,7 @@ describe('application create_dockerfile handler dispatch', () => {
   });
 });
 
-describe('env_vars bulk_create service runtime guard', () => {
+describe('env_vars bulk_create service', () => {
   let server: TestableMcpServer;
 
   beforeEach(() => {
@@ -702,14 +714,14 @@ describe('env_vars bulk_create service runtime guard', () => {
     });
   });
 
-  it('should return error for service + bulk_create combination', async () => {
+  it('should return error when bulk_data is missing for service bulk_create', async () => {
     const result = (await callHandler(server, 'env_vars', {
       resource: 'service',
       action: 'bulk_create',
       uuid: 'svc-uuid',
-      bulk_data: [{ key: 'FOO', value: 'bar' }],
+      // bulk_data intentionally omitted
     })) as { content: Array<{ text: string }> };
-    expect(result.content[0].text).toContain('bulk_create not supported for service');
+    expect(result.content[0].text).toContain('bulk_data required');
   });
 });
 
