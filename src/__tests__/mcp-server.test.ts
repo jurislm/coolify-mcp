@@ -728,6 +728,19 @@ describe('env_vars bulk_create service', () => {
     })) as { content: Array<{ text: string }> };
     expect(result.content[0].text).toContain('bulk_data required');
   });
+
+  it('should call bulkUpdateServiceEnvVars for service bulk_create success path', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'bulkUpdateServiceEnvVars')
+      .mockResolvedValue({ message: 'Updated' } as MessageResponse);
+    await callHandler(server, 'env_vars', {
+      resource: 'service',
+      action: 'bulk_create',
+      uuid: 'svc-uuid',
+      bulk_data: [{ key: 'FOO', value: 'bar' }],
+    });
+    expect(spy).toHaveBeenCalledWith('svc-uuid', { data: [{ key: 'FOO', value: 'bar' }] });
+  });
 });
 
 describe('stop_all_apps confirmation', () => {
