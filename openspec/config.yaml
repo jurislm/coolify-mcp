@@ -1,0 +1,55 @@
+schema: spec-driven
+
+context: |
+  Project: @jurislm/coolify-mcp
+  Purpose: TypeScript MCP server that wraps Coolify REST API into token-optimized tools.
+
+  Tech stack:
+  - TypeScript (ESM, strict mode), Node.js >= 18
+  - @modelcontextprotocol/sdk, zod
+  - Jest for tests, ESLint + Prettier for quality
+
+  Key files:
+  - src/lib/coolify-client.ts (HTTP client)
+  - src/lib/mcp-server.ts (tool definitions/handlers)
+  - src/types/coolify.ts (API types)
+  - src/__tests__/coolify-client.test.ts and src/__tests__/mcp-server.test.ts (required coverage)
+
+  Implementation conventions:
+  - Add new API support in order: types -> client -> server tool -> tests.
+  - Keep list endpoints summary-first to reduce token usage.
+  - UUID path params must use encodeURIComponent(String(value)).
+  - Numeric IDs should use String(id) (no encodeURIComponent).
+  - Application domain input maps fqdn -> domains before API calls.
+  - docker_compose_raw is base64-encoded by client before API requests.
+  - Use explicit field allowlists for update handlers (avoid object spread injection).
+  - Prefer immutable updates and explicit error handling.
+
+  Workflow and release:
+  - Conventional Commits required (feat/fix/refactor/docs/test/chore/perf/ci).
+  - Release Please controls versioning/changelog on main; do not manually bump package version.
+  - Default validation commands: bun run build && bun run test && bun run lint && bun run format:check.
+
+rules:
+  proposal:
+    - Keep proposal focused and concise (target under 600 words).
+    - Include: Problem, Goals, Non-goals, Scope, Risks, and Validation approach.
+    - Explicitly state user-visible behavior changes and backward compatibility impact.
+    - If API surface changes, list affected tools and whether response shape changes.
+
+  design:
+    - Document affected files using this sequence: types -> client -> mcp-server -> tests -> docs.
+    - Specify request/response typing changes and validation strategy (zod + TypeScript types).
+    - Describe token-usage impact for list/summary responses.
+    - Capture Coolify API compatibility considerations (fqdn/domains, base64 fields, id encoding).
+
+  tasks:
+    - Write atomic, testable tasks with clear done criteria.
+    - Include test tasks for both client and MCP layers when adding/modifying endpoints.
+    - Include docs updates when tool count, behavior, or usage examples change.
+    - End with a verification task running: build, tests, lint, format check.
+
+  spec:
+    - Prefer concrete, verifiable requirements over vague guidance.
+    - For each behavioral change, include at least one acceptance scenario.
+    - Note error handling and edge-case behavior (invalid ids, API validation errors, partial failures).
