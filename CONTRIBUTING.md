@@ -99,12 +99,7 @@ src/
 2. Release Please 自動建立版本 PR
 3. 合併版本 PR 後，GitHub Actions 自動發布至 npm
 
-<<<<<<< HEAD
 ## 問題與討論
 
 - [GitHub Issues](https://github.com/jurislm/coolify-mcp/issues)
 - [Coolify 社群](https://coolify.io/docs/contact)
-=======
-- Open a [GitHub Issue](https://github.com/jurislm/coolify-mcp/issues)
-- Check the [Coolify Community](https://coolify.io/docs/contact)
->>>>>>> 4888f85 ([chore] update copyright to terry90918, fix repo references, remove stale lintstagedrc)
