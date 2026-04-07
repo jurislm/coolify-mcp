@@ -1246,3 +1246,89 @@ export interface UpdateScheduledTaskRequest {
   timeout?: number;
   enabled?: boolean;
 }
+
+// ===========================================================================
+// Hetzner types
+// ===========================================================================
+
+export interface HetznerPrice {
+  location: string;
+  price_hourly: { net: string; gross: string };
+  price_monthly: { net: string; gross: string };
+}
+
+export interface HetznerLocation {
+  id: number;
+  name: string;
+  description: string;
+  country: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  network_zone?: string;
+}
+
+export interface HetznerServerType {
+  id: number;
+  name: string;
+  description: string;
+  cores: number;
+  memory: number;
+  disk: number;
+  prices?: HetznerPrice[];
+}
+
+export interface HetznerImage {
+  id: number;
+  name: string;
+  description: string;
+  type: string;
+  os_flavor: string;
+  os_version: string;
+  architecture: string;
+}
+
+export interface HetznerSSHKey {
+  id: number;
+  name: string;
+  fingerprint: string;
+  public_key: string;
+}
+
+export interface CreateHetznerServerRequest {
+  cloud_provider_token_uuid?: string;
+  location: string;
+  server_type: string;
+  image: number;
+  name?: string;
+  private_key_uuid: string;
+  enable_ipv4?: boolean;
+  enable_ipv6?: boolean;
+  hetzner_ssh_key_ids?: number[];
+  cloud_init_script?: string;
+  instant_validate?: boolean;
+}
+
+export interface CreateHetznerServerResponse {
+  uuid: string;
+  hetzner_server_id: number;
+  ip: string;
+}
+
+// ===========================================================================
+// Resources aggregation types
+// ===========================================================================
+
+/**
+ * Minimal common shape for resources returned by GET /resources.
+ * The Coolify API response format for this endpoint is not fully documented
+ * ("Content is very complex. Will be implemented later." per OpenAPI spec).
+ * Additional fields may be present in the response at runtime.
+ */
+export interface ResourceSummary {
+  id?: number;
+  uuid?: string;
+  name?: string;
+  type?: string;
+  status?: string;
+}

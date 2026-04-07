@@ -25,6 +25,11 @@ import type {
   GitHubAppUpdateResponse,
   BatchOperationResult,
   CloudTokenValidation,
+  HetznerLocation,
+  HetznerServerType,
+  HetznerImage,
+  HetznerSSHKey,
+  CreateHetznerServerResponse,
 } from '../types/coolify.js';
 
 type RegisteredToolMap = Record<
@@ -247,6 +252,18 @@ describe('CoolifyMcpServer v2', () => {
       expect(typeof client.bulkEnvUpdate).toBe('function');
       expect(typeof client.stopAllApps).toBe('function');
       expect(typeof client.redeployProjectApps).toBe('function');
+      // Hetzner endpoints
+      expect(typeof client.getHetznerLocations).toBe('function');
+      expect(typeof client.getHetznerServerTypes).toBe('function');
+      expect(typeof client.getHetznerImages).toBe('function');
+      expect(typeof client.getHetznerSSHKeys).toBe('function');
+      expect(typeof client.createHetznerServer).toBe('function');
+      // Service bulk env vars
+      expect(typeof client.bulkUpdateServiceEnvVars).toBe('function');
+      // Resources aggregation
+      expect(typeof client.listResources).toBe('function');
+      // Health check
+      expect(typeof client.getHealth).toBe('function');
     });
   });
 
@@ -692,7 +709,7 @@ describe('application create_dockerfile handler dispatch', () => {
   });
 });
 
-describe('env_vars bulk_create service runtime guard', () => {
+describe('env_vars bulk_create service', () => {
   let server: TestableMcpServer;
 
   beforeEach(() => {
@@ -702,14 +719,27 @@ describe('env_vars bulk_create service runtime guard', () => {
     });
   });
 
-  it('should return error for service + bulk_create combination', async () => {
+  it('should return error when bulk_data is missing for service bulk_create', async () => {
     const result = (await callHandler(server, 'env_vars', {
       resource: 'service',
       action: 'bulk_create',
       uuid: 'svc-uuid',
-      bulk_data: [{ key: 'FOO', value: 'bar' }],
+      // bulk_data intentionally omitted
     })) as { content: Array<{ text: string }> };
-    expect(result.content[0].text).toContain('bulk_create not supported for service');
+    expect(result.content[0].text).toContain('bulk_data required');
+  });
+
+  it('should call bulkUpdateServiceEnvVars for service bulk_create success path', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'bulkUpdateServiceEnvVars')
+      .mockResolvedValue({ message: 'Updated' } as MessageResponse);
+    await callHandler(server, 'env_vars', {
+      resource: 'service',
+      action: 'bulk_create',
+      uuid: 'svc-uuid',
+      bulk_data: [{ key: 'FOO', value: 'bar' }],
+    });
+    expect(spy).toHaveBeenCalledWith('svc-uuid', { data: [{ key: 'FOO', value: 'bar' }] });
   });
 });
 
@@ -811,5 +841,156 @@ describe('scheduled_tasks handler dispatch', () => {
       uuid: 'app-uuid',
     })) as { content: Array<{ text: string }> };
     expect(result.content[0].text).toContain('required');
+  });
+});
+
+describe('list_resources handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('should call listResources when invoked', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listResources').mockResolvedValue([]);
+    await callHandler(server, 'list_resources', {});
+    expect(spy).toHaveBeenCalled();
+  });
+});
+
+describe('health handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('should call getHealth when invoked', async () => {
+    const spy = jest.spyOn(server.getClient(), 'getHealth').mockResolvedValue('OK');
+    await callHandler(server, 'health', {});
+    expect(spy).toHaveBeenCalled();
+  });
+});
+
+describe('deploy pr parameter dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('should pass pr to deployByTagOrUuid when provided', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deployByTagOrUuid')
+      .mockResolvedValue({ message: 'Deploying' } as MessageResponse);
+    await callHandler(server, 'deploy', { tag_or_uuid: 'app-uuid', pr: 42 });
+    expect(spy).toHaveBeenCalledWith('app-uuid', undefined, 42);
+  });
+
+  it('should pass undefined pr when not provided', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deployByTagOrUuid')
+      .mockResolvedValue({ message: 'Deploying' } as MessageResponse);
+    await callHandler(server, 'deploy', { tag_or_uuid: 'app-uuid' });
+    expect(spy).toHaveBeenCalledWith('app-uuid', undefined, undefined);
+  });
+});
+
+describe('hetzner handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('should route locations action to getHetznerLocations', async () => {
+    const mockLocations: HetznerLocation[] = [
+      {
+        id: 1,
+        name: 'nbg1',
+        description: 'Nuremberg',
+        country: 'DE',
+        city: 'Nuremberg',
+        latitude: 49,
+        longitude: 11,
+      },
+    ];
+    const spy = jest
+      .spyOn(server.getClient(), 'getHetznerLocations')
+      .mockResolvedValue(mockLocations);
+    await callHandler(server, 'hetzner', { action: 'locations' });
+    expect(spy).toHaveBeenCalledWith(undefined);
+  });
+
+  it('should route server_types action to getHetznerServerTypes', async () => {
+    const mockTypes: HetznerServerType[] = [
+      { id: 1, name: 'cx11', description: 'CX11', cores: 1, memory: 2, disk: 20 },
+    ];
+    const spy = jest
+      .spyOn(server.getClient(), 'getHetznerServerTypes')
+      .mockResolvedValue(mockTypes);
+    await callHandler(server, 'hetzner', { action: 'server_types' });
+    expect(spy).toHaveBeenCalledWith(undefined);
+  });
+
+  it('should route images action to getHetznerImages', async () => {
+    const mockImages: HetznerImage[] = [
+      {
+        id: 1,
+        name: 'ubuntu-22.04',
+        description: 'Ubuntu 22.04',
+        type: 'system',
+        os_flavor: 'ubuntu',
+        os_version: '22.04',
+        architecture: 'x86',
+      },
+    ];
+    const spy = jest.spyOn(server.getClient(), 'getHetznerImages').mockResolvedValue(mockImages);
+    await callHandler(server, 'hetzner', { action: 'images' });
+    expect(spy).toHaveBeenCalledWith(undefined);
+  });
+
+  it('should route ssh_keys action to getHetznerSSHKeys', async () => {
+    const mockKeys: HetznerSSHKey[] = [
+      { id: 1, name: 'my-key', fingerprint: 'ab:cd', public_key: 'ssh-rsa AAAA' },
+    ];
+    const spy = jest.spyOn(server.getClient(), 'getHetznerSSHKeys').mockResolvedValue(mockKeys);
+    await callHandler(server, 'hetzner', { action: 'ssh_keys' });
+    expect(spy).toHaveBeenCalledWith(undefined);
+  });
+
+  it('should return error for create_server when required fields missing', async () => {
+    const result = (await callHandler(server, 'hetzner', {
+      action: 'create_server',
+      location: 'nbg1',
+      // server_type, image, private_key_uuid intentionally omitted
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('required');
+  });
+
+  it('should route create_server action to createHetznerServer', async () => {
+    const mockResponse: CreateHetznerServerResponse = {
+      uuid: 'srv-uuid',
+      hetzner_server_id: 12345,
+      ip: '1.2.3.4',
+    };
+    const spy = jest
+      .spyOn(server.getClient(), 'createHetznerServer')
+      .mockResolvedValue(mockResponse);
+    await callHandler(server, 'hetzner', {
+      action: 'create_server',
+      location: 'nbg1',
+      server_type: 'cx11',
+      image: 67890,
+      private_key_uuid: 'key-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        location: 'nbg1',
+        server_type: 'cx11',
+        image: 67890,
+        private_key_uuid: 'key-uuid',
+      }),
+    );
   });
 });

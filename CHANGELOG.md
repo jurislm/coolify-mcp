@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Hetzner 雲端整合** (`hetzner` 工具)：新增 `hetzner` 工具，支援查詢機房位置 (`locations`)、伺服器規格 (`server_types`)、映像 (`images`)、SSH 金鑰 (`ssh_keys`)，以及建立 Hetzner 雲端伺服器 (`create_server`)
+- **資源聚合** (`list_resources` 工具)：跨類型列出所有資源（應用程式、資料庫、服務），對應 `GET /resources`
+- **健康檢查** (`health` 工具)：查詢 Coolify API 健康狀態，對應 `GET /health`
+- **Service 批量環境變數更新**：`env_vars` 工具新增對 `service` resource 的 `bulk_create` action，對應 `PATCH /services/{uuid}/envs/bulk`
+- **PR Preview 部署**：`deploy` 工具新增 `pr` 參數，支援拉取請求預覽部署（需啟用 GitHub App 整合）
+- Coolify 版本更新至 v4.0.0-beta.471
+
+### Changed
+
+- 工具總數從 40 增加至 43
+
 ## [3.0.0](https://github.com/jurislm/coolify-mcp/compare/v2.7.0...v3.0.0) (2026-04-06)
 
 ### ⚠ BREAKING CHANGES

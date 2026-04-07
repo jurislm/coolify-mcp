@@ -104,6 +104,15 @@ import type {
   InfrastructureIssuesReport,
   // Batch operation types
   BatchOperationResult,
+  // Hetzner types
+  HetznerLocation,
+  HetznerServerType,
+  HetznerImage,
+  HetznerSSHKey,
+  CreateHetznerServerRequest,
+  CreateHetznerServerResponse,
+  // Resources aggregation types
+  ResourceSummary,
 } from '../types/coolify.js';
 
 // =============================================================================
@@ -1025,13 +1034,18 @@ export class CoolifyClient {
     return options?.includeLogs ? deployment : toDeploymentEssential(deployment);
   }
 
-  async deployByTagOrUuid(tagOrUuid: string, force: boolean = false): Promise<MessageResponse> {
+  async deployByTagOrUuid(
+    tagOrUuid: string,
+    force: boolean = false,
+    pr?: number,
+  ): Promise<MessageResponse> {
     // Detect if the value looks like a UUID or a tag name
     const param = this.isLikelyUuid(tagOrUuid) ? 'uuid' : 'tag';
-    return this.request<MessageResponse>(
-      `/deploy?${param}=${encodeURIComponent(tagOrUuid)}&force=${force}`,
-      { method: 'GET' },
-    );
+    let url = `/deploy?${param}=${encodeURIComponent(tagOrUuid)}&force=${force}`;
+    if (pr !== undefined) {
+      url += `&pr=${pr}`;
+    }
+    return this.request<MessageResponse>(url, { method: 'GET' });
   }
 
   async listApplicationDeployments(appUuid: string): Promise<Deployment[]> {
@@ -2116,5 +2130,86 @@ export class CoolifyClient {
     );
 
     return this.aggregateBatchResults(projectApps, results);
+  }
+
+  // ===========================================================================
+  // Hetzner cloud endpoints
+  // ===========================================================================
+
+  private hetznerQuery(cloudProviderTokenUuid?: string): string {
+    return cloudProviderTokenUuid
+      ? `?cloud_provider_token_uuid=${encodeURIComponent(cloudProviderTokenUuid)}`
+      : '';
+  }
+
+  async getHetznerLocations(cloudProviderTokenUuid?: string): Promise<HetznerLocation[]> {
+    return this.request<HetznerLocation[]>(
+      `/hetzner/locations${this.hetznerQuery(cloudProviderTokenUuid)}`,
+    );
+  }
+
+  async getHetznerServerTypes(cloudProviderTokenUuid?: string): Promise<HetznerServerType[]> {
+    return this.request<HetznerServerType[]>(
+      `/hetzner/server-types${this.hetznerQuery(cloudProviderTokenUuid)}`,
+    );
+  }
+
+  async getHetznerImages(cloudProviderTokenUuid?: string): Promise<HetznerImage[]> {
+    return this.request<HetznerImage[]>(
+      `/hetzner/images${this.hetznerQuery(cloudProviderTokenUuid)}`,
+    );
+  }
+
+  async getHetznerSSHKeys(cloudProviderTokenUuid?: string): Promise<HetznerSSHKey[]> {
+    return this.request<HetznerSSHKey[]>(
+      `/hetzner/ssh-keys${this.hetznerQuery(cloudProviderTokenUuid)}`,
+    );
+  }
+
+  async createHetznerServer(
+    data: CreateHetznerServerRequest,
+  ): Promise<CreateHetznerServerResponse> {
+    return this.request<CreateHetznerServerResponse>('/servers/hetzner', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ===========================================================================
+  // Service bulk env vars
+  // ===========================================================================
+
+  async bulkUpdateServiceEnvVars(
+    uuid: string,
+    data: BulkUpdateEnvVarsRequest,
+  ): Promise<MessageResponse> {
+    return this.request<MessageResponse>(`/services/${encodeURIComponent(uuid)}/envs/bulk`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ===========================================================================
+  // Resources aggregation
+  // ===========================================================================
+
+  async listResources(): Promise<ResourceSummary[]> {
+    return this.request<ResourceSummary[]>('/resources');
+  }
+
+  // ===========================================================================
+  // Health check
+  // ===========================================================================
+
+  async getHealth(): Promise<string> {
+    // /health returns plain text ("OK"), not JSON — bypass request() like getVersion()
+    const url = `${this.baseUrl}/api/v1/health`;
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${this.accessToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response.text();
   }
 }
