@@ -39,6 +39,7 @@ import type {
   CreateEnvVarRequest,
   UpdateEnvVarRequest,
   BulkUpdateEnvVarsRequest,
+  StopOptions,
   // Database types
   Database,
   UpdateDatabaseRequest,
@@ -485,8 +486,11 @@ export class CoolifyClient {
     });
   }
 
-  async deleteServer(uuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/servers/${encodeURIComponent(uuid)}`, {
+  async deleteServer(uuid: string, options?: { force?: boolean }): Promise<MessageResponse> {
+    const query = this.buildQueryString({
+      force: options?.force,
+    });
+    return this.request<MessageResponse>(`/servers/${encodeURIComponent(uuid)}${query}`, {
       method: 'DELETE',
     });
   }
@@ -735,9 +739,12 @@ export class CoolifyClient {
     );
   }
 
-  async stopApplication(uuid: string): Promise<ApplicationActionResponse> {
+  async stopApplication(uuid: string, options?: StopOptions): Promise<ApplicationActionResponse> {
+    const query = this.buildQueryString({
+      docker_cleanup: options?.dockerCleanup,
+    });
     return this.request<ApplicationActionResponse>(
-      `/applications/${encodeURIComponent(uuid)}/stop`,
+      `/applications/${encodeURIComponent(uuid)}/stop${query}`,
       {
         method: 'POST',
       },
@@ -842,8 +849,11 @@ export class CoolifyClient {
     });
   }
 
-  async stopDatabase(uuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/databases/${encodeURIComponent(uuid)}/stop`, {
+  async stopDatabase(uuid: string, options?: StopOptions): Promise<MessageResponse> {
+    const query = this.buildQueryString({
+      docker_cleanup: options?.dockerCleanup,
+    });
+    return this.request<MessageResponse>(`/databases/${encodeURIComponent(uuid)}/stop${query}`, {
       method: 'POST',
     });
   }
@@ -968,8 +978,13 @@ export class CoolifyClient {
     });
   }
 
-  async stopService(uuid: string): Promise<MessageResponse> {
-    return this.request<MessageResponse>(`/services/${encodeURIComponent(uuid)}/stop`, {
+  // Note: Coolify service action routes accept both GET and POST (match(['get', 'post'])).
+  // Using GET here for historical consistency; POST would be more RESTful but both work.
+  async stopService(uuid: string, options?: StopOptions): Promise<MessageResponse> {
+    const query = this.buildQueryString({
+      docker_cleanup: options?.dockerCleanup,
+    });
+    return this.request<MessageResponse>(`/services/${encodeURIComponent(uuid)}/stop${query}`, {
       method: 'GET',
     });
   }

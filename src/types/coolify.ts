@@ -414,7 +414,11 @@ export interface CreateEnvVarRequest {
   is_literal?: boolean;
   is_multiline?: boolean;
   is_shown_once?: boolean;
+  /** @deprecated Use is_buildtime instead. Coolify API uses is_buildtime (no underscore). Kept for backward compatibility. */
   is_build_time?: boolean;
+  is_runtime?: boolean;
+  is_buildtime?: boolean;
+  comment?: string;
 }
 
 export interface UpdateEnvVarRequest {
@@ -424,11 +428,19 @@ export interface UpdateEnvVarRequest {
   is_literal?: boolean;
   is_multiline?: boolean;
   is_shown_once?: boolean;
+  /** @deprecated Use is_buildtime instead. Coolify API uses is_buildtime (no underscore). Kept for backward compatibility. */
   is_build_time?: boolean;
+  is_runtime?: boolean;
+  is_buildtime?: boolean;
+  comment?: string;
 }
 
 export interface BulkUpdateEnvVarsRequest {
   data: CreateEnvVarRequest[];
+}
+
+export interface StopOptions {
+  dockerCleanup?: boolean;
 }
 
 // Summary type for env vars - reduces response size significantly
@@ -738,6 +750,11 @@ export interface Service {
   updated_at: string;
 }
 
+export interface ServiceUrl {
+  name: string;
+  url: string;
+}
+
 export interface CreateServiceRequest {
   type?: ServiceType;
   name?: string;
@@ -749,6 +766,9 @@ export interface CreateServiceRequest {
   destination_uuid?: string;
   instant_deploy?: boolean;
   docker_compose_raw?: string; // Pass raw YAML — client always base64-encodes before sending to API
+  urls?: ServiceUrl[];
+  force_domain_override?: boolean;
+  is_container_label_escape_enabled?: boolean;
 }
 
 /**
@@ -771,14 +791,15 @@ export interface CreateServiceRequest {
  *   - Replace $ with $$ in the hash
  *   - Disable label escaping in Coolify UI (manual step!)
  */
-// Note: fqdn is not supported for service updates — configure domains via docker_compose_raw Traefik labels instead
 export interface UpdateServiceRequest {
   name?: string;
   description?: string;
-  /** Pass raw YAML — client always base64-encodes before sending to API. To update domains, modify Traefik labels inside docker_compose_raw. */
+  /** Pass raw YAML — client always base64-encodes before sending to API. */
   docker_compose_raw?: string;
-  /** @deprecated Not supported by the API. Update domains via Traefik labels in docker_compose_raw instead. */
-  fqdn?: never;
+  urls?: ServiceUrl[];
+  force_domain_override?: boolean;
+  is_container_label_escape_enabled?: boolean;
+  connect_to_docker_network?: boolean;
 }
 
 export interface ServiceCreateResponse {

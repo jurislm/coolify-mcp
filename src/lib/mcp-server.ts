@@ -312,9 +312,13 @@ export class CoolifyMcpServer extends McpServer {
         private_key_uuid: z.string().optional().describe('SSH key UUID (required for create)'),
         is_build_server: z.boolean().optional(),
         instant_validate: z.boolean().optional().describe('(create only)'),
+        force: z
+          .boolean()
+          .optional()
+          .describe('(delete only) Force delete server with all its resources'),
       },
       async (args) => {
-        const { action, uuid, ...serverData } = args;
+        const { action, uuid, force, ...serverData } = args;
         switch (action) {
           case 'create':
             if (!serverData.ip || !serverData.private_key_uuid || !serverData.name)
@@ -355,7 +359,9 @@ export class CoolifyMcpServer extends McpServer {
           case 'delete':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            return wrap(() => this.client.deleteServer(uuid));
+            return wrap(() =>
+              this.client.deleteServer(uuid, force !== undefined ? { force } : undefined),
+            );
         }
         return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
@@ -1007,8 +1013,24 @@ export class CoolifyMcpServer extends McpServer {
           .string()
           .optional()
           .describe(
-            'Raw (unencoded) docker-compose YAML for custom services (client auto base64-encodes). To update domain, modify Traefik labels here — the API does not support direct domain updates for services.',
+            'Raw (unencoded) docker-compose YAML for custom services (client auto base64-encodes).',
           ),
+        urls: z
+          .array(z.object({ name: z.string(), url: z.string() }))
+          .optional()
+          .describe('Service URLs per container (create/update)'),
+        force_domain_override: z
+          .boolean()
+          .optional()
+          .describe('Force domain override even if conflicts detected (create/update)'),
+        is_container_label_escape_enabled: z
+          .boolean()
+          .optional()
+          .describe('Escape special chars in container labels (create/update)'),
+        connect_to_docker_network: z
+          .boolean()
+          .optional()
+          .describe('Connect service to Docker network (update only)'),
         delete_volumes: z.boolean().optional(),
       },
       async (args) => {
@@ -1032,17 +1054,23 @@ export class CoolifyMcpServer extends McpServer {
                 environment_name: args.environment_name,
                 instant_deploy: args.instant_deploy,
                 docker_compose_raw: args.docker_compose_raw,
+                urls: args.urls,
+                force_domain_override: args.force_domain_override,
+                is_container_label_escape_enabled: args.is_container_label_escape_enabled,
               }),
             );
           case 'update': {
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            // Service update only accepts name, description, docker_compose_raw
             return wrap(() =>
               this.client.updateService(uuid, {
                 name: args.name,
                 description: args.description,
                 docker_compose_raw: args.docker_compose_raw,
+                urls: args.urls,
+                force_domain_override: args.force_domain_override,
+                is_container_label_escape_enabled: args.is_container_label_escape_enabled,
+                connect_to_docker_network: args.connect_to_docker_network,
               }),
             );
           }
@@ -1065,22 +1093,28 @@ export class CoolifyMcpServer extends McpServer {
         resource: z.enum(['application', 'database', 'service']),
         action: z.enum(['start', 'stop', 'restart']),
         uuid: z.string(),
+        docker_cleanup: z
+          .boolean()
+          .optional()
+          .describe('(stop only) Run docker cleanup after stopping. Defaults to true.'),
       },
-      async ({ resource, action, uuid }) => {
+      async ({ resource, action, uuid, docker_cleanup }) => {
+        const stopOpts =
+          docker_cleanup !== undefined ? { dockerCleanup: docker_cleanup } : undefined;
         const methods: Record<string, Record<string, (u: string) => Promise<unknown>>> = {
           application: {
             start: (u) => this.client.startApplication(u),
-            stop: (u) => this.client.stopApplication(u),
+            stop: (u) => this.client.stopApplication(u, stopOpts),
             restart: (u) => this.client.restartApplication(u),
           },
           database: {
             start: (u) => this.client.startDatabase(u),
-            stop: (u) => this.client.stopDatabase(u),
+            stop: (u) => this.client.stopDatabase(u, stopOpts),
             restart: (u) => this.client.restartDatabase(u),
           },
           service: {
             start: (u) => this.client.startService(u),
-            stop: (u) => this.client.stopService(u),
+            stop: (u) => this.client.stopService(u, stopOpts),
             restart: (u) => this.client.restartService(u),
           },
         };
@@ -1133,14 +1167,36 @@ export class CoolifyMcpServer extends McpServer {
         key: z.string().optional(),
         value: z.string().optional(),
         env_uuid: z.string().optional(),
+        comment: z.string().optional().describe('Comment for the env var'),
+        is_runtime: z.boolean().optional().describe('Available at runtime'),
+        is_buildtime: z.boolean().optional().describe('Available at build time'),
         bulk_data: z
-          .array(z.object({ key: z.string(), value: z.string() }))
+          .array(
+            z.object({
+              key: z.string(),
+              value: z.string(),
+              comment: z.string().optional(),
+              is_runtime: z.boolean().optional(),
+              is_buildtime: z.boolean().optional(),
+            }),
+          )
           .optional()
           .describe(
-            'Array of {key, value} for bulk_create action (application, database, and service)',
+            'Array of {key, value, comment?, is_runtime?, is_buildtime?} for bulk_create action (application, database, and service)',
           ),
       },
-      async ({ resource, action, uuid, key, value, env_uuid, bulk_data }) => {
+      async ({
+        resource,
+        action,
+        uuid,
+        key,
+        value,
+        env_uuid,
+        comment,
+        is_runtime,
+        is_buildtime,
+        bulk_data,
+      }) => {
         if (resource === 'application') {
           switch (action) {
             case 'list':
@@ -1148,12 +1204,27 @@ export class CoolifyMcpServer extends McpServer {
             case 'create':
               if (!key || !value)
                 return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
-              // Note: is_build_time is not passed - Coolify API rejects it for create action
-              return wrap(() => this.client.createApplicationEnvVar(uuid, { key, value }));
+              return wrap(() =>
+                this.client.createApplicationEnvVar(uuid, {
+                  key,
+                  value,
+                  comment,
+                  is_runtime,
+                  is_buildtime,
+                }),
+              );
             case 'update':
               if (!key || !value)
                 return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
-              return wrap(() => this.client.updateApplicationEnvVar(uuid, { key, value }));
+              return wrap(() =>
+                this.client.updateApplicationEnvVar(uuid, {
+                  key,
+                  value,
+                  comment,
+                  is_runtime,
+                  is_buildtime,
+                }),
+              );
             case 'delete':
               if (!env_uuid)
                 return { content: [{ type: 'text' as const, text: 'Error: env_uuid required' }] };
@@ -1174,11 +1245,27 @@ export class CoolifyMcpServer extends McpServer {
             case 'create':
               if (!key || !value)
                 return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
-              return wrap(() => this.client.createDatabaseEnvVar(uuid, { key, value }));
+              return wrap(() =>
+                this.client.createDatabaseEnvVar(uuid, {
+                  key,
+                  value,
+                  comment,
+                  is_runtime,
+                  is_buildtime,
+                }),
+              );
             case 'update':
               if (!key || !value)
                 return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
-              return wrap(() => this.client.updateDatabaseEnvVar(uuid, { key, value }));
+              return wrap(() =>
+                this.client.updateDatabaseEnvVar(uuid, {
+                  key,
+                  value,
+                  comment,
+                  is_runtime,
+                  is_buildtime,
+                }),
+              );
             case 'delete':
               if (!env_uuid)
                 return { content: [{ type: 'text' as const, text: 'Error: env_uuid required' }] };
@@ -1197,7 +1284,15 @@ export class CoolifyMcpServer extends McpServer {
             case 'create':
               if (!key || !value)
                 return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
-              return wrap(() => this.client.createServiceEnvVar(uuid, { key, value }));
+              return wrap(() =>
+                this.client.createServiceEnvVar(uuid, {
+                  key,
+                  value,
+                  comment,
+                  is_runtime,
+                  is_buildtime,
+                }),
+              );
             case 'update':
               return {
                 content: [

@@ -22,6 +22,7 @@ import type {
   Database,
   UuidResponse,
   MessageResponse,
+  ApplicationActionResponse,
   GitHubAppUpdateResponse,
   BatchOperationResult,
   CloudTokenValidation,
@@ -550,7 +551,7 @@ describe('update handler allowlist — create-only fields must not be forwarded'
         action: 'delete',
         uuid: 'srv-uuid',
       });
-      expect(spy).toHaveBeenCalledWith('srv-uuid');
+      expect(spy).toHaveBeenCalledWith('srv-uuid', undefined);
     });
   });
 
@@ -992,5 +993,125 @@ describe('hetzner handler dispatch', () => {
         private_key_uuid: 'key-uuid',
       }),
     );
+  });
+});
+
+// =============================================================================
+// align-coolify-api-fields: New parameter tests
+// =============================================================================
+
+describe('env_vars with comment field', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should pass comment and runtime fields to createApplicationEnvVar', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createApplicationEnvVar')
+      .mockResolvedValue({ uuid: 'env-uuid' } as UuidResponse);
+    await callHandler(server, 'env_vars', {
+      resource: 'application',
+      action: 'create',
+      uuid: 'app-uuid',
+      key: 'DB_URL',
+      value: 'postgres://...',
+      comment: 'Production DB',
+      is_runtime: true,
+      is_buildtime: false,
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', {
+      key: 'DB_URL',
+      value: 'postgres://...',
+      comment: 'Production DB',
+      is_runtime: true,
+      is_buildtime: false,
+    });
+  });
+
+  it('should pass comment and runtime fields to updateApplicationEnvVar', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'updateApplicationEnvVar')
+      .mockResolvedValue({ message: 'Updated' } as MessageResponse);
+    await callHandler(server, 'env_vars', {
+      resource: 'application',
+      action: 'update',
+      uuid: 'app-uuid',
+      key: 'DB_URL',
+      value: 'postgres://new',
+      comment: 'Updated comment',
+      is_runtime: false,
+      is_buildtime: true,
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', {
+      key: 'DB_URL',
+      value: 'postgres://new',
+      comment: 'Updated comment',
+      is_runtime: false,
+      is_buildtime: true,
+    });
+  });
+});
+
+describe('control stop with docker_cleanup', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should pass dockerCleanup option to stopApplication', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'stopApplication')
+      .mockResolvedValue({ message: 'Stopped' } as ApplicationActionResponse);
+    await callHandler(server, 'control', {
+      resource: 'application',
+      action: 'stop',
+      uuid: 'app-uuid',
+      docker_cleanup: false,
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', { dockerCleanup: false });
+  });
+
+  it('should not pass stopOpts when docker_cleanup is undefined', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'stopApplication')
+      .mockResolvedValue({ message: 'Stopped' } as ApplicationActionResponse);
+    await callHandler(server, 'control', {
+      resource: 'application',
+      action: 'stop',
+      uuid: 'app-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', undefined);
+  });
+});
+
+describe('server delete with force', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should pass force option to deleteServer', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deleteServer')
+      .mockResolvedValue({ message: 'ok' } as MessageResponse);
+    await callHandler(server, 'server', {
+      action: 'delete',
+      uuid: 'srv-uuid',
+      force: true,
+    });
+    expect(spy).toHaveBeenCalledWith('srv-uuid', { force: true });
   });
 });

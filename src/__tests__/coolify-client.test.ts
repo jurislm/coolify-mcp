@@ -439,6 +439,17 @@ describe('CoolifyClient', () => {
 
       expect(result).toEqual({ message: 'Stopped' });
     });
+
+    it('should stop an application with docker_cleanup disabled', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Stopped' }));
+
+      await client.stopApplication('app-uuid', { dockerCleanup: false });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/applications/app-uuid/stop?docker_cleanup=false',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
   });
 
   describe('databases', () => {
@@ -886,6 +897,21 @@ describe('CoolifyClient', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/servers/test-uuid/validate',
         expect.any(Object),
+      );
+    });
+
+    it('should force delete a server', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 204,
+        text: async () => '',
+      } as Response);
+
+      await client.deleteServer('test-uuid', { force: true });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/servers/test-uuid?force=true',
+        expect.objectContaining({ method: 'DELETE' }),
       );
     });
   });
@@ -1667,6 +1693,23 @@ describe('CoolifyClient', () => {
       expect(result).toEqual({ uuid: 'new-env-uuid' });
     });
 
+    it('should create application env var with comment and runtime fields', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ uuid: 'new-env-uuid' }));
+
+      await client.createApplicationEnvVar('app-uuid', {
+        key: 'DB_URL',
+        value: 'postgres://...',
+        comment: 'Production database',
+        is_runtime: true,
+        is_buildtime: false,
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(body.comment).toBe('Production database');
+      expect(body.is_runtime).toBe(true);
+      expect(body.is_buildtime).toBe(false);
+    });
+
     it('should update application env var', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Updated' }));
 
@@ -1793,6 +1836,17 @@ describe('CoolifyClient', () => {
       expect(result).toEqual({ message: 'Stopped' });
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/databases/db-uuid/stop',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+
+    it('should stop a database with docker_cleanup disabled', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Stopped' }));
+
+      await client.stopDatabase('db-uuid', { dockerCleanup: false });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/databases/db-uuid/stop?docker_cleanup=false',
         expect.objectContaining({ method: 'POST' }),
       );
     });
@@ -2124,6 +2178,40 @@ describe('CoolifyClient', () => {
       expect(result.name).toBe('updated-service');
     });
 
+    it('should update a service with new fields', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(mockService));
+
+      await client.updateService('test-uuid', {
+        urls: [{ name: 'web', url: 'https://example.com' }],
+        force_domain_override: true,
+        is_container_label_escape_enabled: false,
+        connect_to_docker_network: true,
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(body.urls).toEqual([{ name: 'web', url: 'https://example.com' }]);
+      expect(body.force_domain_override).toBe(true);
+      expect(body.is_container_label_escape_enabled).toBe(false);
+      expect(body.connect_to_docker_network).toBe(true);
+    });
+
+    it('should create a service with urls and label escape', async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockResponse({ uuid: 'new-svc-uuid', domains: ['https://example.com'] }),
+      );
+
+      await client.createService({
+        project_uuid: 'proj-uuid',
+        server_uuid: 'srv-uuid',
+        urls: [{ name: 'api', url: 'https://api.example.com' }],
+        is_container_label_escape_enabled: false,
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(body.urls).toEqual([{ name: 'api', url: 'https://api.example.com' }]);
+      expect(body.is_container_label_escape_enabled).toBe(false);
+    });
+
     it('should auto base64-encode docker_compose_raw in updateService', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse(mockService));
 
@@ -2154,6 +2242,17 @@ describe('CoolifyClient', () => {
       expect(result).toEqual({ message: 'Stopped' });
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/services/test-uuid/stop',
+        expect.objectContaining({ method: 'GET' }),
+      );
+    });
+
+    it('should stop a service with docker_cleanup disabled', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Stopped' }));
+
+      await client.stopService('test-uuid', { dockerCleanup: false });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/services/test-uuid/stop?docker_cleanup=false',
         expect.objectContaining({ method: 'GET' }),
       );
     });
