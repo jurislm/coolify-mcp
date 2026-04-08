@@ -22,6 +22,7 @@ import type {
   Database,
   UuidResponse,
   MessageResponse,
+  ApplicationActionResponse,
   GitHubAppUpdateResponse,
   BatchOperationResult,
   CloudTokenValidation,
@@ -550,7 +551,7 @@ describe('update handler allowlist — create-only fields must not be forwarded'
         action: 'delete',
         uuid: 'srv-uuid',
       });
-      expect(spy).toHaveBeenCalledWith('srv-uuid');
+      expect(spy).toHaveBeenCalledWith('srv-uuid', undefined);
     });
   });
 
@@ -884,7 +885,7 @@ describe('deploy pr parameter dispatch', () => {
       .spyOn(server.getClient(), 'deployByTagOrUuid')
       .mockResolvedValue({ message: 'Deploying' } as MessageResponse);
     await callHandler(server, 'deploy', { tag_or_uuid: 'app-uuid', pr: 42 });
-    expect(spy).toHaveBeenCalledWith('app-uuid', undefined, 42);
+    expect(spy).toHaveBeenCalledWith('app-uuid', undefined, 42, undefined);
   });
 
   it('should pass undefined pr when not provided', async () => {
@@ -892,7 +893,7 @@ describe('deploy pr parameter dispatch', () => {
       .spyOn(server.getClient(), 'deployByTagOrUuid')
       .mockResolvedValue({ message: 'Deploying' } as MessageResponse);
     await callHandler(server, 'deploy', { tag_or_uuid: 'app-uuid' });
-    expect(spy).toHaveBeenCalledWith('app-uuid', undefined, undefined);
+    expect(spy).toHaveBeenCalledWith('app-uuid', undefined, undefined, undefined);
   });
 });
 
@@ -992,5 +993,225 @@ describe('hetzner handler dispatch', () => {
         private_key_uuid: 'key-uuid',
       }),
     );
+  });
+});
+
+// =============================================================================
+// align-coolify-api-fields: New parameter tests
+// =============================================================================
+
+describe('env_vars with comment field', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should pass comment and runtime fields to createApplicationEnvVar', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createApplicationEnvVar')
+      .mockResolvedValue({ uuid: 'env-uuid' } as UuidResponse);
+    await callHandler(server, 'env_vars', {
+      resource: 'application',
+      action: 'create',
+      uuid: 'app-uuid',
+      key: 'DB_URL',
+      value: 'postgres://...',
+      comment: 'Production DB',
+      is_runtime: true,
+      is_buildtime: false,
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', {
+      key: 'DB_URL',
+      value: 'postgres://...',
+      comment: 'Production DB',
+      is_runtime: true,
+      is_buildtime: false,
+    });
+  });
+
+  it('should pass comment and runtime fields to updateApplicationEnvVar', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'updateApplicationEnvVar')
+      .mockResolvedValue({ message: 'Updated' } as MessageResponse);
+    await callHandler(server, 'env_vars', {
+      resource: 'application',
+      action: 'update',
+      uuid: 'app-uuid',
+      key: 'DB_URL',
+      value: 'postgres://new',
+      comment: 'Updated comment',
+      is_runtime: false,
+      is_buildtime: true,
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', {
+      key: 'DB_URL',
+      value: 'postgres://new',
+      comment: 'Updated comment',
+      is_runtime: false,
+      is_buildtime: true,
+    });
+  });
+});
+
+describe('control stop with docker_cleanup', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should pass dockerCleanup option to stopApplication', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'stopApplication')
+      .mockResolvedValue({ message: 'Stopped' } as ApplicationActionResponse);
+    await callHandler(server, 'control', {
+      resource: 'application',
+      action: 'stop',
+      uuid: 'app-uuid',
+      docker_cleanup: false,
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', { dockerCleanup: false });
+  });
+
+  it('should not pass stopOpts when docker_cleanup is undefined', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'stopApplication')
+      .mockResolvedValue({ message: 'Stopped' } as ApplicationActionResponse);
+    await callHandler(server, 'control', {
+      resource: 'application',
+      action: 'stop',
+      uuid: 'app-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', undefined);
+  });
+});
+
+describe('server delete with force', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should pass force option to deleteServer', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deleteServer')
+      .mockResolvedValue({ message: 'ok' } as MessageResponse);
+    await callHandler(server, 'server', {
+      action: 'delete',
+      uuid: 'srv-uuid',
+      force: true,
+    });
+    expect(spy).toHaveBeenCalledWith('srv-uuid', { force: true });
+  });
+});
+
+describe('application update with extended fields', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should pass extended fields to updateApplication', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'updateApplication')
+      .mockResolvedValue({} as Application);
+    await callHandler(server, 'application', {
+      action: 'update',
+      uuid: 'app-uuid',
+      domains: 'https://app.example.com',
+      is_static: true,
+      is_auto_deploy_enabled: false,
+      redirect: 'www',
+      pre_deployment_command: 'php artisan migrate',
+    });
+    const [, payload] = spy.mock.calls[0] as [string, Record<string, unknown>];
+    expect(payload.domains).toBe('https://app.example.com');
+    expect(payload.is_static).toBe(true);
+    expect(payload.is_auto_deploy_enabled).toBe(false);
+    expect(payload.redirect).toBe('www');
+    expect(payload.pre_deployment_command).toBe('php artisan migrate');
+  });
+});
+
+describe('server update with build fields', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should pass build fields to updateServer', async () => {
+    const spy = jest.spyOn(server.getClient(), 'updateServer').mockResolvedValue({} as Server);
+    await callHandler(server, 'server', {
+      action: 'update',
+      uuid: 'srv-uuid',
+      concurrent_builds: 4,
+      deployment_queue_limit: 10,
+    });
+    const [, payload] = spy.mock.calls[0] as [string, Record<string, unknown>];
+    expect(payload.concurrent_builds).toBe(4);
+    expect(payload.deployment_queue_limit).toBe(10);
+  });
+});
+
+describe('database with public_port_timeout', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should pass public_port_timeout to updateDatabase', async () => {
+    const spy = jest.spyOn(server.getClient(), 'updateDatabase').mockResolvedValue({} as Database);
+    await callHandler(server, 'database', {
+      action: 'update',
+      uuid: 'db-uuid',
+      public_port_timeout: 7200,
+    });
+    const [, payload] = spy.mock.calls[0] as [string, Record<string, unknown>];
+    expect(payload.public_port_timeout).toBe(7200);
+  });
+});
+
+describe('deploy with docker_tag', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should pass docker_tag to deployByTagOrUuid', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deployByTagOrUuid')
+      .mockResolvedValue({ message: 'Deploying' } as MessageResponse);
+    await callHandler(server, 'deploy', {
+      tag_or_uuid: 'app-uuid',
+      docker_tag: 'v2.0.0',
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', undefined, undefined, 'v2.0.0');
   });
 });

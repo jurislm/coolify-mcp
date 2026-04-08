@@ -312,9 +312,20 @@ export class CoolifyMcpServer extends McpServer {
         private_key_uuid: z.string().optional().describe('SSH key UUID (required for create)'),
         is_build_server: z.boolean().optional(),
         instant_validate: z.boolean().optional().describe('(create only)'),
+        proxy_type: z.string().optional().describe('Proxy type (update only)'),
+        concurrent_builds: z.number().optional().describe('Max concurrent builds (update only)'),
+        dynamic_timeout: z.number().optional().describe('Dynamic timeout seconds (update only)'),
+        deployment_queue_limit: z
+          .number()
+          .optional()
+          .describe('Deployment queue limit (update only)'),
+        force: z
+          .boolean()
+          .optional()
+          .describe('(delete only) Force delete server with all its resources'),
       },
       async (args) => {
-        const { action, uuid, ...serverData } = args;
+        const { action, uuid, force, ...serverData } = args;
         switch (action) {
           case 'create':
             if (!serverData.ip || !serverData.private_key_uuid || !serverData.name)
@@ -350,12 +361,18 @@ export class CoolifyMcpServer extends McpServer {
                 user: serverData.user,
                 private_key_uuid: serverData.private_key_uuid,
                 is_build_server: serverData.is_build_server,
+                proxy_type: serverData.proxy_type,
+                concurrent_builds: serverData.concurrent_builds,
+                dynamic_timeout: serverData.dynamic_timeout,
+                deployment_queue_limit: serverData.deployment_queue_limit,
               }),
             );
           case 'delete':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            return wrap(() => this.client.deleteServer(uuid));
+            return wrap(() =>
+              this.client.deleteServer(uuid, force !== undefined ? { force } : undefined),
+            );
         }
         return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
@@ -517,6 +534,26 @@ export class CoolifyMcpServer extends McpServer {
           .describe(
             'Raw (unencoded) docker-compose YAML to update (client auto base64-encodes; Docker Compose apps only)',
           ),
+        // Domain & routing (update)
+        domains: z.string().optional().describe('Comma-separated domain URLs (update)'),
+        redirect: z.enum(['www', 'non-www', 'both']).optional().describe('WWW redirect (update)'),
+        is_force_https_enabled: z.boolean().optional(),
+        // Static app (update)
+        is_static: z.boolean().optional(),
+        is_spa: z.boolean().optional(),
+        static_image: z.string().optional().describe('Docker image for static apps (update)'),
+        // Deployment behavior (update)
+        is_auto_deploy_enabled: z.boolean().optional(),
+        watch_paths: z.string().optional().describe('Paths to watch for auto-deploy (update)'),
+        // Container config (update)
+        custom_labels: z.string().optional().describe('Custom Docker labels (update)'),
+        custom_docker_run_options: z
+          .string()
+          .optional()
+          .describe('Custom Docker run options (update)'),
+        // Pre/Post commands (update)
+        pre_deployment_command: z.string().optional(),
+        post_deployment_command: z.string().optional(),
         // Delete fields
         delete_volumes: z.boolean().optional(),
       },
@@ -711,6 +748,18 @@ export class CoolifyMcpServer extends McpServer {
                 health_check_retries: args.health_check_retries,
                 health_check_start_period: args.health_check_start_period,
                 docker_compose_raw: args.docker_compose_raw,
+                domains: args.domains,
+                redirect: args.redirect,
+                is_force_https_enabled: args.is_force_https_enabled,
+                is_static: args.is_static,
+                is_spa: args.is_spa,
+                static_image: args.static_image,
+                is_auto_deploy_enabled: args.is_auto_deploy_enabled,
+                watch_paths: args.watch_paths,
+                custom_labels: args.custom_labels,
+                custom_docker_run_options: args.custom_docker_run_options,
+                pre_deployment_command: args.pre_deployment_command,
+                post_deployment_command: args.post_deployment_command,
               }),
             );
           case 'delete':
@@ -773,6 +822,10 @@ export class CoolifyMcpServer extends McpServer {
         image: z.string().optional(),
         is_public: z.boolean().optional(),
         public_port: z.number().optional(),
+        public_port_timeout: z
+          .number()
+          .optional()
+          .describe('Public port timeout in seconds (default: 3600)'),
         instant_deploy: z.boolean().optional(),
         delete_volumes: z.boolean().optional(),
         // Resource limit fields (update only)
@@ -838,6 +891,7 @@ export class CoolifyMcpServer extends McpServer {
                 image: dbData.image,
                 is_public: dbData.is_public,
                 public_port: dbData.public_port,
+                public_port_timeout: dbData.public_port_timeout,
                 limits_memory: dbData.limits_memory,
                 limits_memory_swap: dbData.limits_memory_swap,
                 limits_memory_swappiness: dbData.limits_memory_swappiness,
@@ -1007,8 +1061,24 @@ export class CoolifyMcpServer extends McpServer {
           .string()
           .optional()
           .describe(
-            'Raw (unencoded) docker-compose YAML for custom services (client auto base64-encodes). To update domain, modify Traefik labels here — the API does not support direct domain updates for services.',
+            'Raw (unencoded) docker-compose YAML for custom services (client auto base64-encodes).',
           ),
+        urls: z
+          .array(z.object({ name: z.string(), url: z.string() }))
+          .optional()
+          .describe('Service URLs per container (create/update)'),
+        force_domain_override: z
+          .boolean()
+          .optional()
+          .describe('Force domain override even if conflicts detected (create/update)'),
+        is_container_label_escape_enabled: z
+          .boolean()
+          .optional()
+          .describe('Escape special chars in container labels (create/update)'),
+        connect_to_docker_network: z
+          .boolean()
+          .optional()
+          .describe('Connect service to Docker network (update only)'),
         delete_volumes: z.boolean().optional(),
       },
       async (args) => {
@@ -1032,17 +1102,23 @@ export class CoolifyMcpServer extends McpServer {
                 environment_name: args.environment_name,
                 instant_deploy: args.instant_deploy,
                 docker_compose_raw: args.docker_compose_raw,
+                urls: args.urls,
+                force_domain_override: args.force_domain_override,
+                is_container_label_escape_enabled: args.is_container_label_escape_enabled,
               }),
             );
           case 'update': {
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            // Service update only accepts name, description, docker_compose_raw
             return wrap(() =>
               this.client.updateService(uuid, {
                 name: args.name,
                 description: args.description,
                 docker_compose_raw: args.docker_compose_raw,
+                urls: args.urls,
+                force_domain_override: args.force_domain_override,
+                is_container_label_escape_enabled: args.is_container_label_escape_enabled,
+                connect_to_docker_network: args.connect_to_docker_network,
               }),
             );
           }
@@ -1065,22 +1141,28 @@ export class CoolifyMcpServer extends McpServer {
         resource: z.enum(['application', 'database', 'service']),
         action: z.enum(['start', 'stop', 'restart']),
         uuid: z.string(),
+        docker_cleanup: z
+          .boolean()
+          .optional()
+          .describe('(stop only) Run docker cleanup after stopping. Defaults to true.'),
       },
-      async ({ resource, action, uuid }) => {
+      async ({ resource, action, uuid, docker_cleanup }) => {
+        const stopOpts =
+          docker_cleanup !== undefined ? { dockerCleanup: docker_cleanup } : undefined;
         const methods: Record<string, Record<string, (u: string) => Promise<unknown>>> = {
           application: {
             start: (u) => this.client.startApplication(u),
-            stop: (u) => this.client.stopApplication(u),
+            stop: (u) => this.client.stopApplication(u, stopOpts),
             restart: (u) => this.client.restartApplication(u),
           },
           database: {
             start: (u) => this.client.startDatabase(u),
-            stop: (u) => this.client.stopDatabase(u),
+            stop: (u) => this.client.stopDatabase(u, stopOpts),
             restart: (u) => this.client.restartDatabase(u),
           },
           service: {
             start: (u) => this.client.startService(u),
-            stop: (u) => this.client.stopService(u),
+            stop: (u) => this.client.stopService(u, stopOpts),
             restart: (u) => this.client.restartService(u),
           },
         };
@@ -1133,14 +1215,36 @@ export class CoolifyMcpServer extends McpServer {
         key: z.string().optional(),
         value: z.string().optional(),
         env_uuid: z.string().optional(),
+        comment: z.string().optional().describe('Comment for the env var'),
+        is_runtime: z.boolean().optional().describe('Available at runtime'),
+        is_buildtime: z.boolean().optional().describe('Available at build time'),
         bulk_data: z
-          .array(z.object({ key: z.string(), value: z.string() }))
+          .array(
+            z.object({
+              key: z.string(),
+              value: z.string(),
+              comment: z.string().optional(),
+              is_runtime: z.boolean().optional(),
+              is_buildtime: z.boolean().optional(),
+            }),
+          )
           .optional()
           .describe(
-            'Array of {key, value} for bulk_create action (application, database, and service)',
+            'Array of {key, value, comment?, is_runtime?, is_buildtime?} for bulk_create action (application, database, and service)',
           ),
       },
-      async ({ resource, action, uuid, key, value, env_uuid, bulk_data }) => {
+      async ({
+        resource,
+        action,
+        uuid,
+        key,
+        value,
+        env_uuid,
+        comment,
+        is_runtime,
+        is_buildtime,
+        bulk_data,
+      }) => {
         if (resource === 'application') {
           switch (action) {
             case 'list':
@@ -1148,12 +1252,27 @@ export class CoolifyMcpServer extends McpServer {
             case 'create':
               if (!key || !value)
                 return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
-              // Note: is_build_time is not passed - Coolify API rejects it for create action
-              return wrap(() => this.client.createApplicationEnvVar(uuid, { key, value }));
+              return wrap(() =>
+                this.client.createApplicationEnvVar(uuid, {
+                  key,
+                  value,
+                  comment,
+                  is_runtime,
+                  is_buildtime,
+                }),
+              );
             case 'update':
               if (!key || !value)
                 return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
-              return wrap(() => this.client.updateApplicationEnvVar(uuid, { key, value }));
+              return wrap(() =>
+                this.client.updateApplicationEnvVar(uuid, {
+                  key,
+                  value,
+                  comment,
+                  is_runtime,
+                  is_buildtime,
+                }),
+              );
             case 'delete':
               if (!env_uuid)
                 return { content: [{ type: 'text' as const, text: 'Error: env_uuid required' }] };
@@ -1174,11 +1293,27 @@ export class CoolifyMcpServer extends McpServer {
             case 'create':
               if (!key || !value)
                 return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
-              return wrap(() => this.client.createDatabaseEnvVar(uuid, { key, value }));
+              return wrap(() =>
+                this.client.createDatabaseEnvVar(uuid, {
+                  key,
+                  value,
+                  comment,
+                  is_runtime,
+                  is_buildtime,
+                }),
+              );
             case 'update':
               if (!key || !value)
                 return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
-              return wrap(() => this.client.updateDatabaseEnvVar(uuid, { key, value }));
+              return wrap(() =>
+                this.client.updateDatabaseEnvVar(uuid, {
+                  key,
+                  value,
+                  comment,
+                  is_runtime,
+                  is_buildtime,
+                }),
+              );
             case 'delete':
               if (!env_uuid)
                 return { content: [{ type: 'text' as const, text: 'Error: env_uuid required' }] };
@@ -1197,7 +1332,15 @@ export class CoolifyMcpServer extends McpServer {
             case 'create':
               if (!key || !value)
                 return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
-              return wrap(() => this.client.createServiceEnvVar(uuid, { key, value }));
+              return wrap(() =>
+                this.client.createServiceEnvVar(uuid, {
+                  key,
+                  value,
+                  comment,
+                  is_runtime,
+                  is_buildtime,
+                }),
+              );
             case 'update':
               return {
                 content: [
@@ -1250,10 +1393,11 @@ export class CoolifyMcpServer extends McpServer {
           .positive()
           .optional()
           .describe('Pull Request number for PR preview deploy'),
+        docker_tag: z.string().optional().describe('Docker image tag to deploy'),
       },
-      async ({ tag_or_uuid, force, pr }) =>
+      async ({ tag_or_uuid, force, pr, docker_tag }) =>
         wrapWithActions(
-          () => this.client.deployByTagOrUuid(tag_or_uuid, force, pr),
+          () => this.client.deployByTagOrUuid(tag_or_uuid, force, pr, docker_tag),
           () => [{ tool: 'list_deployments', args: {}, hint: 'Check deployment status' }],
         ),
     );
@@ -1543,6 +1687,15 @@ export class CoolifyMcpServer extends McpServer {
         database_backup_retention_days_s3: z.number().optional(),
         database_backup_retention_amount_locally: z.number().optional(),
         database_backup_retention_amount_s3: z.number().optional(),
+        database_backup_retention_max_storage_locally: z
+          .string()
+          .optional()
+          .describe('Max local backup storage (e.g. "10GB")'),
+        database_backup_retention_max_storage_s3: z
+          .string()
+          .optional()
+          .describe('Max S3 backup storage (e.g. "50GB")'),
+        timeout: z.number().optional().describe('Backup timeout in seconds'),
       },
       async (args) => {
         const { action, database_uuid, backup_uuid, execution_uuid, delete_s3 } = args;
@@ -1611,6 +1764,15 @@ export class CoolifyMcpServer extends McpServer {
                 ...(args.database_backup_retention_amount_s3 !== undefined && {
                   database_backup_retention_amount_s3: args.database_backup_retention_amount_s3,
                 }),
+                ...(args.database_backup_retention_max_storage_locally !== undefined && {
+                  database_backup_retention_max_storage_locally:
+                    args.database_backup_retention_max_storage_locally,
+                }),
+                ...(args.database_backup_retention_max_storage_s3 !== undefined && {
+                  database_backup_retention_max_storage_s3:
+                    args.database_backup_retention_max_storage_s3,
+                }),
+                ...(args.timeout !== undefined && { timeout: args.timeout }),
               }),
             );
           case 'update':
@@ -1642,6 +1804,15 @@ export class CoolifyMcpServer extends McpServer {
                 ...(args.database_backup_retention_amount_s3 !== undefined && {
                   database_backup_retention_amount_s3: args.database_backup_retention_amount_s3,
                 }),
+                ...(args.database_backup_retention_max_storage_locally !== undefined && {
+                  database_backup_retention_max_storage_locally:
+                    args.database_backup_retention_max_storage_locally,
+                }),
+                ...(args.database_backup_retention_max_storage_s3 !== undefined && {
+                  database_backup_retention_max_storage_s3:
+                    args.database_backup_retention_max_storage_s3,
+                }),
+                ...(args.timeout !== undefined && { timeout: args.timeout }),
               }),
             );
           case 'delete':
