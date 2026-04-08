@@ -812,7 +812,7 @@ export class CoolifyClient {
   ): Promise<MessageResponse> {
     return this.request<MessageResponse>(`/applications/${encodeURIComponent(uuid)}/envs/bulk`, {
       method: 'PATCH',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ data: data.data.map(normalizeEnvVarFields) }),
     });
   }
 
@@ -1077,7 +1077,7 @@ export class CoolifyClient {
     const param = this.isLikelyUuid(tagOrUuid) ? 'uuid' : 'tag';
     let url = `/deploy?${param}=${encodeURIComponent(tagOrUuid)}&force=${force}`;
     if (pr !== undefined) {
-      url += `&pr=${pr}`;
+      url += `&pr=${encodeURIComponent(String(pr))}`;
     }
     if (dockerTag !== undefined) {
       url += `&docker_tag=${encodeURIComponent(dockerTag)}`;
@@ -1342,7 +1342,7 @@ export class CoolifyClient {
   ): Promise<MessageResponse> {
     return this.request<MessageResponse>(`/databases/${encodeURIComponent(uuid)}/envs/bulk`, {
       method: 'PATCH',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ data: data.data.map(normalizeEnvVarFields) }),
     });
   }
 
@@ -2222,7 +2222,7 @@ export class CoolifyClient {
   ): Promise<MessageResponse> {
     return this.request<MessageResponse>(`/services/${encodeURIComponent(uuid)}/envs/bulk`, {
       method: 'PATCH',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ data: data.data.map(normalizeEnvVarFields) }),
     });
   }
 
