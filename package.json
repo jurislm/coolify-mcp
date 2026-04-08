@@ -32,7 +32,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky",
-    "prepublishOnly": "bun run test && bun run lint",
+    "prepublishOnly": "bun run build && bun run test && bun run lint",
     "start": "node dist/index.js"
   },
   "keywords": [
