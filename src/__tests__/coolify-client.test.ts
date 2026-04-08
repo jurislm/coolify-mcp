@@ -3751,12 +3751,12 @@ describe('CoolifyClient', () => {
 
         await client.bulkEnvUpdate(['app-1'], 'BUILD_VAR', 'value', true);
 
-        // Verify the PATCH call was made with is_build_time
+        // Verify the PATCH call was made with is_buildtime (normalized from is_build_time)
         expect(mockFetch).toHaveBeenCalledWith(
           'http://localhost:3000/api/v1/applications/app-1/envs',
           expect.objectContaining({
             method: 'PATCH',
-            body: JSON.stringify({ key: 'BUILD_VAR', value: 'value', is_build_time: true }),
+            body: JSON.stringify({ key: 'BUILD_VAR', value: 'value', is_buildtime: true }),
           }),
         );
       });

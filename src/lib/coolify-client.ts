@@ -207,6 +207,23 @@ function cleanRequestData<T extends object>(data: T): Partial<T> {
   return cleaned;
 }
 
+/**
+ * Normalize deprecated env var field names to match the Coolify API.
+ * Maps is_build_time → is_buildtime (Coolify API uses no underscore).
+ */
+function normalizeEnvVarFields<T extends { is_build_time?: boolean; is_buildtime?: boolean }>(
+  data: T,
+): Omit<T, 'is_build_time'> {
+  const { is_build_time, ...rest } = data;
+  if (
+    is_build_time !== undefined &&
+    (rest as { is_buildtime?: boolean }).is_buildtime === undefined
+  ) {
+    return { ...rest, is_buildtime: is_build_time } as Omit<T, 'is_build_time'>;
+  }
+  return rest as Omit<T, 'is_build_time'>;
+}
+
 /** Base64-encode a string. Always encodes — callers must pass raw content. */
 function toBase64(value: string): string {
   return Buffer.from(value, 'utf-8').toString('base64');
@@ -217,11 +234,12 @@ function toBase64(value: string): string {
  * Coolify API uses 'domains' field for setting application domain, not 'fqdn'.
  * This provides backward compatibility for callers using 'fqdn'.
  */
-function mapFqdnToDomains<T extends { fqdn?: string }>(
+function mapFqdnToDomains<T extends { fqdn?: string; domains?: string }>(
   data: T,
 ): Omit<T, 'fqdn'> & { domains?: string } {
   const { fqdn, ...rest } = data;
-  if (fqdn === undefined) {
+  // Only map fqdn → domains when domains is not already explicitly provided
+  if (fqdn === undefined || (rest as { domains?: string }).domains !== undefined) {
     return rest;
   }
   return { ...rest, domains: fqdn };
@@ -777,14 +795,14 @@ export class CoolifyClient {
   async createApplicationEnvVar(uuid: string, data: CreateEnvVarRequest): Promise<UuidResponse> {
     return this.request<UuidResponse>(`/applications/${encodeURIComponent(uuid)}/envs`, {
       method: 'POST',
-      body: JSON.stringify(cleanRequestData(data)),
+      body: JSON.stringify(cleanRequestData(normalizeEnvVarFields(data))),
     });
   }
 
   async updateApplicationEnvVar(uuid: string, data: UpdateEnvVarRequest): Promise<MessageResponse> {
     return this.request<MessageResponse>(`/applications/${encodeURIComponent(uuid)}/envs`, {
       method: 'PATCH',
-      body: JSON.stringify(cleanRequestData(data)),
+      body: JSON.stringify(cleanRequestData(normalizeEnvVarFields(data))),
     });
   }
 
@@ -1006,14 +1024,14 @@ export class CoolifyClient {
   async createServiceEnvVar(uuid: string, data: CreateEnvVarRequest): Promise<UuidResponse> {
     return this.request<UuidResponse>(`/services/${encodeURIComponent(uuid)}/envs`, {
       method: 'POST',
-      body: JSON.stringify(cleanRequestData(data)),
+      body: JSON.stringify(cleanRequestData(normalizeEnvVarFields(data))),
     });
   }
 
   async updateServiceEnvVar(uuid: string, data: UpdateEnvVarRequest): Promise<MessageResponse> {
     return this.request<MessageResponse>(`/services/${encodeURIComponent(uuid)}/envs`, {
       method: 'PATCH',
-      body: JSON.stringify(cleanRequestData(data)),
+      body: JSON.stringify(cleanRequestData(normalizeEnvVarFields(data))),
     });
   }
 
@@ -1307,14 +1325,14 @@ export class CoolifyClient {
   async createDatabaseEnvVar(uuid: string, data: CreateEnvVarRequest): Promise<UuidResponse> {
     return this.request<UuidResponse>(`/databases/${encodeURIComponent(uuid)}/envs`, {
       method: 'POST',
-      body: JSON.stringify(cleanRequestData(data)),
+      body: JSON.stringify(cleanRequestData(normalizeEnvVarFields(data))),
     });
   }
 
   async updateDatabaseEnvVar(uuid: string, data: UpdateEnvVarRequest): Promise<MessageResponse> {
     return this.request<MessageResponse>(`/databases/${encodeURIComponent(uuid)}/envs`, {
       method: 'PATCH',
-      body: JSON.stringify(cleanRequestData(data)),
+      body: JSON.stringify(cleanRequestData(normalizeEnvVarFields(data))),
     });
   }
 

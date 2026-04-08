@@ -2,11 +2,11 @@
 
 ### Requirement: Deploy supports pull request ID and Docker tag
 
-The `deployByTagOrUuid` client method SHALL accept optional `pull_request_id` (number) and `docker_tag` (string) parameters. These SHALL be sent as query parameters to the Coolify deploy endpoint.
+The `deployByTagOrUuid` client method SHALL accept optional `pr` (number) and `docker_tag` (string) parameters. These SHALL be sent as query parameters to the Coolify deploy endpoint.
 
 #### Scenario: Deploy a pull request preview
 
-- **WHEN** `deployByTagOrUuid` is called with `uuid: "app-uuid"` and `pull_request_id: 42`
+- **WHEN** `deployByTagOrUuid` is called with `uuid: "app-uuid"` and `pr: 42`
 - **THEN** the client sends GET `/deploy?uuid=app-uuid&pr=42`
 
 #### Scenario: Deploy a specific Docker tag
@@ -16,9 +16,9 @@ The `deployByTagOrUuid` client method SHALL accept optional `pull_request_id` (n
 
 ### Requirement: MCP deploy tool exposes PR and Docker tag params
 
-The `deploy` MCP tool SHALL accept optional `pull_request_id` (number) and `docker_tag` (string) parameters.
+The `deploy` MCP tool SHALL accept optional `pr` (number) and `docker_tag` (string) parameters.
 
 #### Scenario: MCP deploy PR preview
 
-- **WHEN** the `deploy` tool is called with `uuid: "app-uuid"` and `pull_request_id: 42`
+- **WHEN** the `deploy` tool is called with `uuid: "app-uuid"` and `pr: 42`
 - **THEN** the parameters are passed to `deployByTagOrUuid`

@@ -28,7 +28,7 @@ coolify-mcp v3.2.1 covers all Coolify API endpoints but many request types have 
 
 ### Deployment
 
-- Add `pull_request_id` and `docker_tag` parameters to deploy method and MCP tool
+- Add `docker_tag` parameter to deploy method and MCP tool (`pr` already supported)
 
 ## Capabilities
 
