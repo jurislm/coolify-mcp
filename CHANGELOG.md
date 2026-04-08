@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0](https://github.com/jurislm/coolify-mcp/compare/v3.2.1...v3.3.0) (2026-04-08)
+
+
+### Features
+
+* align API types with Coolify v4.0.0-beta.471 ([5848c1d](https://github.com/jurislm/coolify-mcp/commit/5848c1d406b131aa02f1d97b76f6fe561ea281fb))
+* align API types with Coolify v4.0.0-beta.471 ([231aff8](https://github.com/jurislm/coolify-mcp/commit/231aff8b9f4dac4ff9d4aa813cdecbba0bebcccb))
+* expand API field coverage for app, server, database, backup, and deploy ([aba87d9](https://github.com/jurislm/coolify-mcp/commit/aba87d9dec821eda7c396592ac949dc8718ab651))
+
+
+### Bug Fixes
+
+* address Copilot review — normalize is_build_time, prevent fqdn overwrite ([2ed990c](https://github.com/jurislm/coolify-mcp/commit/2ed990cc5882fbeeeb9d4e7c8cb69b42cc81a59f))
+
 ## [3.2.1](https://github.com/jurislm/coolify-mcp/compare/v3.2.0...v3.2.1) (2026-04-07)
 
 
