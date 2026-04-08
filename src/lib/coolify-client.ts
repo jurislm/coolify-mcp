@@ -1053,12 +1053,16 @@ export class CoolifyClient {
     tagOrUuid: string,
     force: boolean = false,
     pr?: number,
+    dockerTag?: string,
   ): Promise<MessageResponse> {
     // Detect if the value looks like a UUID or a tag name
     const param = this.isLikelyUuid(tagOrUuid) ? 'uuid' : 'tag';
     let url = `/deploy?${param}=${encodeURIComponent(tagOrUuid)}&force=${force}`;
     if (pr !== undefined) {
       url += `&pr=${pr}`;
+    }
+    if (dockerTag !== undefined) {
+      url += `&docker_tag=${encodeURIComponent(dockerTag)}`;
     }
     return this.request<MessageResponse>(url, { method: 'GET' });
   }

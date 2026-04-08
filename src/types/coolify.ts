@@ -134,6 +134,12 @@ export interface UpdateServerRequest {
   user?: string;
   private_key_uuid?: string;
   is_build_server?: boolean;
+  proxy_type?: string;
+  concurrent_builds?: number;
+  dynamic_timeout?: number;
+  deployment_queue_limit?: number;
+  server_disk_usage_notification_threshold?: number;
+  server_disk_usage_check_frequency?: number;
 }
 
 // =============================================================================
@@ -371,11 +377,43 @@ export interface UpdateApplicationRequest {
   // Resource limits
   limits_memory?: string;
   limits_memory_swap?: string;
+  limits_memory_swappiness?: number;
+  limits_memory_reservation?: string;
   limits_cpus?: string;
+  limits_cpuset?: string;
+  limits_cpu_shares?: number;
   // HTTP Basic Auth
   is_http_basic_auth_enabled?: boolean;
   http_basic_auth_username?: string;
   http_basic_auth_password?: string;
+  // Domain & Routing
+  domains?: string;
+  redirect?: 'www' | 'non-www' | 'both';
+  is_force_https_enabled?: boolean;
+  autogenerate_domain?: boolean;
+  // Static app
+  is_static?: boolean;
+  is_spa?: boolean;
+  static_image?: string;
+  // Deployment behavior
+  is_auto_deploy_enabled?: boolean;
+  use_build_server?: boolean;
+  is_preserve_repository_enabled?: boolean;
+  watch_paths?: string;
+  // Container config
+  custom_labels?: string;
+  custom_docker_run_options?: string;
+  custom_nginx_configuration?: string;
+  // Pre/Post deployment commands
+  pre_deployment_command?: string;
+  pre_deployment_command_container?: string;
+  post_deployment_command?: string;
+  post_deployment_command_container?: string;
+  // Webhook secrets
+  manual_webhook_secret_github?: string;
+  manual_webhook_secret_gitlab?: string;
+  manual_webhook_secret_bitbucket?: string;
+  manual_webhook_secret_gitea?: string;
 }
 
 export interface ApplicationActionResponse {
@@ -537,6 +575,7 @@ export interface UpdateDatabaseRequest {
   image?: string;
   is_public?: boolean;
   public_port?: number;
+  public_port_timeout?: number;
   limits_memory?: string;
   limits_memory_swap?: string;
   limits_memory_swappiness?: number;
@@ -593,6 +632,7 @@ export interface CreateDatabaseBaseRequest {
   image?: string;
   is_public?: boolean;
   public_port?: number;
+  public_port_timeout?: number;
   limits_memory?: string;
   limits_memory_swap?: string;
   limits_memory_swappiness?: number;
@@ -691,6 +731,9 @@ export interface CreateDatabaseBackupRequest {
   database_backup_retention_days_s3?: number;
   database_backup_retention_amount_locally?: number;
   database_backup_retention_amount_s3?: number;
+  database_backup_retention_max_storage_locally?: string;
+  database_backup_retention_max_storage_s3?: string;
+  timeout?: number;
 }
 
 export interface UpdateDatabaseBackupRequest {
@@ -704,6 +747,9 @@ export interface UpdateDatabaseBackupRequest {
   database_backup_retention_days_s3?: number;
   database_backup_retention_amount_locally?: number;
   database_backup_retention_amount_s3?: number;
+  database_backup_retention_max_storage_locally?: string;
+  database_backup_retention_max_storage_s3?: string;
+  timeout?: number;
 }
 
 export interface BackupExecution {

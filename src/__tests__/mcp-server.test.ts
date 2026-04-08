@@ -885,7 +885,7 @@ describe('deploy pr parameter dispatch', () => {
       .spyOn(server.getClient(), 'deployByTagOrUuid')
       .mockResolvedValue({ message: 'Deploying' } as MessageResponse);
     await callHandler(server, 'deploy', { tag_or_uuid: 'app-uuid', pr: 42 });
-    expect(spy).toHaveBeenCalledWith('app-uuid', undefined, 42);
+    expect(spy).toHaveBeenCalledWith('app-uuid', undefined, 42, undefined);
   });
 
   it('should pass undefined pr when not provided', async () => {
@@ -893,7 +893,7 @@ describe('deploy pr parameter dispatch', () => {
       .spyOn(server.getClient(), 'deployByTagOrUuid')
       .mockResolvedValue({ message: 'Deploying' } as MessageResponse);
     await callHandler(server, 'deploy', { tag_or_uuid: 'app-uuid' });
-    expect(spy).toHaveBeenCalledWith('app-uuid', undefined, undefined);
+    expect(spy).toHaveBeenCalledWith('app-uuid', undefined, undefined, undefined);
   });
 });
 
@@ -1113,5 +1113,105 @@ describe('server delete with force', () => {
       force: true,
     });
     expect(spy).toHaveBeenCalledWith('srv-uuid', { force: true });
+  });
+});
+
+describe('application update with extended fields', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should pass extended fields to updateApplication', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'updateApplication')
+      .mockResolvedValue({} as Application);
+    await callHandler(server, 'application', {
+      action: 'update',
+      uuid: 'app-uuid',
+      domains: 'https://app.example.com',
+      is_static: true,
+      is_auto_deploy_enabled: false,
+      redirect: 'www',
+      pre_deployment_command: 'php artisan migrate',
+    });
+    const [, payload] = spy.mock.calls[0] as [string, Record<string, unknown>];
+    expect(payload.domains).toBe('https://app.example.com');
+    expect(payload.is_static).toBe(true);
+    expect(payload.is_auto_deploy_enabled).toBe(false);
+    expect(payload.redirect).toBe('www');
+    expect(payload.pre_deployment_command).toBe('php artisan migrate');
+  });
+});
+
+describe('server update with build fields', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should pass build fields to updateServer', async () => {
+    const spy = jest.spyOn(server.getClient(), 'updateServer').mockResolvedValue({} as Server);
+    await callHandler(server, 'server', {
+      action: 'update',
+      uuid: 'srv-uuid',
+      concurrent_builds: 4,
+      deployment_queue_limit: 10,
+    });
+    const [, payload] = spy.mock.calls[0] as [string, Record<string, unknown>];
+    expect(payload.concurrent_builds).toBe(4);
+    expect(payload.deployment_queue_limit).toBe(10);
+  });
+});
+
+describe('database with public_port_timeout', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should pass public_port_timeout to updateDatabase', async () => {
+    const spy = jest.spyOn(server.getClient(), 'updateDatabase').mockResolvedValue({} as Database);
+    await callHandler(server, 'database', {
+      action: 'update',
+      uuid: 'db-uuid',
+      public_port_timeout: 7200,
+    });
+    const [, payload] = spy.mock.calls[0] as [string, Record<string, unknown>];
+    expect(payload.public_port_timeout).toBe(7200);
+  });
+});
+
+describe('deploy with docker_tag', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+  });
+
+  it('should pass docker_tag to deployByTagOrUuid', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deployByTagOrUuid')
+      .mockResolvedValue({ message: 'Deploying' } as MessageResponse);
+    await callHandler(server, 'deploy', {
+      tag_or_uuid: 'app-uuid',
+      docker_tag: 'v2.0.0',
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', undefined, undefined, 'v2.0.0');
   });
 });

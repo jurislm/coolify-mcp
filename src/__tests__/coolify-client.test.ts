@@ -874,6 +874,23 @@ describe('CoolifyClient', () => {
       );
     });
 
+    it('should update a server with extended build fields', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(mockServerInfo));
+
+      await client.updateServer('test-uuid', {
+        concurrent_builds: 4,
+        dynamic_timeout: 120,
+        deployment_queue_limit: 10,
+        proxy_type: 'traefik',
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(body.concurrent_builds).toBe(4);
+      expect(body.dynamic_timeout).toBe(120);
+      expect(body.deployment_queue_limit).toBe(10);
+      expect(body.proxy_type).toBe('traefik');
+    });
+
     it('should get server domains', async () => {
       const mockDomains = [{ domain: 'example.com', ip: '1.2.3.4' }];
       mockFetch.mockResolvedValueOnce(mockResponse(mockDomains));
@@ -1529,6 +1546,31 @@ describe('CoolifyClient', () => {
       );
     });
 
+    it('should update an application with extended fields', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(mockApplication));
+
+      await client.updateApplication('app-uuid', {
+        domains: 'https://app.example.com',
+        is_static: true,
+        is_spa: true,
+        is_auto_deploy_enabled: false,
+        redirect: 'www',
+        pre_deployment_command: 'php artisan migrate',
+        post_deployment_command: 'php artisan cache:clear',
+        custom_labels: 'traefik.enable=true',
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(body.domains).toBe('https://app.example.com');
+      expect(body.is_static).toBe(true);
+      expect(body.is_spa).toBe(true);
+      expect(body.is_auto_deploy_enabled).toBe(false);
+      expect(body.redirect).toBe('www');
+      expect(body.pre_deployment_command).toBe('php artisan migrate');
+      expect(body.post_deployment_command).toBe('php artisan cache:clear');
+      expect(body.custom_labels).toBe('traefik.enable=true');
+    });
+
     it('should auto base64-encode docker_compose_raw in updateApplication', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse(mockApplication));
 
@@ -1809,6 +1851,15 @@ describe('CoolifyClient', () => {
       expect(result.name).toBe('updated-db');
     });
 
+    it('should update a database with public_port_timeout', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(mockDatabase));
+
+      await client.updateDatabase('db-uuid', { public_port_timeout: 7200 });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(body.public_port_timeout).toBe(7200);
+    });
+
     it('should delete a database', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Deleted' }));
 
@@ -1923,6 +1974,21 @@ describe('CoolifyClient', () => {
         'http://localhost:3000/api/v1/databases/db-uuid/backups/backup-uuid',
         expect.objectContaining({ method: 'PATCH' }),
       );
+    });
+
+    it('should update a database backup with retention limits and timeout', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Updated' }));
+
+      await client.updateDatabaseBackup('db-uuid', 'backup-uuid', {
+        database_backup_retention_max_storage_locally: '10GB',
+        database_backup_retention_max_storage_s3: '50GB',
+        timeout: 600,
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(body.database_backup_retention_max_storage_locally).toBe('10GB');
+      expect(body.database_backup_retention_max_storage_s3).toBe('50GB');
+      expect(body.timeout).toBe(600);
     });
 
     it('should delete a database backup', async () => {
@@ -5135,6 +5201,15 @@ describe('CoolifyClient', () => {
       await client.deployByTagOrUuid('app-uuid', false);
       const url = mockFetch.mock.calls[0][0] as string;
       expect(url).not.toContain('pr=');
+    });
+
+    it('should append docker_tag to query string when provided', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Deploying' }));
+      await client.deployByTagOrUuid('app-uuid', false, undefined, 'v2.0.0');
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('docker_tag=v2.0.0'),
+        expect.any(Object),
+      );
     });
   });
 

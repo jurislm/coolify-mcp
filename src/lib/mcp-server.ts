@@ -312,6 +312,13 @@ export class CoolifyMcpServer extends McpServer {
         private_key_uuid: z.string().optional().describe('SSH key UUID (required for create)'),
         is_build_server: z.boolean().optional(),
         instant_validate: z.boolean().optional().describe('(create only)'),
+        proxy_type: z.string().optional().describe('Proxy type (update only)'),
+        concurrent_builds: z.number().optional().describe('Max concurrent builds (update only)'),
+        dynamic_timeout: z.number().optional().describe('Dynamic timeout seconds (update only)'),
+        deployment_queue_limit: z
+          .number()
+          .optional()
+          .describe('Deployment queue limit (update only)'),
         force: z
           .boolean()
           .optional()
@@ -354,6 +361,10 @@ export class CoolifyMcpServer extends McpServer {
                 user: serverData.user,
                 private_key_uuid: serverData.private_key_uuid,
                 is_build_server: serverData.is_build_server,
+                proxy_type: serverData.proxy_type,
+                concurrent_builds: serverData.concurrent_builds,
+                dynamic_timeout: serverData.dynamic_timeout,
+                deployment_queue_limit: serverData.deployment_queue_limit,
               }),
             );
           case 'delete':
@@ -523,6 +534,26 @@ export class CoolifyMcpServer extends McpServer {
           .describe(
             'Raw (unencoded) docker-compose YAML to update (client auto base64-encodes; Docker Compose apps only)',
           ),
+        // Domain & routing (update)
+        domains: z.string().optional().describe('Comma-separated domain URLs (update)'),
+        redirect: z.enum(['www', 'non-www', 'both']).optional().describe('WWW redirect (update)'),
+        is_force_https_enabled: z.boolean().optional(),
+        // Static app (update)
+        is_static: z.boolean().optional(),
+        is_spa: z.boolean().optional(),
+        static_image: z.string().optional().describe('Docker image for static apps (update)'),
+        // Deployment behavior (update)
+        is_auto_deploy_enabled: z.boolean().optional(),
+        watch_paths: z.string().optional().describe('Paths to watch for auto-deploy (update)'),
+        // Container config (update)
+        custom_labels: z.string().optional().describe('Custom Docker labels (update)'),
+        custom_docker_run_options: z
+          .string()
+          .optional()
+          .describe('Custom Docker run options (update)'),
+        // Pre/Post commands (update)
+        pre_deployment_command: z.string().optional(),
+        post_deployment_command: z.string().optional(),
         // Delete fields
         delete_volumes: z.boolean().optional(),
       },
@@ -717,6 +748,18 @@ export class CoolifyMcpServer extends McpServer {
                 health_check_retries: args.health_check_retries,
                 health_check_start_period: args.health_check_start_period,
                 docker_compose_raw: args.docker_compose_raw,
+                domains: args.domains,
+                redirect: args.redirect,
+                is_force_https_enabled: args.is_force_https_enabled,
+                is_static: args.is_static,
+                is_spa: args.is_spa,
+                static_image: args.static_image,
+                is_auto_deploy_enabled: args.is_auto_deploy_enabled,
+                watch_paths: args.watch_paths,
+                custom_labels: args.custom_labels,
+                custom_docker_run_options: args.custom_docker_run_options,
+                pre_deployment_command: args.pre_deployment_command,
+                post_deployment_command: args.post_deployment_command,
               }),
             );
           case 'delete':
@@ -779,6 +822,10 @@ export class CoolifyMcpServer extends McpServer {
         image: z.string().optional(),
         is_public: z.boolean().optional(),
         public_port: z.number().optional(),
+        public_port_timeout: z
+          .number()
+          .optional()
+          .describe('Public port timeout in seconds (default: 3600)'),
         instant_deploy: z.boolean().optional(),
         delete_volumes: z.boolean().optional(),
         // Resource limit fields (update only)
@@ -844,6 +891,7 @@ export class CoolifyMcpServer extends McpServer {
                 image: dbData.image,
                 is_public: dbData.is_public,
                 public_port: dbData.public_port,
+                public_port_timeout: dbData.public_port_timeout,
                 limits_memory: dbData.limits_memory,
                 limits_memory_swap: dbData.limits_memory_swap,
                 limits_memory_swappiness: dbData.limits_memory_swappiness,
@@ -1345,10 +1393,11 @@ export class CoolifyMcpServer extends McpServer {
           .positive()
           .optional()
           .describe('Pull Request number for PR preview deploy'),
+        docker_tag: z.string().optional().describe('Docker image tag to deploy'),
       },
-      async ({ tag_or_uuid, force, pr }) =>
+      async ({ tag_or_uuid, force, pr, docker_tag }) =>
         wrapWithActions(
-          () => this.client.deployByTagOrUuid(tag_or_uuid, force, pr),
+          () => this.client.deployByTagOrUuid(tag_or_uuid, force, pr, docker_tag),
           () => [{ tool: 'list_deployments', args: {}, hint: 'Check deployment status' }],
         ),
     );
@@ -1638,6 +1687,15 @@ export class CoolifyMcpServer extends McpServer {
         database_backup_retention_days_s3: z.number().optional(),
         database_backup_retention_amount_locally: z.number().optional(),
         database_backup_retention_amount_s3: z.number().optional(),
+        database_backup_retention_max_storage_locally: z
+          .string()
+          .optional()
+          .describe('Max local backup storage (e.g. "10GB")'),
+        database_backup_retention_max_storage_s3: z
+          .string()
+          .optional()
+          .describe('Max S3 backup storage (e.g. "50GB")'),
+        timeout: z.number().optional().describe('Backup timeout in seconds'),
       },
       async (args) => {
         const { action, database_uuid, backup_uuid, execution_uuid, delete_s3 } = args;
@@ -1706,6 +1764,15 @@ export class CoolifyMcpServer extends McpServer {
                 ...(args.database_backup_retention_amount_s3 !== undefined && {
                   database_backup_retention_amount_s3: args.database_backup_retention_amount_s3,
                 }),
+                ...(args.database_backup_retention_max_storage_locally !== undefined && {
+                  database_backup_retention_max_storage_locally:
+                    args.database_backup_retention_max_storage_locally,
+                }),
+                ...(args.database_backup_retention_max_storage_s3 !== undefined && {
+                  database_backup_retention_max_storage_s3:
+                    args.database_backup_retention_max_storage_s3,
+                }),
+                ...(args.timeout !== undefined && { timeout: args.timeout }),
               }),
             );
           case 'update':
@@ -1737,6 +1804,15 @@ export class CoolifyMcpServer extends McpServer {
                 ...(args.database_backup_retention_amount_s3 !== undefined && {
                   database_backup_retention_amount_s3: args.database_backup_retention_amount_s3,
                 }),
+                ...(args.database_backup_retention_max_storage_locally !== undefined && {
+                  database_backup_retention_max_storage_locally:
+                    args.database_backup_retention_max_storage_locally,
+                }),
+                ...(args.database_backup_retention_max_storage_s3 !== undefined && {
+                  database_backup_retention_max_storage_s3:
+                    args.database_backup_retention_max_storage_s3,
+                }),
+                ...(args.timeout !== undefined && { timeout: args.timeout }),
               }),
             );
           case 'delete':
