@@ -12,17 +12,14 @@ export default defineConfig(
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
-      globals: {
-        ...globals.node,
-      },
+      globals: { ...globals.node },
     },
     rules: {
-      '@typescript-eslint/explicit-function-return-type': 'warn',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
     },
   },
   {
-    ignores: ['dist/', 'node_modules/', 'coverage/', '.worktrees/'],
+    ignores: ['dist/', 'node_modules/', '.worktrees/'],
   },
 );
