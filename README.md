@@ -1,4 +1,4 @@
-# Coolify MCP Server
+# @jurislm/coolify-mcp
 
 [![npm version](https://img.shields.io/npm/v/@jurislm/coolify-mcp.svg)](https://www.npmjs.com/package/@jurislm/coolify-mcp)
 [![npm downloads](https://img.shields.io/npm/dm/@jurislm/coolify-mcp.svg)](https://www.npmjs.com/package/@jurislm/coolify-mcp)
