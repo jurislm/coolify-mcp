@@ -124,8 +124,8 @@ Add to your MCP configuration (`.mcp.json` or `~/.claude/settings.json`):
 {
   "mcpServers": {
     "coolify": {
-      "command": "npx",
-      "args": ["-y", "@jurislm/coolify-mcp@latest"],
+      "command": "bunx",
+      "args": ["@jurislm/coolify-mcp@latest"],
       "env": {
         "COOLIFY_ACCESS_TOKEN": "your-api-token",
         "COOLIFY_BASE_URL": "https://your-coolify-instance.com"
