@@ -51,16 +51,16 @@
 - 運作中的 Coolify 實例（已測試 v4.0.0-beta.471）
 - Coolify API Token（於 Coolify 設定 > API 中產生）
 
-### Claude Desktop
+### Claude Code（via npx）
 
-新增至 Claude Desktop 設定檔（macOS：`~/Library/Application Support/Claude/claude_desktop_config.json`）：
+新增至 MCP 設定檔（`.mcp.json` 或 `~/.claude/settings.json`）：
 
 ```json
 {
   "mcpServers": {
     "coolify": {
       "command": "npx",
-      "args": ["-y", "@jurislm/coolify-mcp"],
+      "args": ["-y", "@jurislm/coolify-mcp@latest"],
       "env": {
         "COOLIFY_ACCESS_TOKEN": "your-api-token",
         "COOLIFY_BASE_URL": "https://your-coolify-instance.com"
@@ -70,21 +70,38 @@
 }
 ```
 
-### Claude Code
+### Claude Code Plugin（jurislm-tools）
 
-```bash
-claude mcp add coolify \
-  -e COOLIFY_BASE_URL="https://your-coolify-instance.com" \
-  -e COOLIFY_ACCESS_TOKEN="your-api-token" \
-  -- npx @jurislm/coolify-mcp@latest
+如果你使用 [jurislm-tools](https://github.com/jurislm/jurislm-tools) Claude Code plugin，`jt:coolify` 已包含在內：
+
+```
+/plugin marketplace update jurislm-tools
 ```
 
-> **注意：** 在 Claude Code CLI 中請使用 `@latest` 標籤（而非 `-y` 旗標）以確保穩定啟動。
-
-### Cursor
+在 `~/.zshenv` 設定環境變數：
 
 ```bash
-env COOLIFY_ACCESS_TOKEN=your-api-token COOLIFY_BASE_URL=https://your-coolify-instance.com npx -y @jurislm/coolify-mcp
+export COOLIFY_ACCESS_TOKEN=your-api-token
+export COOLIFY_BASE_URL=https://your-coolify-instance.com
+```
+
+### Claude Desktop
+
+新增至 Claude Desktop 設定檔（macOS：`~/Library/Application Support/Claude/claude_desktop_config.json`）：
+
+```json
+{
+  "mcpServers": {
+    "coolify": {
+      "command": "npx",
+      "args": ["-y", "@jurislm/coolify-mcp@latest"],
+      "env": {
+        "COOLIFY_ACCESS_TOKEN": "your-api-token",
+        "COOLIFY_BASE_URL": "https://your-coolify-instance.com"
+      }
+    }
+  }
+}
 ```
 
 ## Context 優化回應
