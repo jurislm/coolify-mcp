@@ -27,7 +27,7 @@
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch --testPathIgnorePatterns=integration",
     "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage --testPathIgnorePatterns=integration",
     "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPattern=integration --testTimeout=60000",
-    "lint": "eslint .",
+    "lint": "eslint --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
