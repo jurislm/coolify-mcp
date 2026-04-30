@@ -1,4 +1,4 @@
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+import { jest, describe, it, expect, beforeEach } from 'bun:test';
 import { CoolifyClient } from '../lib/coolify-client.js';
 import type { ServiceType, CreateServiceRequest } from '../types/coolify.js';
 
@@ -2773,7 +2773,7 @@ describe('CoolifyClient', () => {
         text: async () => 'v4.0.0',
       } as Response);
 
-      await expect(client.validateConnection()).resolves.not.toThrow();
+      await expect(client.validateConnection()).resolves.toBeUndefined();
     });
 
     it('should throw on failed connection validation', async () => {
