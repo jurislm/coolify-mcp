@@ -6,7 +6,7 @@
  * These tests verify MCP server instantiation and structure.
  */
 import { createRequire } from 'module';
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest } from 'bun:test';
 import {
   CoolifyMcpServer,
   VERSION,
