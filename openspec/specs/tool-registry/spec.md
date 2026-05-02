@@ -6,7 +6,16 @@ date: 2026-04-07
 
 ## Purpose
 
-Define the required MCP tool surface for consolidated Coolify infrastructure management.
+Define the required MCP tool surface for consolidated Coolify infrastructure management. This spec describes tool existence and error-safety requirements only. Behavioral semantics for each tool family are documented in their respective feature specs:
+
+- [hetzner-integration](../hetzner-integration/spec.md) — Hetzner Cloud provisioning
+- [smart-diagnostics](../smart-diagnostics/spec.md) — diagnose_app, diagnose_server, find_issues
+- [database-backups](../database-backups/spec.md) — backup schedule and execution management
+- [storages](../storages/spec.md) — persistent volume mounts for apps, databases, services
+- [scheduled-tasks](../scheduled-tasks/spec.md) — cron-style tasks for apps and services
+- [cloud-tokens](../cloud-tokens/spec.md) — cloud provider API token CRUD and validation
+- [batch-operations](../batch-operations/spec.md) — restart_project_apps, bulk_env_update, stop_all_apps, redeploy_project
+- [github-apps](../github-apps/spec.md) — GitHub App CRUD and repo/branch enumeration
 
 ## Requirements
 
