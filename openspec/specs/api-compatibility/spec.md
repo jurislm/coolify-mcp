@@ -24,6 +24,11 @@ The client MUST transform caller-facing inputs into the field names and payload 
 - **WHEN** a caller provides docker_compose_raw as plain text content
 - **THEN** the client encodes content to base64 prior to API submission
 
+#### Scenario: Environment variable field name normalization
+
+- **WHEN** a caller provides an environment variable object using the deprecated `is_build_time` field name
+- **THEN** the client maps it to the Coolify API's canonical `is_buildtime` field name (no underscore) before sending the request; the mapping only applies when `is_buildtime` is not already explicitly provided by the caller
+
 ### Requirement: Request payloads must drop undefined fields while preserving explicit false
 
 The client MUST remove undefined values from outgoing payloads and MUST preserve explicit false boolean values.

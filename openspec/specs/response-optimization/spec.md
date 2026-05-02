@@ -44,10 +44,17 @@ Application log handling MUST enforce size limits to avoid unbounded payload gro
 
 #### Scenario: Log content exceeds limits
 
-- **WHEN** logs exceed configured line or character boundaries
-- **THEN** output is truncated to the most recent content and clearly indicates truncation
+- **WHEN** logs exceed configured line or character boundaries (default: 100 lines, 50,000 characters)
+- **THEN** output is truncated to the most recent content and clearly indicates truncation with the prefix `"...[truncated]...\n"` prepended to the retained tail
 
 #### Scenario: Log content within limits
 
-- **WHEN** logs are below configured limits
+- **WHEN** logs are below both the line limit (100) and character limit (50,000)
 - **THEN** logs are returned without truncation artifacts
+
+#### Scenario: Truncation precedence
+
+- **WHEN** log content exceeds the line limit but not the character limit
+- **THEN** only the line-based truncation applies (keep last N lines)
+- **WHEN** the line-truncated result still exceeds the character limit
+- **THEN** character-based truncation is applied as a safety net on top of the already line-truncated content
