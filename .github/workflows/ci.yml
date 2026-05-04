@@ -4,9 +4,13 @@ on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
   push:
+    # Only run on push to main as a post-merge safety net.
+    # `develop` is excluded because every change to develop arrives via a
+    # PR (per CLAUDE.md branch policy), and the `pull_request` trigger
+    # already covers it. Listing develop here causes every push to a PR'd
+    # develop branch to trigger CI twice.
     branches:
       - main
-      - develop
   workflow_dispatch:
 
 jobs:
