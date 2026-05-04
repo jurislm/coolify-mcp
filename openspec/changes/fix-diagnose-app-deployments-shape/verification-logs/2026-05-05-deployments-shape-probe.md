@@ -77,10 +77,8 @@ $ bun test --timeout 60000 ./src/__tests__/integration/diagnostics.integration.t
 - `should detect issues in an unhealthy application` — 同上
 - `should return diagnostic data for a server` — TEST_DATA.SERVER_UUID 同樣 stale
 
-→ 這 3 個既有失敗是 test fixture maintainability 問題，建議另開 issue 追蹤（建議改為 self-discovery 模式）。
+→ 這 3 個既有失敗已在後續 commit `f97fa4c` 修正：改為 self-discovery 模式（從 `listApplications` / `listServers` 動態取真實 UUID），不再依賴 hardcoded 環境特定值。
 
-## Next
+## Status
 
-- task 5.x：build / typecheck / lint / format check
-- task 6.x：CHANGELOG 與 CLAUDE.md gotcha 補記
-- task 7.x：commit + PR
+本 verification 已完整支撐 PR #25 的設計與實作。後續 PR review feedback（round 1 / round 2）的修正紀錄見對應 commit log，不在此 log 範圍內。

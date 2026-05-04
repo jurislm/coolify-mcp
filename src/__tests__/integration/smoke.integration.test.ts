@@ -1,7 +1,7 @@
 /**
  * Smoke integration tests — quick sanity checks against a real Coolify instance.
  *
- * Run with: npm run test:integration
+ * Run with: bun run test:integration
  *
  * Prerequisites:
  * - COOLIFY_URL and COOLIFY_TOKEN environment variables set (from .env)

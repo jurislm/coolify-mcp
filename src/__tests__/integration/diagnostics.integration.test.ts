@@ -8,7 +8,7 @@
  * - COOLIFY_URL and COOLIFY_TOKEN environment variables set (from .env)
  * - Access to a running Coolify instance
  *
- * Run with: npm run test:integration
+ * Run with: bun run test:integration
  */
 
 import { config } from 'dotenv';
