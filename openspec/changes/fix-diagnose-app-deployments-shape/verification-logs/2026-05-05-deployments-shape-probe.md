@@ -6,7 +6,9 @@
 
 ## Method
 
-從 `~/.zshenv` 載入 `COOLIFY_BASE_URL` / `COOLIFY_ACCESS_TOKEN`（user 自架 Coolify），用 `bun -e` 直接 fetch endpoint，**不印 raw response**，只記錄：HTTP status / typeof body / Array.isArray / top-level keys。
+用 `bun -e` 直接 fetch endpoint，**不印 raw response**，只記錄：HTTP status / typeof body / Array.isArray / top-level keys。
+
+連線資訊：probe 執行時 user 自架 Coolify 的 `~/.zshenv` 仍是 legacy env names（`COOLIFY_BASE_URL` / `COOLIFY_ACCESS_TOKEN`）。本 PR 已將 canonical 名稱改為 `COOLIFY_URL` / `COOLIFY_TOKEN`（runtime 接受新舊名 fallback），未來重跑 probe 應使用新名稱。
 
 對 issue 列出的三個 query 跑：
 

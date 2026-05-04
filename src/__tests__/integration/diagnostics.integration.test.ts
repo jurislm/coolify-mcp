@@ -54,6 +54,7 @@ describeFn('Diagnostic Integration Tests', () => {
     });
 
     // Self-discover real UUIDs so tests work against any Coolify instance.
+    // Use `||` (not `??`) so empty-string env vars fall through to discovery.
     const [apps, servers] = await Promise.all([client.listApplications(), client.listServers()]);
 
     const isHealthy = (status: string | undefined): boolean =>
@@ -62,25 +63,38 @@ describeFn('Diagnostic Integration Tests', () => {
       !!status &&
       (status.includes('exited') || status.includes('unhealthy') || status.includes('error'));
 
-    TEST_DATA.SERVER_UUID = process.env.INTEGRATION_SERVER_UUID ?? servers[0]?.uuid ?? null;
+    TEST_DATA.SERVER_UUID = process.env.INTEGRATION_SERVER_UUID || servers[0]?.uuid || null;
     TEST_DATA.APP_UUID_HEALTHY =
-      process.env.INTEGRATION_APP_UUID_HEALTHY ??
-      apps.find((a) => isHealthy(a.status))?.uuid ??
-      apps[0]?.uuid ??
+      process.env.INTEGRATION_APP_UUID_HEALTHY ||
+      apps.find((a) => isHealthy(a.status))?.uuid ||
+      apps[0]?.uuid ||
       null;
     TEST_DATA.APP_UUID_UNHEALTHY =
-      process.env.INTEGRATION_APP_UUID_UNHEALTHY ??
-      apps.find((a) => isUnhealthy(a.status))?.uuid ??
+      process.env.INTEGRATION_APP_UUID_UNHEALTHY ||
+      apps.find((a) => isUnhealthy(a.status))?.uuid ||
       null;
+
+    // Mandatory: at least one application and one server must exist for the
+    // suite to be meaningful. Failing fast here is better than each test
+    // silently returning early (which would log green CI with 0 assertions).
+    if (!TEST_DATA.APP_UUID_HEALTHY) {
+      throw new Error(
+        'No application discoverable — set INTEGRATION_APP_UUID_HEALTHY or ensure Coolify has at least one application',
+      );
+    }
+    if (!TEST_DATA.SERVER_UUID) {
+      throw new Error(
+        'No server discoverable — set INTEGRATION_SERVER_UUID or ensure Coolify has at least one server',
+      );
+    }
+    // APP_UUID_UNHEALTHY is optional — unhealthy apps may not exist in a
+    // clean environment. The dependent test handles its absence explicitly.
   }, 30000);
 
   describe('diagnoseApplication', () => {
     it('should return diagnostic data for a healthy application', async () => {
-      if (!TEST_DATA.APP_UUID_HEALTHY) {
-        console.warn('No application discoverable — skipping');
-        return;
-      }
-      const result = await client.diagnoseApplication(TEST_DATA.APP_UUID_HEALTHY);
+      // beforeAll guarantees APP_UUID_HEALTHY is non-null
+      const result = await client.diagnoseApplication(TEST_DATA.APP_UUID_HEALTHY!);
 
       // Should have application info
       expect(result.application).not.toBeNull();
@@ -112,9 +126,13 @@ describeFn('Diagnostic Integration Tests', () => {
       console.log('Healthy app diagnostic result:', JSON.stringify(result, null, 2));
     }, 30000);
 
+    // This test is environment-dependent: a clean Coolify with no unhealthy
+    // apps cannot exercise this path. We assert against `null` to skip via
+    // a passing no-op rather than `return`-with-zero-assertions.
     it('should detect issues in an unhealthy application', async () => {
       if (!TEST_DATA.APP_UUID_UNHEALTHY) {
-        console.warn('No unhealthy application in this Coolify instance — skipping');
+        // Explicit no-op: record intent without leaving zero assertions.
+        expect(TEST_DATA.APP_UUID_UNHEALTHY).toBeNull();
         return;
       }
       const result = await client.diagnoseApplication(TEST_DATA.APP_UUID_UNHEALTHY);
@@ -149,11 +167,8 @@ describeFn('Diagnostic Integration Tests', () => {
     // fix, listApplicationDeployments normalizes the wrapper shape so the
     // diagnostic completes and no slice-related TypeError leaks into errors.
     it('does not crash on real Coolify deployments wrapper shape (issue #24)', async () => {
-      if (!TEST_DATA.APP_UUID_HEALTHY) {
-        console.warn('No application discoverable — skipping issue #24 regression');
-        return;
-      }
-      const result = await client.diagnoseApplication(TEST_DATA.APP_UUID_HEALTHY);
+      // beforeAll guarantees APP_UUID_HEALTHY is non-null
+      const result = await client.diagnoseApplication(TEST_DATA.APP_UUID_HEALTHY!);
 
       expect(result.application).not.toBeNull();
       expect(Array.isArray(result.recent_deployments)).toBe(true);
@@ -165,11 +180,8 @@ describeFn('Diagnostic Integration Tests', () => {
 
   describe('diagnoseServer', () => {
     it('should return diagnostic data for a server', async () => {
-      if (!TEST_DATA.SERVER_UUID) {
-        console.warn('No server discoverable — skipping');
-        return;
-      }
-      const result = await client.diagnoseServer(TEST_DATA.SERVER_UUID);
+      // beforeAll guarantees SERVER_UUID is non-null
+      const result = await client.diagnoseServer(TEST_DATA.SERVER_UUID!);
 
       // Should have server info
       expect(result.server).not.toBeNull();

@@ -33,10 +33,10 @@
 
 ## 5. 品質檢核（commit 前必須全綠）
 
-- [x] 5.1 `bun run build` 生產 code 0 新錯誤（`bun:test` 既有錯誤不在範圍）
-- [x] 5.2 `bun run test` 全綠（383 pass / 0 fail）
+- [x] 5.1 `bun run build` 全綠（修正 root cause：`bun install` 同步 lockfile + `tsconfig.json` exclude `__tests__`，避免 prepublishOnly 失敗阻擋 npm publish）
+- [x] 5.2 `bun run test` 全綠（383 pass / 0 fail unit；10 pass / 0 fail integration — 修好 3 個既有 stale TEST_DATA 測試，改為 self-discovery）
 - [x] 5.3 `bun run lint` 0 errors / 0 warnings
-- [x] 5.4 `bun run format:check` 全部通過（已跑 `bun run format`）
+- [x] 5.4 `bun run format:check` 全部通過
 
 ## 6. 文件更新
 

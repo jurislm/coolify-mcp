@@ -2612,25 +2612,31 @@ describe('CoolifyClient', () => {
 
       it('returns an empty array and warns when shape is unrecognized', async () => {
         const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-        mockFetch.mockResolvedValueOnce(mockResponse({ foo: 'bar' }));
+        try {
+          mockFetch.mockResolvedValueOnce(mockResponse({ foo: 'bar' }));
 
-        const result = await client.listApplicationDeployments('app-uuid');
+          const result = await client.listApplicationDeployments('app-uuid');
 
-        expect(result).toEqual([]);
-        expect(warnSpy).toHaveBeenCalledTimes(1);
-        expect(warnSpy.mock.calls[0]?.[0]).toContain('unrecognized response shape');
-        warnSpy.mockRestore();
+          expect(result).toEqual([]);
+          expect(warnSpy).toHaveBeenCalledTimes(1);
+          expect(warnSpy.mock.calls[0]?.[0]).toContain('unrecognized response shape');
+        } finally {
+          warnSpy.mockRestore();
+        }
       });
 
       it('returns an empty array and warns when response is null', async () => {
         const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-        mockFetch.mockResolvedValueOnce(mockResponse(null));
+        try {
+          mockFetch.mockResolvedValueOnce(mockResponse(null));
 
-        const result = await client.listApplicationDeployments('app-uuid');
+          const result = await client.listApplicationDeployments('app-uuid');
 
-        expect(result).toEqual([]);
-        expect(warnSpy).toHaveBeenCalledTimes(1);
-        warnSpy.mockRestore();
+          expect(result).toEqual([]);
+          expect(warnSpy).toHaveBeenCalledTimes(1);
+        } finally {
+          warnSpy.mockRestore();
+        }
       });
     });
   });
@@ -3251,19 +3257,22 @@ describe('CoolifyClient', () => {
       // Issue #24: even an unrecognized shape must not abort the diagnosis.
       it('completes diagnosis with empty deployments when shape is unrecognized (issue #24)', async () => {
         const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-        mockFetch
-          .mockResolvedValueOnce(mockResponse(mockApp))
-          .mockResolvedValueOnce(mockResponse(mockLogs))
-          .mockResolvedValueOnce(mockResponse(mockEnvVars))
-          .mockResolvedValueOnce(mockResponse({ foo: 'bar' }));
+        try {
+          mockFetch
+            .mockResolvedValueOnce(mockResponse(mockApp))
+            .mockResolvedValueOnce(mockResponse(mockLogs))
+            .mockResolvedValueOnce(mockResponse(mockEnvVars))
+            .mockResolvedValueOnce(mockResponse({ foo: 'bar' }));
 
-        const result = await client.diagnoseApplication(testAppUuid);
+          const result = await client.diagnoseApplication(testAppUuid);
 
-        expect(result.application).not.toBeNull();
-        expect(result.recent_deployments).toEqual([]);
-        const errorJoined = (result.errors ?? []).join(' ');
-        expect(errorJoined).not.toContain('slice');
-        warnSpy.mockRestore();
+          expect(result.application).not.toBeNull();
+          expect(result.recent_deployments).toEqual([]);
+          const errorJoined = (result.errors ?? []).join(' ');
+          expect(errorJoined).not.toContain('slice');
+        } finally {
+          warnSpy.mockRestore();
+        }
       });
 
       it('should detect unhealthy application status', async () => {
