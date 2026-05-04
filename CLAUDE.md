@@ -100,6 +100,7 @@ The Coolify OpenAPI docs are unreliable — always test against the real API. Kn
 
 - **`docker_compose_raw` requires base64** — The API expects base64-encoded YAML, but the field name suggests raw content. The client auto-encodes this field so models and callers can pass plain YAML.
 - **Validation errors vary in format** — The `errors` field in API error responses can contain `string[]` or plain `string` values. The client handles both.
+- **`/deployments/applications/{uuid}` returns a wrapper, not an array** — OpenAPI claims `type: array`, but real Coolify returns `{ count, deployments: [...] }`. The client normalizes this in `listApplicationDeployments` (also accepts `{ data: [...] }` and bare arrays as fallbacks). See issue #24.
 
 ## TypeScript Standards
 

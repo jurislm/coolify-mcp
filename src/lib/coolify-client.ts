@@ -306,6 +306,36 @@ function toDeploymentSummary(dep: Deployment): DeploymentSummary {
   };
 }
 
+/**
+ * Normalize Coolify's `/deployments/applications/{uuid}` response shape.
+ *
+ * Coolify's OpenAPI claims this endpoint returns a bare array, but real
+ * instances may return a wrapper object (e.g. `{ count, deployments }` or
+ * `{ data }`). Without normalization, downstream callers crash with
+ * `deployments.slice is not a function` (issue #24).
+ */
+function normalizeDeploymentsResponse(raw: unknown): Deployment[] {
+  if (Array.isArray(raw)) return raw as Deployment[];
+  if (raw !== null && typeof raw === 'object') {
+    const obj = raw as Record<string, unknown>;
+    if (Array.isArray(obj.data)) return obj.data as Deployment[];
+    if (Array.isArray(obj.deployments)) return obj.deployments as Deployment[];
+  }
+  // Unrecognized shape: warn (without leaking values) and fall back to empty.
+  const summary =
+    raw === null
+      ? 'null'
+      : raw === undefined
+        ? 'undefined'
+        : typeof raw === 'object'
+          ? `object keys=${JSON.stringify(Object.keys(raw as object))}`
+          : typeof raw;
+  console.warn(
+    `[coolify-mcp] listApplicationDeployments: unrecognized response shape (${summary}); returning empty array`,
+  );
+  return [];
+}
+
 function toDeploymentEssential(dep: Deployment): DeploymentEssential {
   return {
     uuid: dep.uuid,
@@ -1086,7 +1116,10 @@ export class CoolifyClient {
   }
 
   async listApplicationDeployments(appUuid: string): Promise<Deployment[]> {
-    return this.request<Deployment[]>(`/deployments/applications/${encodeURIComponent(appUuid)}`);
+    const raw = await this.request<unknown>(
+      `/deployments/applications/${encodeURIComponent(appUuid)}`,
+    );
+    return normalizeDeploymentsResponse(raw);
   }
 
   // ===========================================================================

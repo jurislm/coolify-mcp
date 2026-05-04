@@ -108,6 +108,37 @@ describeFn('Diagnostic Integration Tests', () => {
       expect(result.errors!.length).toBeGreaterThan(0);
       expect(result.application).toBeNull();
     }, 30000);
+
+    // Regression test for issue #24
+    // (https://github.com/jurislm/coolify-mcp/issues/24): diagnose_app used
+    // to crash with `deployments.slice is not a function` because Coolify
+    // returns `{ count, deployments }` instead of a bare array. This test
+    // self-discovers a real application UUID from listApplications and runs
+    // diagnoseApplication, asserting no slice-related error leaks into the
+    // response. Self-discovery avoids hard-coding environment-specific UUIDs.
+    it('does not crash on real Coolify deployments wrapper shape (issue #24)', async () => {
+      const apps = await client.listApplications();
+      if (apps.length === 0) {
+        console.warn('No applications in this Coolify instance — skipping issue #24 regression');
+        return;
+      }
+      const targetUuid = process.env.INTEGRATION_APP_UUID ?? (apps[0]?.uuid as string | undefined);
+      if (!targetUuid) {
+        console.warn('No application UUID resolvable — skipping issue #24 regression');
+        return;
+      }
+
+      const result = await client.diagnoseApplication(targetUuid);
+
+      // Application must resolve (we picked a real UUID from listApplications)
+      expect(result.application).not.toBeNull();
+      // Deployments must always be an array post-normalization
+      expect(Array.isArray(result.recent_deployments)).toBe(true);
+      // Errors must not include the pre-fix TypeError signature
+      const errorJoined = (result.errors ?? []).join(' ').toLowerCase();
+      expect(errorJoined).not.toContain('slice');
+      expect(errorJoined).not.toContain('not a function');
+    }, 30000);
   });
 
   describe('diagnoseServer', () => {
