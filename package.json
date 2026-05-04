@@ -1,6 +1,6 @@
 {
   "name": "@jurislm/coolify-mcp",
-  "version": "3.3.2",
+  "version": "3.3.3",
   "description": "MCP server implementation for Coolify",
   "type": "module",
   "main": "./dist/index.js",
