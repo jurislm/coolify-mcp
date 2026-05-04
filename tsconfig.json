@@ -16,5 +16,11 @@
     "resolveJsonModule": true
   },
   "include": ["src"],
+  // src/__tests__ is excluded from production build because:
+  //   1. tests are run by `bun test` (which type-checks them at runtime
+  //      against bun:test types), not compiled to dist/
+  //   2. test-only types (jest globals legacy, Bun.serve mocks) would
+  //      otherwise cause noise during `bun run build` (used by
+  //      prepublishOnly), without adding value — the tests aren't shipped.
   "exclude": ["node_modules", "dist", "tests", "src/__tests__"]
 }

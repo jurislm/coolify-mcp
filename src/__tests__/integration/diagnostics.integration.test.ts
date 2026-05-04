@@ -27,16 +27,16 @@ const shouldRun = COOLIFY_URL && COOLIFY_TOKEN;
 // suite works against any environment. Set the env vars below to pin a
 // specific UUID; otherwise the first matching resource is used.
 //   INTEGRATION_APP_UUID            — any application UUID (used for general diagnostics)
-//   INTEGRATION_APP_UUID_UNHEALTHY  — application UUID with exited/unhealthy status
 //   INTEGRATION_SERVER_UUID         — server UUID
+//   INTEGRATION_APP_UUID_UNHEALTHY  — required to enable the unhealthy-app
+//                                     test (no auto-discovery; the test is
+//                                     `it.skipIf`'d when this is unset)
 const TEST_DATA: {
   SERVER_UUID: string | null;
   APP_UUID: string | null;
-  APP_UUID_UNHEALTHY: string | null;
 } = {
   SERVER_UUID: null,
   APP_UUID: null,
-  APP_UUID_UNHEALTHY: null,
 };
 
 const describeFn = shouldRun ? describe : describe.skip;
@@ -57,19 +57,11 @@ describeFn('Diagnostic Integration Tests', () => {
     // Use `||` (not `??`) so empty-string env vars fall through to discovery.
     const [apps, servers] = await Promise.all([client.listApplications(), client.listServers()]);
 
-    const isUnhealthy = (status: string | undefined): boolean =>
-      !!status &&
-      (status.includes('exited') || status.includes('unhealthy') || status.includes('error'));
-
     TEST_DATA.SERVER_UUID = process.env.INTEGRATION_SERVER_UUID || servers[0]?.uuid || null;
     // General-purpose application UUID for diagnostic testing — does NOT
     // require the application to be healthy. The dependent tests assert
     // structural correctness, not specific health status.
     TEST_DATA.APP_UUID = process.env.INTEGRATION_APP_UUID || apps[0]?.uuid || null;
-    TEST_DATA.APP_UUID_UNHEALTHY =
-      process.env.INTEGRATION_APP_UUID_UNHEALTHY ||
-      apps.find((a) => isUnhealthy(a.status))?.uuid ||
-      null;
 
     // Mandatory: at least one application and one server must exist for the
     // suite to be meaningful. Failing fast here is better than each test
@@ -84,8 +76,6 @@ describeFn('Diagnostic Integration Tests', () => {
         'No server discoverable — set INTEGRATION_SERVER_UUID or ensure Coolify has at least one server',
       );
     }
-    // APP_UUID_UNHEALTHY is optional — unhealthy apps may not exist in a
-    // clean environment. The dependent test handles its absence explicitly.
   }, 30000);
 
   describe('diagnoseApplication', () => {
@@ -123,30 +113,35 @@ describeFn('Diagnostic Integration Tests', () => {
       console.log('Healthy app diagnostic result:', JSON.stringify(result, null, 2));
     }, 30000);
 
-    // This test is environment-dependent: a clean Coolify with no unhealthy
-    // apps cannot exercise this path. We assert against `null` to skip via
-    // a passing no-op rather than `return`-with-zero-assertions.
-    it('should detect issues in an unhealthy application', async () => {
-      if (!TEST_DATA.APP_UUID_UNHEALTHY) {
-        // Explicit no-op: record intent without leaving zero assertions.
-        expect(TEST_DATA.APP_UUID_UNHEALTHY).toBeNull();
-        return;
-      }
-      const result = await client.diagnoseApplication(TEST_DATA.APP_UUID_UNHEALTHY);
+    // This test requires an unhealthy application to exercise the
+    // unhealthy code path. Since auto-discovery cannot guarantee one
+    // exists in a clean Coolify, the test is skipped unless the user
+    // explicitly pins one via INTEGRATION_APP_UUID_UNHEALTHY. The bun
+    // test runner reports this as "skipped" (not "passed"), making
+    // intent obvious in the report. Run with:
+    //   INTEGRATION_APP_UUID_UNHEALTHY=<uuid> bun run test:integration
+    it.skipIf(!process.env.INTEGRATION_APP_UUID_UNHEALTHY)(
+      'should detect issues in an unhealthy application',
+      async () => {
+        const result = await client.diagnoseApplication(
+          process.env.INTEGRATION_APP_UUID_UNHEALTHY!,
+        );
 
-      expect(result.application).not.toBeNull();
+        expect(result.application).not.toBeNull();
 
-      // Should detect unhealthy status
-      if (
-        result.application?.status?.includes('exited') ||
-        result.application?.status?.includes('unhealthy')
-      ) {
-        expect(result.health.status).toBe('unhealthy');
-        expect(result.health.issues.length).toBeGreaterThan(0);
-      }
+        // Should detect unhealthy status
+        if (
+          result.application?.status?.includes('exited') ||
+          result.application?.status?.includes('unhealthy')
+        ) {
+          expect(result.health.status).toBe('unhealthy');
+          expect(result.health.issues.length).toBeGreaterThan(0);
+        }
 
-      console.log('Unhealthy app diagnostic result:', JSON.stringify(result, null, 2));
-    }, 30000);
+        console.log('Unhealthy app diagnostic result:', JSON.stringify(result, null, 2));
+      },
+      30000,
+    );
 
     it('should handle non-existent application gracefully', async () => {
       const result = await client.diagnoseApplication('non-existent-uuid');
