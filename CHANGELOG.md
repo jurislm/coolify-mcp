@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.3](https://github.com/jurislm/coolify-mcp/compare/v3.3.2...v3.3.3) (2026-05-04)
+
+
+### Bug Fixes
+
+* diagnose_app deployments.slice crash + env var rename (closes [#24](https://github.com/jurislm/coolify-mcp/issues/24)) ([#25](https://github.com/jurislm/coolify-mcp/issues/25)) ([293939b](https://github.com/jurislm/coolify-mcp/commit/293939b6232aad961bbc058103c0d2eb1c361c1d))
+
 ## [3.3.2](https://github.com/jurislm/coolify-mcp/compare/v3.3.1...v3.3.2) (2026-05-02)
 
 
