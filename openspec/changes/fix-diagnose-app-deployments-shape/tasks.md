@@ -46,11 +46,11 @@
 
 ## 7. Commit & PR
 
-- [ ] 7.1 `git status` 確認所有改動位於 develop worktree 範圍
-- [ ] 7.2 提交：`git commit -m "fix: normalize listApplicationDeployments response shape (#24)"`（不用 `--no-verify`）
-- [ ] 7.3 推 develop 分支：`git push -u origin develop`
-- [ ] 7.4 用 `gh pr create` 建 PR `develop → main`，body 引用 issue #24 並列 verification 證據
-- [ ] 7.5 PR 建好後用 `gh api` 設 labels (`bug`) 與 assignee (`terry90918`)（GraphQL 不支援，必走 REST API）
+- [x] 7.1 `git status` 確認所有改動位於 develop worktree 範圍
+- [x] 7.2 拆兩個 commit：`fix:` (dae1439) + `chore:` (5437729)
+- [x] 7.3 推 develop 分支
+- [x] 7.4 PR #25 建立：https://github.com/jurislm/coolify-mcp/pull/25
+- [x] 7.5 設 label `bug` + assignee `terry90918`（REST API）
 
 ## 8. Post-merge
 

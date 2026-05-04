@@ -23,15 +23,20 @@ const COOLIFY_TOKEN = process.env.COOLIFY_TOKEN;
 // Skip all tests if environment variables are not set
 const shouldRun = COOLIFY_URL && COOLIFY_TOKEN;
 
-// Test data - UUIDs from actual infrastructure
-// These should be updated to match your test environment
-const TEST_DATA = {
-  // Server: coolify-apps (running, reachable)
-  SERVER_UUID: 'ggkk8w4c08gw48oowsg4g0oc',
-  // Application: test-system (running)
-  APP_UUID_HEALTHY: 'xs0sgs4gog044s4k4c88kgsc',
-  // Application: Bumnail Benerator (exited:unhealthy)
-  APP_UUID_UNHEALTHY: 't444wg40s4kkwcc04s084wgw',
+// Test data is discovered at runtime from the live Coolify instance so the
+// suite works against any environment. Set the env vars below to pin a
+// specific UUID; otherwise the first matching resource is used.
+//   INTEGRATION_APP_UUID_HEALTHY   — application UUID with running:healthy status
+//   INTEGRATION_APP_UUID_UNHEALTHY — application UUID with exited/unhealthy status
+//   INTEGRATION_SERVER_UUID        — server UUID
+const TEST_DATA: {
+  SERVER_UUID: string | null;
+  APP_UUID_HEALTHY: string | null;
+  APP_UUID_UNHEALTHY: string | null;
+} = {
+  SERVER_UUID: null,
+  APP_UUID_HEALTHY: null,
+  APP_UUID_UNHEALTHY: null,
 };
 
 const describeFn = shouldRun ? describe : describe.skip;
@@ -39,7 +44,7 @@ const describeFn = shouldRun ? describe : describe.skip;
 describeFn('Diagnostic Integration Tests', () => {
   let client: CoolifyClient;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     if (!COOLIFY_URL || !COOLIFY_TOKEN) {
       throw new Error('COOLIFY_URL and COOLIFY_TOKEN must be set for integration tests');
     }
@@ -47,10 +52,34 @@ describeFn('Diagnostic Integration Tests', () => {
       baseUrl: COOLIFY_URL,
       accessToken: COOLIFY_TOKEN,
     });
-  });
+
+    // Self-discover real UUIDs so tests work against any Coolify instance.
+    const [apps, servers] = await Promise.all([client.listApplications(), client.listServers()]);
+
+    const isHealthy = (status: string | undefined): boolean =>
+      !!status && status.includes('running') && !status.includes('unhealthy');
+    const isUnhealthy = (status: string | undefined): boolean =>
+      !!status &&
+      (status.includes('exited') || status.includes('unhealthy') || status.includes('error'));
+
+    TEST_DATA.SERVER_UUID = process.env.INTEGRATION_SERVER_UUID ?? servers[0]?.uuid ?? null;
+    TEST_DATA.APP_UUID_HEALTHY =
+      process.env.INTEGRATION_APP_UUID_HEALTHY ??
+      apps.find((a) => isHealthy(a.status))?.uuid ??
+      apps[0]?.uuid ??
+      null;
+    TEST_DATA.APP_UUID_UNHEALTHY =
+      process.env.INTEGRATION_APP_UUID_UNHEALTHY ??
+      apps.find((a) => isUnhealthy(a.status))?.uuid ??
+      null;
+  }, 30000);
 
   describe('diagnoseApplication', () => {
     it('should return diagnostic data for a healthy application', async () => {
+      if (!TEST_DATA.APP_UUID_HEALTHY) {
+        console.warn('No application discoverable — skipping');
+        return;
+      }
       const result = await client.diagnoseApplication(TEST_DATA.APP_UUID_HEALTHY);
 
       // Should have application info
@@ -84,6 +113,10 @@ describeFn('Diagnostic Integration Tests', () => {
     }, 30000);
 
     it('should detect issues in an unhealthy application', async () => {
+      if (!TEST_DATA.APP_UUID_UNHEALTHY) {
+        console.warn('No unhealthy application in this Coolify instance — skipping');
+        return;
+      }
       const result = await client.diagnoseApplication(TEST_DATA.APP_UUID_UNHEALTHY);
 
       expect(result.application).not.toBeNull();
@@ -112,29 +145,18 @@ describeFn('Diagnostic Integration Tests', () => {
     // Regression test for issue #24
     // (https://github.com/jurislm/coolify-mcp/issues/24): diagnose_app used
     // to crash with `deployments.slice is not a function` because Coolify
-    // returns `{ count, deployments }` instead of a bare array. This test
-    // self-discovers a real application UUID from listApplications and runs
-    // diagnoseApplication, asserting no slice-related error leaks into the
-    // response. Self-discovery avoids hard-coding environment-specific UUIDs.
+    // returns `{ count, deployments }` instead of a bare array. After the
+    // fix, listApplicationDeployments normalizes the wrapper shape so the
+    // diagnostic completes and no slice-related TypeError leaks into errors.
     it('does not crash on real Coolify deployments wrapper shape (issue #24)', async () => {
-      const apps = await client.listApplications();
-      if (apps.length === 0) {
-        console.warn('No applications in this Coolify instance — skipping issue #24 regression');
+      if (!TEST_DATA.APP_UUID_HEALTHY) {
+        console.warn('No application discoverable — skipping issue #24 regression');
         return;
       }
-      const targetUuid = process.env.INTEGRATION_APP_UUID ?? (apps[0]?.uuid as string | undefined);
-      if (!targetUuid) {
-        console.warn('No application UUID resolvable — skipping issue #24 regression');
-        return;
-      }
+      const result = await client.diagnoseApplication(TEST_DATA.APP_UUID_HEALTHY);
 
-      const result = await client.diagnoseApplication(targetUuid);
-
-      // Application must resolve (we picked a real UUID from listApplications)
       expect(result.application).not.toBeNull();
-      // Deployments must always be an array post-normalization
       expect(Array.isArray(result.recent_deployments)).toBe(true);
-      // Errors must not include the pre-fix TypeError signature
       const errorJoined = (result.errors ?? []).join(' ').toLowerCase();
       expect(errorJoined).not.toContain('slice');
       expect(errorJoined).not.toContain('not a function');
@@ -143,6 +165,10 @@ describeFn('Diagnostic Integration Tests', () => {
 
   describe('diagnoseServer', () => {
     it('should return diagnostic data for a server', async () => {
+      if (!TEST_DATA.SERVER_UUID) {
+        console.warn('No server discoverable — skipping');
+        return;
+      }
       const result = await client.diagnoseServer(TEST_DATA.SERVER_UUID);
 
       // Should have server info
