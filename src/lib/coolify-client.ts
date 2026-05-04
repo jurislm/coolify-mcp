@@ -351,6 +351,10 @@ function normalizeDeploymentsResponse(raw: unknown): Deployment[] {
   if (Array.isArray(raw)) return filterDeployments(raw);
   if (raw !== null && typeof raw === 'object') {
     const obj = raw as Record<string, unknown>;
+    // Priority: `data` is checked before `deployments` so a Laravel-style
+    // pagination wrapper (the more generic shape) wins over Coolify's
+    // current named-array shape if a future response carries both keys.
+    // The order is locked by `prefers data over deployments` test below.
     if (Array.isArray(obj.data)) return filterDeployments(obj.data);
     if (Array.isArray(obj.deployments)) return filterDeployments(obj.deployments);
   }

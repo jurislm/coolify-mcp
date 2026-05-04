@@ -2639,6 +2639,21 @@ describe('CoolifyClient', () => {
         }
       });
 
+      // Lock the priority order: `data` is checked before `deployments`.
+      // If a future refactor swaps these branches the test fails loudly.
+      it('prefers data over deployments when both keys are present', async () => {
+        const fromData = { ...mockDeployment, uuid: 'from-data' };
+        const fromDeployments = { ...mockDeployment, uuid: 'from-deployments' };
+        mockFetch.mockResolvedValueOnce(
+          mockResponse({ data: [fromData], deployments: [fromDeployments] }),
+        );
+
+        const result = await client.listApplicationDeployments('app-uuid');
+
+        expect(result).toEqual([fromData]);
+        expect(result.map((d) => d.uuid)).not.toContain('from-deployments');
+      });
+
       // Element-level shape drift: drop entries missing uuid, warn once.
       it('filters out entries that lack a uuid and warns', async () => {
         const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});

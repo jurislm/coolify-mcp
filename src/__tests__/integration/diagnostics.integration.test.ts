@@ -11,6 +11,7 @@
  * Run with: bun run test:integration
  */
 
+import { describe, it, expect, beforeAll } from 'bun:test';
 import { config } from 'dotenv';
 import { CoolifyClient } from '../../lib/coolify-client.js';
 

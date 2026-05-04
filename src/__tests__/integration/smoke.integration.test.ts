@@ -12,6 +12,7 @@
  * its validation behaviour, these tests may need updating.
  */
 
+import { describe, it, expect, beforeAll } from 'bun:test';
 import { config } from 'dotenv';
 import { CoolifyClient } from '../../lib/coolify-client.js';
 
