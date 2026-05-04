@@ -2638,6 +2638,33 @@ describe('CoolifyClient', () => {
           warnSpy.mockRestore();
         }
       });
+
+      // Element-level shape drift: drop entries missing uuid, warn once.
+      it('filters out entries that lack a uuid and warns', async () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        try {
+          mockFetch.mockResolvedValueOnce(
+            mockResponse({
+              count: 3,
+              deployments: [
+                mockDeployment,
+                { status: 'queued', no_uuid: true },
+                { uuid: 'd2', status: 'finished' },
+              ],
+            }),
+          );
+
+          const result = await client.listApplicationDeployments('app-uuid');
+
+          // Only entries with a string uuid should remain
+          expect(result).toHaveLength(2);
+          expect(result.map((d) => d.uuid)).toEqual([mockDeployment.uuid, 'd2']);
+          expect(warnSpy).toHaveBeenCalledTimes(1);
+          expect(warnSpy.mock.calls[0]?.[0]).toContain('lacking a uuid');
+        } finally {
+          warnSpy.mockRestore();
+        }
+      });
     });
   });
 

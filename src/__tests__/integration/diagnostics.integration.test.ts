@@ -26,16 +26,16 @@ const shouldRun = COOLIFY_URL && COOLIFY_TOKEN;
 // Test data is discovered at runtime from the live Coolify instance so the
 // suite works against any environment. Set the env vars below to pin a
 // specific UUID; otherwise the first matching resource is used.
-//   INTEGRATION_APP_UUID_HEALTHY   — application UUID with running:healthy status
-//   INTEGRATION_APP_UUID_UNHEALTHY — application UUID with exited/unhealthy status
-//   INTEGRATION_SERVER_UUID        — server UUID
+//   INTEGRATION_APP_UUID            — any application UUID (used for general diagnostics)
+//   INTEGRATION_APP_UUID_UNHEALTHY  — application UUID with exited/unhealthy status
+//   INTEGRATION_SERVER_UUID         — server UUID
 const TEST_DATA: {
   SERVER_UUID: string | null;
-  APP_UUID_HEALTHY: string | null;
+  APP_UUID: string | null;
   APP_UUID_UNHEALTHY: string | null;
 } = {
   SERVER_UUID: null,
-  APP_UUID_HEALTHY: null,
+  APP_UUID: null,
   APP_UUID_UNHEALTHY: null,
 };
 
@@ -57,18 +57,15 @@ describeFn('Diagnostic Integration Tests', () => {
     // Use `||` (not `??`) so empty-string env vars fall through to discovery.
     const [apps, servers] = await Promise.all([client.listApplications(), client.listServers()]);
 
-    const isHealthy = (status: string | undefined): boolean =>
-      !!status && status.includes('running') && !status.includes('unhealthy');
     const isUnhealthy = (status: string | undefined): boolean =>
       !!status &&
       (status.includes('exited') || status.includes('unhealthy') || status.includes('error'));
 
     TEST_DATA.SERVER_UUID = process.env.INTEGRATION_SERVER_UUID || servers[0]?.uuid || null;
-    TEST_DATA.APP_UUID_HEALTHY =
-      process.env.INTEGRATION_APP_UUID_HEALTHY ||
-      apps.find((a) => isHealthy(a.status))?.uuid ||
-      apps[0]?.uuid ||
-      null;
+    // General-purpose application UUID for diagnostic testing — does NOT
+    // require the application to be healthy. The dependent tests assert
+    // structural correctness, not specific health status.
+    TEST_DATA.APP_UUID = process.env.INTEGRATION_APP_UUID || apps[0]?.uuid || null;
     TEST_DATA.APP_UUID_UNHEALTHY =
       process.env.INTEGRATION_APP_UUID_UNHEALTHY ||
       apps.find((a) => isUnhealthy(a.status))?.uuid ||
@@ -77,9 +74,9 @@ describeFn('Diagnostic Integration Tests', () => {
     // Mandatory: at least one application and one server must exist for the
     // suite to be meaningful. Failing fast here is better than each test
     // silently returning early (which would log green CI with 0 assertions).
-    if (!TEST_DATA.APP_UUID_HEALTHY) {
+    if (!TEST_DATA.APP_UUID) {
       throw new Error(
-        'No application discoverable — set INTEGRATION_APP_UUID_HEALTHY or ensure Coolify has at least one application',
+        'No application discoverable — set INTEGRATION_APP_UUID or ensure Coolify has at least one application',
       );
     }
     if (!TEST_DATA.SERVER_UUID) {
@@ -92,13 +89,13 @@ describeFn('Diagnostic Integration Tests', () => {
   }, 30000);
 
   describe('diagnoseApplication', () => {
-    it('should return diagnostic data for a healthy application', async () => {
-      // beforeAll guarantees APP_UUID_HEALTHY is non-null
-      const result = await client.diagnoseApplication(TEST_DATA.APP_UUID_HEALTHY!);
+    it('should return structurally valid diagnostic data for a discoverable application', async () => {
+      // beforeAll guarantees APP_UUID is non-null
+      const result = await client.diagnoseApplication(TEST_DATA.APP_UUID!);
 
       // Should have application info
       expect(result.application).not.toBeNull();
-      expect(result.application?.uuid).toBe(TEST_DATA.APP_UUID_HEALTHY);
+      expect(result.application?.uuid).toBe(TEST_DATA.APP_UUID);
       expect(result.application?.name).toBeDefined();
 
       // Should have health assessment
@@ -167,8 +164,8 @@ describeFn('Diagnostic Integration Tests', () => {
     // fix, listApplicationDeployments normalizes the wrapper shape so the
     // diagnostic completes and no slice-related TypeError leaks into errors.
     it('does not crash on real Coolify deployments wrapper shape (issue #24)', async () => {
-      // beforeAll guarantees APP_UUID_HEALTHY is non-null
-      const result = await client.diagnoseApplication(TEST_DATA.APP_UUID_HEALTHY!);
+      // beforeAll guarantees APP_UUID is non-null
+      const result = await client.diagnoseApplication(TEST_DATA.APP_UUID!);
 
       expect(result.application).not.toBeNull();
       expect(Array.isArray(result.recent_deployments)).toBe(true);
