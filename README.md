@@ -112,9 +112,11 @@ MCP (Model Context Protocol) server for [Coolify](https://coolify.io) — provid
 ### Environment Variables
 
 ```bash
-COOLIFY_ACCESS_TOKEN=your-api-token  # Generate at Coolify Settings > API
-COOLIFY_BASE_URL=https://your-coolify-instance.com  # optional, defaults to http://localhost:3000
+COOLIFY_TOKEN=your-api-token  # Generate at Coolify Settings > API
+COOLIFY_URL=https://your-coolify-instance.com  # optional, defaults to http://localhost:3000
 ```
+
+> Legacy names `COOLIFY_ACCESS_TOKEN` and `COOLIFY_BASE_URL` are still accepted as fallback for backward compatibility and may be removed in a future major version.
 
 ### Usage with Claude Code (via npx)
 
@@ -127,8 +129,8 @@ Add to your MCP configuration (`.mcp.json` or `~/.claude/settings.json`):
       "command": "bunx",
       "args": ["@jurislm/coolify-mcp@latest"],
       "env": {
-        "COOLIFY_ACCESS_TOKEN": "your-api-token",
-        "COOLIFY_BASE_URL": "https://your-coolify-instance.com"
+        "COOLIFY_TOKEN": "your-api-token",
+        "COOLIFY_URL": "https://your-coolify-instance.com"
       }
     }
   }
@@ -146,8 +148,8 @@ If you use the [jurislm-tools](https://github.com/jurislm/jurislm-tools) Claude 
 Then set environment variables in `~/.zshenv`:
 
 ```bash
-export COOLIFY_ACCESS_TOKEN=your-api-token
-export COOLIFY_BASE_URL=https://your-coolify-instance.com
+export COOLIFY_TOKEN=your-api-token
+export COOLIFY_URL=https://your-coolify-instance.com
 ```
 
 ## Development

@@ -306,6 +306,73 @@ function toDeploymentSummary(dep: Deployment): DeploymentSummary {
   };
 }
 
+/**
+ * Type guard: a value is Deployment-like if it is a non-null object with a
+ * string `uuid`. We do not validate the full shape because the Coolify API
+ * surface is unstable — `uuid` is the minimum identifier downstream code
+ * (e.g. `toDeploymentSummary`) reads directly without optional chaining.
+ */
+function isDeploymentLike(value: unknown): value is Deployment {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { uuid?: unknown }).uuid === 'string'
+  );
+}
+
+/**
+ * Filter an array down to entries that pass `isDeploymentLike`. If any
+ * entries are dropped, emit a single warn line so silent shape drift is
+ * still observable in logs.
+ */
+function filterDeployments(arr: unknown[]): Deployment[] {
+  const valid = arr.filter(isDeploymentLike);
+  if (valid.length < arr.length) {
+    console.warn(
+      `[coolify-mcp] listApplicationDeployments: dropped ${arr.length - valid.length} of ${arr.length} entries lacking a uuid`,
+    );
+  }
+  return valid;
+}
+
+/**
+ * Normalize Coolify's `/deployments/applications/{uuid}` response shape.
+ *
+ * Coolify's OpenAPI claims this endpoint returns a bare array, but real
+ * instances may return a wrapper object (e.g. `{ count, deployments }` or
+ * `{ data }`). Without normalization, downstream callers crash with
+ * `deployments.slice is not a function` (issue #24).
+ *
+ * Each accepted shape is additionally filtered through `isDeploymentLike`
+ * so element-level shape drift surfaces as a warn rather than an
+ * undefined-field crash downstream.
+ */
+function normalizeDeploymentsResponse(raw: unknown): Deployment[] {
+  if (Array.isArray(raw)) return filterDeployments(raw);
+  if (raw !== null && typeof raw === 'object') {
+    const obj = raw as Record<string, unknown>;
+    // Priority: `data` is checked before `deployments` so a Laravel-style
+    // pagination wrapper (the more generic shape) wins over Coolify's
+    // current named-array shape if a future response carries both keys.
+    // The order is locked by `prefers data over deployments` test below.
+    if (Array.isArray(obj.data)) return filterDeployments(obj.data);
+    if (Array.isArray(obj.deployments)) return filterDeployments(obj.deployments);
+  }
+  // Unrecognized shape: warn (without leaking values) and fall back to empty.
+  const summary =
+    raw === null
+      ? 'null'
+      : raw === undefined
+        ? 'undefined'
+        : typeof raw === 'object'
+          ? `object keys=${JSON.stringify(Object.keys(raw as object))}`
+          : typeof raw;
+  console.warn(
+    `[coolify-mcp] listApplicationDeployments: unrecognized response shape (${summary}); returning empty array`,
+  );
+  return [];
+}
+
 function toDeploymentEssential(dep: Deployment): DeploymentEssential {
   return {
     uuid: dep.uuid,
@@ -1086,7 +1153,10 @@ export class CoolifyClient {
   }
 
   async listApplicationDeployments(appUuid: string): Promise<Deployment[]> {
-    return this.request<Deployment[]>(`/deployments/applications/${encodeURIComponent(appUuid)}`);
+    const raw = await this.request<unknown>(
+      `/deployments/applications/${encodeURIComponent(appUuid)}`,
+    );
+    return normalizeDeploymentsResponse(raw);
   }
 
   // ===========================================================================

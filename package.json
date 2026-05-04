@@ -27,6 +27,7 @@
     "test:watch": "bun test --watch ./src/__tests__/*.test.ts",
     "test:coverage": "bun test --coverage ./src/__tests__/*.test.ts",
     "test:integration": "bun test --timeout 60000 ./src/__tests__/integration",
+    "typecheck:tests": "tsc --noEmit -p tsconfig.test.json",
     "lint": "eslint --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

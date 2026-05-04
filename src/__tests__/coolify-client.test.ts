@@ -2576,6 +2576,111 @@ describe('CoolifyClient', () => {
         expect.any(Object),
       );
     });
+
+    // Issue #24: Coolify returns wrapper objects in some versions instead of a
+    // bare array. listApplicationDeployments must normalize all known shapes
+    // and never crash with `deployments.slice is not a function`.
+    describe('listApplicationDeployments shape normalization (issue #24)', () => {
+      it('returns the array as-is when Coolify returns a bare array', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse([mockDeployment]));
+
+        const result = await client.listApplicationDeployments('app-uuid');
+
+        expect(Array.isArray(result)).toBe(true);
+        expect(result).toEqual([mockDeployment]);
+      });
+
+      it('extracts the data field from a Laravel-style pagination wrapper', async () => {
+        mockFetch.mockResolvedValueOnce(
+          mockResponse({ data: [mockDeployment], total: 1, current_page: 1 }),
+        );
+
+        const result = await client.listApplicationDeployments('app-uuid');
+
+        expect(Array.isArray(result)).toBe(true);
+        expect(result).toEqual([mockDeployment]);
+      });
+
+      it('extracts the deployments field from a named-array wrapper (real Coolify shape)', async () => {
+        mockFetch.mockResolvedValueOnce(mockResponse({ count: 1, deployments: [mockDeployment] }));
+
+        const result = await client.listApplicationDeployments('app-uuid');
+
+        expect(Array.isArray(result)).toBe(true);
+        expect(result).toEqual([mockDeployment]);
+      });
+
+      it('returns an empty array and warns when shape is unrecognized', async () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        try {
+          mockFetch.mockResolvedValueOnce(mockResponse({ foo: 'bar' }));
+
+          const result = await client.listApplicationDeployments('app-uuid');
+
+          expect(result).toEqual([]);
+          expect(warnSpy).toHaveBeenCalledTimes(1);
+          expect(warnSpy.mock.calls[0]?.[0]).toContain('unrecognized response shape');
+        } finally {
+          warnSpy.mockRestore();
+        }
+      });
+
+      it('returns an empty array and warns when response is null', async () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        try {
+          mockFetch.mockResolvedValueOnce(mockResponse(null));
+
+          const result = await client.listApplicationDeployments('app-uuid');
+
+          expect(result).toEqual([]);
+          expect(warnSpy).toHaveBeenCalledTimes(1);
+        } finally {
+          warnSpy.mockRestore();
+        }
+      });
+
+      // Lock the priority order: `data` is checked before `deployments`.
+      // If a future refactor swaps these branches the test fails loudly.
+      it('prefers data over deployments when both keys are present', async () => {
+        const fromData = { ...mockDeployment, uuid: 'from-data' };
+        const fromDeployments = { ...mockDeployment, uuid: 'from-deployments' };
+        mockFetch.mockResolvedValueOnce(
+          mockResponse({ data: [fromData], deployments: [fromDeployments] }),
+        );
+
+        const result = await client.listApplicationDeployments('app-uuid');
+
+        expect(result).toEqual([fromData]);
+        expect(result.map((d) => d.uuid)).not.toContain('from-deployments');
+      });
+
+      // Element-level shape drift: drop entries missing uuid, warn once.
+      it('filters out entries that lack a uuid and warns', async () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        try {
+          mockFetch.mockResolvedValueOnce(
+            mockResponse({
+              count: 3,
+              deployments: [
+                mockDeployment,
+                { status: 'queued', no_uuid: true },
+                { uuid: 'd2', status: 'finished' },
+              ],
+            }),
+          );
+
+          const result = await client.listApplicationDeployments('app-uuid');
+
+          // Only entries with a string uuid should remain
+          expect(result).toHaveLength(2);
+          expect(result.map((d) => d.uuid)).toEqual([mockDeployment.uuid, 'd2']);
+          expect(warnSpy).toHaveBeenCalledTimes(1);
+          expect(warnSpy.mock.calls[0]?.[0]).toContain('lacking a uuid');
+        } finally {
+          warnSpy.mockRestore();
+        }
+      });
+    });
   });
 
   // =========================================================================
@@ -3169,6 +3274,47 @@ describe('CoolifyClient', () => {
         ]);
         expect(result.recent_deployments).toHaveLength(2);
         expect(result.errors).toBeUndefined();
+      });
+
+      // Issue #24: when the deployments endpoint returns the real Coolify
+      // wrapper { count, deployments }, the tool used to crash with
+      // `deployments.slice is not a function`. After normalization, the
+      // diagnostic should complete successfully and surface the deployments.
+      it('completes diagnosis when deployments come back as a wrapper object (issue #24)', async () => {
+        mockFetch
+          .mockResolvedValueOnce(mockResponse(mockApp))
+          .mockResolvedValueOnce(mockResponse(mockLogs))
+          .mockResolvedValueOnce(mockResponse(mockEnvVars))
+          .mockResolvedValueOnce(
+            mockResponse({ count: mockDeployments.length, deployments: mockDeployments }),
+          );
+
+        const result = await client.diagnoseApplication(testAppUuid);
+
+        expect(result.application).not.toBeNull();
+        expect(result.recent_deployments).toHaveLength(2);
+        expect(result.errors).toBeUndefined();
+      });
+
+      // Issue #24: even an unrecognized shape must not abort the diagnosis.
+      it('completes diagnosis with empty deployments when shape is unrecognized (issue #24)', async () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        try {
+          mockFetch
+            .mockResolvedValueOnce(mockResponse(mockApp))
+            .mockResolvedValueOnce(mockResponse(mockLogs))
+            .mockResolvedValueOnce(mockResponse(mockEnvVars))
+            .mockResolvedValueOnce(mockResponse({ foo: 'bar' }));
+
+          const result = await client.diagnoseApplication(testAppUuid);
+
+          expect(result.application).not.toBeNull();
+          expect(result.recent_deployments).toEqual([]);
+          const errorJoined = (result.errors ?? []).join(' ');
+          expect(errorJoined).not.toContain('slice');
+        } finally {
+          warnSpy.mockRestore();
+        }
       });
 
       it('should detect unhealthy application status', async () => {

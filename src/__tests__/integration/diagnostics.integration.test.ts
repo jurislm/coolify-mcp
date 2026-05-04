@@ -8,9 +8,10 @@
  * - COOLIFY_URL and COOLIFY_TOKEN environment variables set (from .env)
  * - Access to a running Coolify instance
  *
- * Run with: npm run test:integration
+ * Run with: bun run test:integration
  */
 
+import { describe, it, expect, beforeAll } from 'bun:test';
 import { config } from 'dotenv';
 import { CoolifyClient } from '../../lib/coolify-client.js';
 
@@ -23,15 +24,20 @@ const COOLIFY_TOKEN = process.env.COOLIFY_TOKEN;
 // Skip all tests if environment variables are not set
 const shouldRun = COOLIFY_URL && COOLIFY_TOKEN;
 
-// Test data - UUIDs from actual infrastructure
-// These should be updated to match your test environment
-const TEST_DATA = {
-  // Server: coolify-apps (running, reachable)
-  SERVER_UUID: 'ggkk8w4c08gw48oowsg4g0oc',
-  // Application: test-system (running)
-  APP_UUID_HEALTHY: 'xs0sgs4gog044s4k4c88kgsc',
-  // Application: Bumnail Benerator (exited:unhealthy)
-  APP_UUID_UNHEALTHY: 't444wg40s4kkwcc04s084wgw',
+// Test data is discovered at runtime from the live Coolify instance so the
+// suite works against any environment. Set the env vars below to pin a
+// specific UUID; otherwise the first matching resource is used.
+//   INTEGRATION_APP_UUID            — any application UUID (used for general diagnostics)
+//   INTEGRATION_SERVER_UUID         — server UUID
+//   INTEGRATION_APP_UUID_UNHEALTHY  — required to enable the unhealthy-app
+//                                     test (no auto-discovery; the test is
+//                                     `it.skipIf`'d when this is unset)
+const TEST_DATA: {
+  SERVER_UUID: string | null;
+  APP_UUID: string | null;
+} = {
+  SERVER_UUID: null,
+  APP_UUID: null,
 };
 
 const describeFn = shouldRun ? describe : describe.skip;
@@ -39,7 +45,7 @@ const describeFn = shouldRun ? describe : describe.skip;
 describeFn('Diagnostic Integration Tests', () => {
   let client: CoolifyClient;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     if (!COOLIFY_URL || !COOLIFY_TOKEN) {
       throw new Error('COOLIFY_URL and COOLIFY_TOKEN must be set for integration tests');
     }
@@ -47,15 +53,40 @@ describeFn('Diagnostic Integration Tests', () => {
       baseUrl: COOLIFY_URL,
       accessToken: COOLIFY_TOKEN,
     });
-  });
+
+    // Self-discover real UUIDs so tests work against any Coolify instance.
+    // Use `||` (not `??`) so empty-string env vars fall through to discovery.
+    const [apps, servers] = await Promise.all([client.listApplications(), client.listServers()]);
+
+    TEST_DATA.SERVER_UUID = process.env.INTEGRATION_SERVER_UUID || servers[0]?.uuid || null;
+    // General-purpose application UUID for diagnostic testing — does NOT
+    // require the application to be healthy. The dependent tests assert
+    // structural correctness, not specific health status.
+    TEST_DATA.APP_UUID = process.env.INTEGRATION_APP_UUID || apps[0]?.uuid || null;
+
+    // Mandatory: at least one application and one server must exist for the
+    // suite to be meaningful. Failing fast here is better than each test
+    // silently returning early (which would log green CI with 0 assertions).
+    if (!TEST_DATA.APP_UUID) {
+      throw new Error(
+        'No application discoverable — set INTEGRATION_APP_UUID or ensure Coolify has at least one application',
+      );
+    }
+    if (!TEST_DATA.SERVER_UUID) {
+      throw new Error(
+        'No server discoverable — set INTEGRATION_SERVER_UUID or ensure Coolify has at least one server',
+      );
+    }
+  }, 30000);
 
   describe('diagnoseApplication', () => {
-    it('should return diagnostic data for a healthy application', async () => {
-      const result = await client.diagnoseApplication(TEST_DATA.APP_UUID_HEALTHY);
+    it('should return structurally valid diagnostic data for a discoverable application', async () => {
+      // beforeAll guarantees APP_UUID is non-null
+      const result = await client.diagnoseApplication(TEST_DATA.APP_UUID!);
 
       // Should have application info
       expect(result.application).not.toBeNull();
-      expect(result.application?.uuid).toBe(TEST_DATA.APP_UUID_HEALTHY);
+      expect(result.application?.uuid).toBe(TEST_DATA.APP_UUID);
       expect(result.application?.name).toBeDefined();
 
       // Should have health assessment
@@ -83,22 +114,35 @@ describeFn('Diagnostic Integration Tests', () => {
       console.log('Healthy app diagnostic result:', JSON.stringify(result, null, 2));
     }, 30000);
 
-    it('should detect issues in an unhealthy application', async () => {
-      const result = await client.diagnoseApplication(TEST_DATA.APP_UUID_UNHEALTHY);
+    // This test requires an unhealthy application to exercise the
+    // unhealthy code path. Since auto-discovery cannot guarantee one
+    // exists in a clean Coolify, the test is skipped unless the user
+    // explicitly pins one via INTEGRATION_APP_UUID_UNHEALTHY. The bun
+    // test runner reports this as "skipped" (not "passed"), making
+    // intent obvious in the report. Run with:
+    //   INTEGRATION_APP_UUID_UNHEALTHY=<uuid> bun run test:integration
+    it.skipIf(!process.env.INTEGRATION_APP_UUID_UNHEALTHY)(
+      'should detect issues in an unhealthy application',
+      async () => {
+        const result = await client.diagnoseApplication(
+          process.env.INTEGRATION_APP_UUID_UNHEALTHY!,
+        );
 
-      expect(result.application).not.toBeNull();
+        expect(result.application).not.toBeNull();
 
-      // Should detect unhealthy status
-      if (
-        result.application?.status?.includes('exited') ||
-        result.application?.status?.includes('unhealthy')
-      ) {
-        expect(result.health.status).toBe('unhealthy');
-        expect(result.health.issues.length).toBeGreaterThan(0);
-      }
+        // Should detect unhealthy status
+        if (
+          result.application?.status?.includes('exited') ||
+          result.application?.status?.includes('unhealthy')
+        ) {
+          expect(result.health.status).toBe('unhealthy');
+          expect(result.health.issues.length).toBeGreaterThan(0);
+        }
 
-      console.log('Unhealthy app diagnostic result:', JSON.stringify(result, null, 2));
-    }, 30000);
+        console.log('Unhealthy app diagnostic result:', JSON.stringify(result, null, 2));
+      },
+      30000,
+    );
 
     it('should handle non-existent application gracefully', async () => {
       const result = await client.diagnoseApplication('non-existent-uuid');
@@ -108,11 +152,29 @@ describeFn('Diagnostic Integration Tests', () => {
       expect(result.errors!.length).toBeGreaterThan(0);
       expect(result.application).toBeNull();
     }, 30000);
+
+    // Regression test for issue #24
+    // (https://github.com/jurislm/coolify-mcp/issues/24): diagnose_app used
+    // to crash with `deployments.slice is not a function` because Coolify
+    // returns `{ count, deployments }` instead of a bare array. After the
+    // fix, listApplicationDeployments normalizes the wrapper shape so the
+    // diagnostic completes and no slice-related TypeError leaks into errors.
+    it('does not crash on real Coolify deployments wrapper shape (issue #24)', async () => {
+      // beforeAll guarantees APP_UUID is non-null
+      const result = await client.diagnoseApplication(TEST_DATA.APP_UUID!);
+
+      expect(result.application).not.toBeNull();
+      expect(Array.isArray(result.recent_deployments)).toBe(true);
+      const errorJoined = (result.errors ?? []).join(' ').toLowerCase();
+      expect(errorJoined).not.toContain('slice');
+      expect(errorJoined).not.toContain('not a function');
+    }, 30000);
   });
 
   describe('diagnoseServer', () => {
     it('should return diagnostic data for a server', async () => {
-      const result = await client.diagnoseServer(TEST_DATA.SERVER_UUID);
+      // beforeAll guarantees SERVER_UUID is non-null
+      const result = await client.diagnoseServer(TEST_DATA.SERVER_UUID!);
 
       // Should have server info
       expect(result.server).not.toBeNull();
