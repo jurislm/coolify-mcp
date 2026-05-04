@@ -16,7 +16,7 @@ bun run lint         # Run ESLint
 bun run format       # Run Prettier
 
 # Run locally
-COOLIFY_BASE_URL="https://your-coolify.com" COOLIFY_ACCESS_TOKEN="token" node dist/index.js
+COOLIFY_URL="https://your-coolify.com" COOLIFY_TOKEN="token" node dist/index.js
 ```
 
 ## Architecture
