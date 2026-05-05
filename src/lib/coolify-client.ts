@@ -804,6 +804,13 @@ export class CoolifyClient {
     });
   }
 
+  async deleteApplicationPreview(uuid: string, pullRequestId: number): Promise<MessageResponse> {
+    return this.request<MessageResponse>(
+      `/applications/${encodeURIComponent(uuid)}/previews/${encodeURIComponent(String(pullRequestId))}`,
+      { method: 'DELETE' },
+    );
+  }
+
   async getApplicationLogs(uuid: string, lines: number = 100): Promise<string> {
     return this.request<string>(`/applications/${encodeURIComponent(uuid)}/logs?lines=${lines}`);
   }
@@ -2318,5 +2325,17 @@ export class CoolifyClient {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     return { status: (await response.text()).trim() };
+  }
+
+  // ===========================================================================
+  // API control (enable / disable)
+  // ===========================================================================
+
+  async enableApi(): Promise<MessageResponse> {
+    return this.request<MessageResponse>('/enable');
+  }
+
+  async disableApi(): Promise<MessageResponse> {
+    return this.request<MessageResponse>('/disable');
   }
 }

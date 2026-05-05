@@ -486,6 +486,7 @@ export class CoolifyMcpServer extends McpServer {
           'create_dockerimage',
           'update',
           'delete',
+          'delete_preview',
         ]),
         uuid: z.string().optional(),
         // Create fields
@@ -556,6 +557,12 @@ export class CoolifyMcpServer extends McpServer {
         post_deployment_command: z.string().optional(),
         // Delete fields
         delete_volumes: z.boolean().optional(),
+        // delete_preview fields
+        pull_request_id: z
+          .number()
+          .int()
+          .optional()
+          .describe('Pull Request ID for delete_preview action'),
       },
       async (args) => {
         const { action, uuid, delete_volumes } = args;
@@ -768,6 +775,14 @@ export class CoolifyMcpServer extends McpServer {
             return wrap(() =>
               this.client.deleteApplication(uuid, { deleteVolumes: delete_volumes }),
             );
+          case 'delete_preview':
+            if (!uuid)
+              return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
+            if (args.pull_request_id === undefined)
+              return {
+                content: [{ type: 'text' as const, text: 'Error: pull_request_id required' }],
+              };
+            return wrap(() => this.client.deleteApplicationPreview(uuid, args.pull_request_id!));
         }
         return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
       },
@@ -2299,6 +2314,19 @@ export class CoolifyMcpServer extends McpServer {
     // =========================================================================
     this.tool('health', 'Check Coolify API health status', {}, async () =>
       wrap(() => this.client.getHealth()),
+    );
+
+    // =========================================================================
+    // API control (1 tool)
+    // =========================================================================
+    this.tool(
+      'api_control',
+      'Enable or disable the Coolify API. Requires write permission.',
+      { action: z.enum(['enable', 'disable']) },
+      async ({ action }) => {
+        if (action === 'enable') return wrap(() => this.client.enableApi());
+        return wrap(() => this.client.disableApi());
+      },
     );
   }
 }
