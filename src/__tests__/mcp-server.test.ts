@@ -1199,6 +1199,443 @@ describe('database with public_port_timeout', () => {
   });
 });
 
+// =============================================================================
+// Handler coverage tests — covers previously untested tool handlers
+// =============================================================================
+
+describe('wrap() and wrapWithActions() error paths', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('wrap(): returns error text when client method throws Error', async () => {
+    jest.spyOn(server.getClient(), 'getVersion').mockRejectedValue(new Error('Network error'));
+    const result = (await callHandler(server, 'get_version', {})) as {
+      content: Array<{ type: string; text: string }>;
+    };
+    expect(result.content[0].text).toContain('Error: Network error');
+  });
+
+  it('wrap(): returns error text when client method throws non-Error', async () => {
+    jest.spyOn(server.getClient(), 'getHealth').mockRejectedValue('plain string error');
+    const result = (await callHandler(server, 'health', {})) as {
+      content: Array<{ type: string; text: string }>;
+    };
+    expect(result.content[0].text).toContain('Error: plain string error');
+  });
+
+  it('wrapWithActions(): returns error text when client method throws', async () => {
+    jest.spyOn(server.getClient(), 'listApplications').mockRejectedValue(new Error('Auth failed'));
+    const result = (await callHandler(server, 'list_applications', {})) as {
+      content: Array<{ type: string; text: string }>;
+    };
+    expect(result.content[0].text).toContain('Error: Auth failed');
+  });
+
+  it('get_application calls getApplication with HATEOAS actions', async () => {
+    jest
+      .spyOn(server.getClient(), 'getApplication')
+      .mockResolvedValue({
+        uuid: 'app-uuid',
+        name: 'test',
+        status: 'running:healthy',
+      } as Application);
+    const result = (await callHandler(server, 'get_application', { uuid: 'app-uuid' })) as {
+      content: Array<{ type: string; text: string }>;
+    };
+    const data = JSON.parse(result.content[0].text) as { data: { uuid: string } };
+    expect(data.data.uuid).toBe('app-uuid');
+  });
+});
+
+describe('simple tool handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('get_version calls getVersion', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'getVersion')
+      .mockResolvedValue({ version: '4.0.0' });
+    await callHandler(server, 'get_version', {});
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('get_mcp_version returns version JSON', async () => {
+    const result = (await callHandler(server, 'get_mcp_version', {})) as {
+      content: Array<{ type: string; text: string }>;
+    };
+    const data = JSON.parse(result.content[0].text) as { version: string; name: string };
+    expect(data.name).toBe('@jurislm/coolify-mcp');
+  });
+
+  it('find_issues calls findInfrastructureIssues', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'findInfrastructureIssues')
+      .mockResolvedValue({
+        summary: {
+          total_issues: 0,
+          unhealthy_applications: 0,
+          unhealthy_databases: 0,
+          unhealthy_services: 0,
+          unreachable_servers: 0,
+        },
+        issues: [],
+      });
+    await callHandler(server, 'find_issues', {});
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('list_servers calls listServers with summary', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listServers').mockResolvedValue([]);
+    await callHandler(server, 'list_servers', {});
+    expect(spy).toHaveBeenCalledWith({ page: undefined, per_page: undefined, summary: true });
+  });
+
+  it('get_server calls getServer', async () => {
+    const spy = jest.spyOn(server.getClient(), 'getServer').mockResolvedValue({} as Server);
+    await callHandler(server, 'get_server', { uuid: 'srv-uuid' });
+    expect(spy).toHaveBeenCalledWith('srv-uuid');
+  });
+
+  it('server_resources calls getServerResources', async () => {
+    const spy = jest.spyOn(server.getClient(), 'getServerResources').mockResolvedValue([]);
+    await callHandler(server, 'server_resources', { uuid: 'srv-uuid' });
+    expect(spy).toHaveBeenCalledWith('srv-uuid');
+  });
+
+  it('server_domains calls getServerDomains', async () => {
+    const spy = jest.spyOn(server.getClient(), 'getServerDomains').mockResolvedValue([]);
+    await callHandler(server, 'server_domains', { uuid: 'srv-uuid' });
+    expect(spy).toHaveBeenCalledWith('srv-uuid');
+  });
+
+  it('validate_server calls validateServer', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'validateServer')
+      .mockResolvedValue({ message: 'ok' });
+    await callHandler(server, 'validate_server', { uuid: 'srv-uuid' });
+    expect(spy).toHaveBeenCalledWith('srv-uuid');
+  });
+
+  it('list_resources calls listResources', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listResources').mockResolvedValue([]);
+    await callHandler(server, 'list_resources', {});
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('list_databases calls listDatabases with summary', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listDatabases').mockResolvedValue([]);
+    await callHandler(server, 'list_databases', {});
+    expect(spy).toHaveBeenCalledWith({ page: undefined, per_page: undefined, summary: true });
+  });
+
+  it('get_database calls getDatabase', async () => {
+    const spy = jest.spyOn(server.getClient(), 'getDatabase').mockResolvedValue({} as Database);
+    await callHandler(server, 'get_database', { uuid: 'db-uuid' });
+    expect(spy).toHaveBeenCalledWith('db-uuid');
+  });
+
+  it('list_services calls listServices with summary', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listServices').mockResolvedValue([]);
+    await callHandler(server, 'list_services', {});
+    expect(spy).toHaveBeenCalledWith({ page: undefined, per_page: undefined, summary: true });
+  });
+
+  it('list_applications calls listApplications with summary', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listApplications').mockResolvedValue([]);
+    await callHandler(server, 'list_applications', {});
+    expect(spy).toHaveBeenCalledWith({ page: undefined, per_page: undefined, summary: true });
+  });
+});
+
+describe('get_infrastructure_overview handler', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('returns overview with counts', async () => {
+    jest.spyOn(server.getClient(), 'listServers').mockResolvedValue([]);
+    jest.spyOn(server.getClient(), 'listProjects').mockResolvedValue([]);
+    jest.spyOn(server.getClient(), 'listApplications').mockResolvedValue([]);
+    jest.spyOn(server.getClient(), 'listDatabases').mockResolvedValue([]);
+    jest.spyOn(server.getClient(), 'listServices').mockResolvedValue([]);
+    const result = (await callHandler(server, 'get_infrastructure_overview', {})) as {
+      content: Array<{ type: string; text: string }>;
+    };
+    const data = JSON.parse(result.content[0].text) as { summary: { servers: number } };
+    expect(data.summary.servers).toBe(0);
+  });
+});
+
+describe('projects tool handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('list action calls listProjects', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listProjects').mockResolvedValue([]);
+    await callHandler(server, 'projects', { action: 'list' });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('get action requires uuid', async () => {
+    const result = (await callHandler(server, 'projects', { action: 'get' })) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toContain('uuid required');
+  });
+
+  it('create action requires name', async () => {
+    const result = (await callHandler(server, 'projects', { action: 'create' })) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toContain('name required');
+  });
+
+  it('update action requires uuid', async () => {
+    const result = (await callHandler(server, 'projects', { action: 'update' })) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toContain('uuid required');
+  });
+
+  it('delete action requires uuid', async () => {
+    const result = (await callHandler(server, 'projects', { action: 'delete' })) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toContain('uuid required');
+  });
+
+  it('create action calls createProject', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createProject')
+      .mockResolvedValue({ uuid: 'new-uuid' });
+    await callHandler(server, 'projects', { action: 'create', name: 'My Project' });
+    expect(spy).toHaveBeenCalledWith({ name: 'My Project', description: undefined });
+  });
+});
+
+describe('environments tool handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('list action calls listProjectEnvironments', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listProjectEnvironments').mockResolvedValue([]);
+    await callHandler(server, 'environments', { action: 'list', project_uuid: 'proj-uuid' });
+    expect(spy).toHaveBeenCalledWith('proj-uuid');
+  });
+
+  it('get action requires name', async () => {
+    const result = (await callHandler(server, 'environments', {
+      action: 'get',
+      project_uuid: 'proj-uuid',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('name required');
+  });
+
+  it('create action requires name', async () => {
+    const result = (await callHandler(server, 'environments', {
+      action: 'create',
+      project_uuid: 'proj-uuid',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('name required');
+  });
+
+  it('delete action requires name', async () => {
+    const result = (await callHandler(server, 'environments', {
+      action: 'delete',
+      project_uuid: 'proj-uuid',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('name required');
+  });
+
+  it('delete action calls deleteProjectEnvironment', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deleteProjectEnvironment')
+      .mockResolvedValue({ message: 'Deleted' });
+    await callHandler(server, 'environments', {
+      action: 'delete',
+      project_uuid: 'proj-uuid',
+      name: 'staging',
+    });
+    expect(spy).toHaveBeenCalledWith('proj-uuid', 'staging');
+  });
+
+  it('create action calls createProjectEnvironment', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createProjectEnvironment')
+      .mockResolvedValue({ uuid: 'env-uuid' });
+    await callHandler(server, 'environments', {
+      action: 'create',
+      project_uuid: 'proj-uuid',
+      name: 'staging',
+    });
+    expect(spy).toHaveBeenCalledWith('proj-uuid', { name: 'staging', description: undefined });
+  });
+});
+
+describe('service tool handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('create action requires server_uuid and project_uuid', async () => {
+    const result = (await callHandler(server, 'service', { action: 'create' })) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toContain('server_uuid, project_uuid required');
+  });
+
+  it('update action requires uuid', async () => {
+    const result = (await callHandler(server, 'service', { action: 'update' })) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toContain('uuid required');
+  });
+
+  it('delete action requires uuid', async () => {
+    const result = (await callHandler(server, 'service', { action: 'delete' })) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toContain('uuid required');
+  });
+
+  it('create action calls createService', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createService')
+      .mockResolvedValue({ uuid: 'svc-uuid' } as { uuid: string });
+    await callHandler(server, 'service', {
+      action: 'create',
+      server_uuid: 'srv-uuid',
+      project_uuid: 'proj-uuid',
+    });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('delete action calls deleteService', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deleteService')
+      .mockResolvedValue({ message: 'Deleted' });
+    await callHandler(server, 'service', { action: 'delete', uuid: 'svc-uuid' });
+    expect(spy).toHaveBeenCalledWith('svc-uuid', { deleteVolumes: undefined });
+  });
+});
+
+describe('database_backups tool handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('list_schedules calls listDatabaseBackups', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listDatabaseBackups').mockResolvedValue([]);
+    await callHandler(server, 'database_backups', {
+      action: 'list_schedules',
+      database_uuid: 'db-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith('db-uuid');
+  });
+
+  it('get_schedule requires backup_uuid', async () => {
+    const result = (await callHandler(server, 'database_backups', {
+      action: 'get_schedule',
+      database_uuid: 'db-uuid',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('backup_uuid required');
+  });
+
+  it('list_executions requires backup_uuid', async () => {
+    const result = (await callHandler(server, 'database_backups', {
+      action: 'list_executions',
+      database_uuid: 'db-uuid',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('backup_uuid required');
+  });
+
+  it('create requires frequency', async () => {
+    const result = (await callHandler(server, 'database_backups', {
+      action: 'create',
+      database_uuid: 'db-uuid',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('frequency required');
+  });
+});
+
+describe('api_control tool handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('enable action calls enableApi', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'enableApi')
+      .mockResolvedValue({ message: 'API enabled.' });
+    await callHandler(server, 'api_control', { action: 'enable' });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('disable action calls disableApi', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'disableApi')
+      .mockResolvedValue({ message: 'API disabled.' });
+    await callHandler(server, 'api_control', { action: 'disable' });
+    expect(spy).toHaveBeenCalled();
+  });
+});
+
+describe('application delete_preview handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('delete_preview requires uuid', async () => {
+    const result = (await callHandler(server, 'application', {
+      action: 'delete_preview',
+      pull_request_id: 42,
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('uuid required');
+  });
+
+  it('delete_preview requires pull_request_id', async () => {
+    const result = (await callHandler(server, 'application', {
+      action: 'delete_preview',
+      uuid: 'app-uuid',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('pull_request_id required');
+  });
+
+  it('delete_preview calls deleteApplicationPreview', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deleteApplicationPreview')
+      .mockResolvedValue({ message: 'Deleted' });
+    await callHandler(server, 'application', {
+      action: 'delete_preview',
+      uuid: 'app-uuid',
+      pull_request_id: 42,
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', 42);
+  });
+});
+
 describe('deploy with docker_tag', () => {
   let server: TestableMcpServer;
 
