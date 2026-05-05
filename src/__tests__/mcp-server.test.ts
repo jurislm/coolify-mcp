@@ -1235,13 +1235,11 @@ describe('wrap() and wrapWithActions() error paths', () => {
   });
 
   it('get_application calls getApplication with HATEOAS actions', async () => {
-    jest
-      .spyOn(server.getClient(), 'getApplication')
-      .mockResolvedValue({
-        uuid: 'app-uuid',
-        name: 'test',
-        status: 'running:healthy',
-      } as Application);
+    jest.spyOn(server.getClient(), 'getApplication').mockResolvedValue({
+      uuid: 'app-uuid',
+      name: 'test',
+      status: 'running:healthy',
+    } as Application);
     const result = (await callHandler(server, 'get_application', { uuid: 'app-uuid' })) as {
       content: Array<{ type: string; text: string }>;
     };
@@ -1274,18 +1272,16 @@ describe('simple tool handler dispatch', () => {
   });
 
   it('find_issues calls findInfrastructureIssues', async () => {
-    const spy = jest
-      .spyOn(server.getClient(), 'findInfrastructureIssues')
-      .mockResolvedValue({
-        summary: {
-          total_issues: 0,
-          unhealthy_applications: 0,
-          unhealthy_databases: 0,
-          unhealthy_services: 0,
-          unreachable_servers: 0,
-        },
-        issues: [],
-      });
+    const spy = jest.spyOn(server.getClient(), 'findInfrastructureIssues').mockResolvedValue({
+      summary: {
+        total_issues: 0,
+        unhealthy_applications: 0,
+        unhealthy_databases: 0,
+        unhealthy_services: 0,
+        unreachable_servers: 0,
+      },
+      issues: [],
+    });
     await callHandler(server, 'find_issues', {});
     expect(spy).toHaveBeenCalled();
   });
@@ -1655,5 +1651,803 @@ describe('deploy with docker_tag', () => {
       docker_tag: 'v2.0.0',
     });
     expect(spy).toHaveBeenCalledWith('app-uuid', undefined, undefined, 'v2.0.0');
+  });
+});
+
+// =============================================================================
+// Coverage completion tests (improve-test-coverage-100)
+// =============================================================================
+
+describe('CoolifyMcpServer connect() method', () => {
+  it('delegates to super.connect with mock transport', async () => {
+    const server = new TestableMcpServer({
+      baseUrl: 'http://localhost:3000',
+      accessToken: 'test-token',
+    });
+    const mockTransport = { start: jest.fn().mockResolvedValue(undefined) } as never;
+    await server.connect(mockTransport);
+    expect(mockTransport.start).toHaveBeenCalled();
+  });
+});
+
+describe('database create — remaining engine types', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  const baseArgs = {
+    action: 'create',
+    project_uuid: 'p',
+    server_uuid: 's',
+    environment_name: 'production',
+  };
+
+  it('create mysql dispatches to createMysql', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createMysql')
+      .mockResolvedValue({ uuid: 'db' } as UuidResponse);
+    await callHandler(server, 'database', { ...baseArgs, type: 'mysql' });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('create mariadb dispatches to createMariadb', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createMariadb')
+      .mockResolvedValue({ uuid: 'db' } as UuidResponse);
+    await callHandler(server, 'database', { ...baseArgs, type: 'mariadb' });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('create mongodb dispatches to createMongodb', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createMongodb')
+      .mockResolvedValue({ uuid: 'db' } as UuidResponse);
+    await callHandler(server, 'database', { ...baseArgs, type: 'mongodb' });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('create redis dispatches to createRedis', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createRedis')
+      .mockResolvedValue({ uuid: 'db' } as UuidResponse);
+    await callHandler(server, 'database', { ...baseArgs, type: 'redis' });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('create keydb dispatches to createKeydb', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createKeydb')
+      .mockResolvedValue({ uuid: 'db' } as UuidResponse);
+    await callHandler(server, 'database', { ...baseArgs, type: 'keydb' });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('create clickhouse dispatches to createClickhouse', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createClickhouse')
+      .mockResolvedValue({ uuid: 'db' } as UuidResponse);
+    await callHandler(server, 'database', { ...baseArgs, type: 'clickhouse' });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('create dragonfly dispatches to createDragonfly', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createDragonfly')
+      .mockResolvedValue({ uuid: 'db' } as UuidResponse);
+    await callHandler(server, 'database', { ...baseArgs, type: 'dragonfly' });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('create postgresql dispatches to createPostgresql', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createPostgresql')
+      .mockResolvedValue({ uuid: 'db' } as UuidResponse);
+    await callHandler(server, 'database', { ...baseArgs, type: 'postgresql' });
+    expect(spy).toHaveBeenCalled();
+  });
+});
+
+describe('application create_public / create_github / create_key / delete', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('create_public dispatches to createApplicationPublic', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createApplicationPublic')
+      .mockResolvedValue({ uuid: 'app' } as UuidResponse);
+    await callHandler(server, 'application', {
+      action: 'create_public',
+      project_uuid: 'p',
+      server_uuid: 's',
+      git_repository: 'https://github.com/x/y',
+      git_branch: 'main',
+      build_pack: 'nixpacks',
+      ports_exposes: '3000',
+    });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('create_github dispatches to createApplicationPrivateGH', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createApplicationPrivateGH')
+      .mockResolvedValue({ uuid: 'app' } as UuidResponse);
+    await callHandler(server, 'application', {
+      action: 'create_github',
+      project_uuid: 'p',
+      server_uuid: 's',
+      github_app_uuid: 'g',
+      git_repository: 'repo',
+      git_branch: 'main',
+    });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('create_key dispatches to createApplicationPrivateKey', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createApplicationPrivateKey')
+      .mockResolvedValue({ uuid: 'app' } as UuidResponse);
+    await callHandler(server, 'application', {
+      action: 'create_key',
+      project_uuid: 'p',
+      server_uuid: 's',
+      private_key_uuid: 'k',
+      git_repository: 'repo',
+      git_branch: 'main',
+    });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('delete dispatches to deleteApplication', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deleteApplication')
+      .mockResolvedValue({ message: 'Deleted' });
+    await callHandler(server, 'application', { action: 'delete', uuid: 'app-uuid' });
+    expect(spy).toHaveBeenCalledWith('app-uuid', { deleteVolumes: undefined });
+  });
+});
+
+describe('service get_service and service update', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('get_service dispatches to getService', async () => {
+    const spy = jest.spyOn(server.getClient(), 'getService').mockResolvedValue({} as never);
+    await callHandler(server, 'get_service', { uuid: 'svc-uuid' });
+    expect(spy).toHaveBeenCalledWith('svc-uuid');
+  });
+
+  it('service update dispatches to updateService', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'updateService')
+      .mockResolvedValue({ message: 'Updated' });
+    await callHandler(server, 'service', { action: 'update', uuid: 'svc-uuid', name: 'new-name' });
+    expect(spy).toHaveBeenCalledWith('svc-uuid', expect.objectContaining({ name: 'new-name' }));
+  });
+});
+
+describe('env_vars — database/service paths, application bulk_create, list_deployments HATEOAS', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('application bulk_create dispatches to bulkUpdateApplicationEnvVars', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'bulkUpdateApplicationEnvVars')
+      .mockResolvedValue({ message: 'ok' });
+    await callHandler(server, 'env_vars', {
+      resource: 'application',
+      action: 'bulk_create',
+      uuid: 'app-uuid',
+      bulk_data: [{ key: 'K', value: 'V' }],
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', { data: [{ key: 'K', value: 'V' }] });
+  });
+
+  it('database create dispatches to createDatabaseEnvVar', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createDatabaseEnvVar')
+      .mockResolvedValue({ message: 'ok' });
+    await callHandler(server, 'env_vars', {
+      resource: 'database',
+      action: 'create',
+      uuid: 'db-uuid',
+      key: 'K',
+      value: 'V',
+    });
+    expect(spy).toHaveBeenCalledWith('db-uuid', expect.objectContaining({ key: 'K', value: 'V' }));
+  });
+
+  it('database update dispatches to updateDatabaseEnvVar', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'updateDatabaseEnvVar')
+      .mockResolvedValue({ message: 'ok' });
+    await callHandler(server, 'env_vars', {
+      resource: 'database',
+      action: 'update',
+      uuid: 'db-uuid',
+      key: 'K',
+      value: 'V2',
+    });
+    expect(spy).toHaveBeenCalledWith('db-uuid', expect.objectContaining({ key: 'K', value: 'V2' }));
+  });
+
+  it('service create dispatches to createServiceEnvVar', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createServiceEnvVar')
+      .mockResolvedValue({ message: 'ok' });
+    await callHandler(server, 'env_vars', {
+      resource: 'service',
+      action: 'create',
+      uuid: 'svc-uuid',
+      key: 'K',
+      value: 'V',
+    });
+    expect(spy).toHaveBeenCalledWith('svc-uuid', expect.objectContaining({ key: 'K', value: 'V' }));
+  });
+
+  it('service bulk_create dispatches to bulkUpdateServiceEnvVars', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'bulkUpdateServiceEnvVars')
+      .mockResolvedValue({ message: 'ok' });
+    await callHandler(server, 'env_vars', {
+      resource: 'service',
+      action: 'bulk_create',
+      uuid: 'svc-uuid',
+      bulk_data: [{ key: 'K', value: 'V' }],
+    });
+    expect(spy).toHaveBeenCalledWith('svc-uuid', { data: [{ key: 'K', value: 'V' }] });
+  });
+
+  it('list_deployments response includes _pagination when on page 2+', async () => {
+    jest.spyOn(server.getClient(), 'listDeployments').mockResolvedValue([]);
+    const result = (await callHandler(server, 'list_deployments', { page: 2 })) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toContain('_pagination');
+  });
+});
+
+describe('deployment tool — get/cancel/list_for_app', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('get without lines returns response with _actions', async () => {
+    jest.spyOn(server.getClient(), 'getDeployment').mockResolvedValue({
+      uuid: 'dep-uuid',
+      status: 'finished',
+      application_uuid: 'app-uuid',
+    } as never);
+    const result = (await callHandler(server, 'deployment', {
+      action: 'get',
+      uuid: 'dep-uuid',
+    })) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toContain('_actions');
+  });
+
+  it('get with lines includes logs in response', async () => {
+    jest.spyOn(server.getClient(), 'getDeployment').mockResolvedValue({
+      uuid: 'dep-uuid',
+      status: 'finished',
+      application_uuid: 'app-uuid',
+      logs: 'log line 1\nlog line 2',
+    } as never);
+    const result = (await callHandler(server, 'deployment', {
+      action: 'get',
+      uuid: 'dep-uuid',
+      lines: 10,
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('dep-uuid');
+  });
+
+  it('cancel dispatches to cancelDeployment', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'cancelDeployment')
+      .mockResolvedValue({ message: 'Cancelled' });
+    await callHandler(server, 'deployment', { action: 'cancel', uuid: 'dep-uuid' });
+    expect(spy).toHaveBeenCalledWith('dep-uuid');
+  });
+
+  it('list_for_app dispatches to listApplicationDeployments', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listApplicationDeployments').mockResolvedValue([]);
+    await callHandler(server, 'deployment', { action: 'list_for_app', uuid: 'app-uuid' });
+    expect(spy).toHaveBeenCalledWith('app-uuid');
+  });
+});
+
+describe('teams get/members and private_keys create/update/delete', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('teams get without id returns error', async () => {
+    const result = (await callHandler(server, 'teams', { action: 'get' })) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toContain('id required');
+  });
+
+  it('teams get dispatches to getTeam', async () => {
+    const spy = jest.spyOn(server.getClient(), 'getTeam').mockResolvedValue({} as never);
+    await callHandler(server, 'teams', { action: 'get', id: 1 });
+    expect(spy).toHaveBeenCalledWith(1);
+  });
+
+  it('teams members without id returns error', async () => {
+    const result = (await callHandler(server, 'teams', { action: 'members' })) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toContain('id required');
+  });
+
+  it('teams members dispatches to getTeamMembers', async () => {
+    const spy = jest.spyOn(server.getClient(), 'getTeamMembers').mockResolvedValue([]);
+    await callHandler(server, 'teams', { action: 'members', id: 2 });
+    expect(spy).toHaveBeenCalledWith(2);
+  });
+
+  it('private_keys create dispatches to createPrivateKey', async () => {
+    const spy = jest.spyOn(server.getClient(), 'createPrivateKey').mockResolvedValue({} as never);
+    await callHandler(server, 'private_keys', { action: 'create', private_key: 'pk-content' });
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ private_key: 'pk-content' }));
+  });
+
+  it('private_keys update without uuid returns error', async () => {
+    const result = (await callHandler(server, 'private_keys', { action: 'update' })) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toContain('uuid required');
+  });
+
+  it('private_keys update dispatches to updatePrivateKey', async () => {
+    const spy = jest.spyOn(server.getClient(), 'updatePrivateKey').mockResolvedValue({} as never);
+    await callHandler(server, 'private_keys', {
+      action: 'update',
+      uuid: 'key-uuid',
+      name: 'new-name',
+    });
+    expect(spy).toHaveBeenCalledWith('key-uuid', expect.objectContaining({ name: 'new-name' }));
+  });
+
+  it('private_keys delete without uuid returns error', async () => {
+    const result = (await callHandler(server, 'private_keys', { action: 'delete' })) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toContain('uuid required');
+  });
+
+  it('private_keys delete dispatches to deletePrivateKey', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deletePrivateKey')
+      .mockResolvedValue({ message: 'Deleted' });
+    await callHandler(server, 'private_keys', { action: 'delete', uuid: 'key-uuid' });
+    expect(spy).toHaveBeenCalledWith('key-uuid');
+  });
+});
+
+describe('github_apps list/get/create', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('list dispatches to listGitHubApps', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listGitHubApps').mockResolvedValue([] as never);
+    await callHandler(server, 'github_apps', { action: 'list' });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('get without id returns error', async () => {
+    const result = (await callHandler(server, 'github_apps', { action: 'get' })) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toContain('id required');
+  });
+
+  it('get dispatches and returns matching app', async () => {
+    jest
+      .spyOn(server.getClient(), 'listGitHubApps')
+      .mockResolvedValue([{ id: 1, name: 'MyApp' }] as never);
+    const result = (await callHandler(server, 'github_apps', { action: 'get', id: 1 })) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toContain('MyApp');
+  });
+
+  it('create dispatches to createGitHubApp', async () => {
+    const spy = jest.spyOn(server.getClient(), 'createGitHubApp').mockResolvedValue({} as never);
+    await callHandler(server, 'github_apps', {
+      action: 'create',
+      name: 'my-app',
+      api_url: 'https://api.github.com',
+      html_url: 'https://github.com/apps/my-app',
+      app_id: 12345,
+      installation_id: 67890,
+      client_id: 'Iv1.abc',
+      client_secret: 'secret',
+      private_key_uuid: 'pk-uuid',
+    });
+    expect(spy).toHaveBeenCalled();
+  });
+});
+
+describe('database_backups — get_execution, create dispatch, update', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('get_execution dispatches to getBackupExecution', async () => {
+    const spy = jest.spyOn(server.getClient(), 'getBackupExecution').mockResolvedValue({} as never);
+    await callHandler(server, 'database_backups', {
+      action: 'get_execution',
+      database_uuid: 'd',
+      backup_uuid: 'b',
+      execution_uuid: 'e',
+    });
+    expect(spy).toHaveBeenCalledWith('d', 'b', 'e');
+  });
+
+  it('get_execution without execution_uuid returns error', async () => {
+    const result = (await callHandler(server, 'database_backups', {
+      action: 'get_execution',
+      database_uuid: 'd',
+      backup_uuid: 'b',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('required');
+  });
+
+  it('create with frequency dispatches to createDatabaseBackup', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createDatabaseBackup')
+      .mockResolvedValue({} as never);
+    await callHandler(server, 'database_backups', {
+      action: 'create',
+      database_uuid: 'db-uuid',
+      frequency: '@daily',
+    });
+    expect(spy).toHaveBeenCalledWith('db-uuid', expect.objectContaining({ frequency: '@daily' }));
+  });
+
+  it('update without backup_uuid returns error', async () => {
+    const result = (await callHandler(server, 'database_backups', {
+      action: 'update',
+      database_uuid: 'db-uuid',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('backup_uuid required');
+  });
+
+  it('update dispatches to updateDatabaseBackup', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'updateDatabaseBackup')
+      .mockResolvedValue({} as never);
+    await callHandler(server, 'database_backups', {
+      action: 'update',
+      database_uuid: 'db-uuid',
+      backup_uuid: 'bk-uuid',
+      enabled: false,
+    });
+    expect(spy).toHaveBeenCalledWith('db-uuid', 'bk-uuid', expect.any(Object));
+  });
+
+  it('delete_execution without execution_uuid returns error', async () => {
+    const result = (await callHandler(server, 'database_backups', {
+      action: 'delete_execution',
+      database_uuid: 'd',
+      backup_uuid: 'b',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('required');
+  });
+
+  it('delete_execution dispatches to deleteBackupExecution', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deleteBackupExecution')
+      .mockResolvedValue({ message: 'ok' });
+    await callHandler(server, 'database_backups', {
+      action: 'delete_execution',
+      database_uuid: 'd',
+      backup_uuid: 'b',
+      execution_uuid: 'e',
+    });
+    expect(spy).toHaveBeenCalledWith('d', 'b', 'e', undefined);
+  });
+});
+
+describe('storages tool handler dispatch', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('list application dispatches to listApplicationStorages', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listApplicationStorages').mockResolvedValue([]);
+    await callHandler(server, 'storages', {
+      action: 'list',
+      resource_type: 'application',
+      uuid: 'app-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid');
+  });
+
+  it('list database dispatches to listDatabaseStorages', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listDatabaseStorages').mockResolvedValue([]);
+    await callHandler(server, 'storages', {
+      action: 'list',
+      resource_type: 'database',
+      uuid: 'db-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith('db-uuid');
+  });
+
+  it('list service dispatches to listServiceStorages', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listServiceStorages').mockResolvedValue([]);
+    await callHandler(server, 'storages', {
+      action: 'list',
+      resource_type: 'service',
+      uuid: 'svc-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith('svc-uuid');
+  });
+
+  it('create requires type', async () => {
+    const result = (await callHandler(server, 'storages', {
+      action: 'create',
+      resource_type: 'application',
+      uuid: 'app-uuid',
+      mount_path: '/data',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('type required');
+  });
+
+  it('create requires mount_path', async () => {
+    const result = (await callHandler(server, 'storages', {
+      action: 'create',
+      resource_type: 'application',
+      uuid: 'app-uuid',
+      type: 'persistent',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('mount_path required');
+  });
+
+  it('create service requires service_resource_uuid', async () => {
+    const result = (await callHandler(server, 'storages', {
+      action: 'create',
+      resource_type: 'service',
+      uuid: 'svc-uuid',
+      type: 'persistent',
+      mount_path: '/data',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('service_resource_uuid required');
+  });
+
+  it('create application with persistent type dispatches to createApplicationStorage', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createApplicationStorage')
+      .mockResolvedValue({} as never);
+    await callHandler(server, 'storages', {
+      action: 'create',
+      resource_type: 'application',
+      uuid: 'app-uuid',
+      type: 'persistent',
+      mount_path: '/data',
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', expect.any(Object));
+  });
+
+  it('create application with file type dispatches to createApplicationStorage', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createApplicationStorage')
+      .mockResolvedValue({} as never);
+    await callHandler(server, 'storages', {
+      action: 'create',
+      resource_type: 'application',
+      uuid: 'app-uuid',
+      type: 'file',
+      mount_path: '/app/.env',
+      content: 'KEY=VALUE',
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', expect.any(Object));
+  });
+
+  it('create database dispatches to createDatabaseStorage', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createDatabaseStorage')
+      .mockResolvedValue({} as never);
+    await callHandler(server, 'storages', {
+      action: 'create',
+      resource_type: 'database',
+      uuid: 'db-uuid',
+      type: 'persistent',
+      mount_path: '/data',
+    });
+    expect(spy).toHaveBeenCalledWith('db-uuid', expect.any(Object));
+  });
+
+  it('create service dispatches to createServiceStorage', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'createServiceStorage')
+      .mockResolvedValue({} as never);
+    await callHandler(server, 'storages', {
+      action: 'create',
+      resource_type: 'service',
+      uuid: 'svc-uuid',
+      type: 'persistent',
+      mount_path: '/data',
+      service_resource_uuid: 'res-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith('svc-uuid', expect.any(Object));
+  });
+
+  it('update requires type', async () => {
+    const result = (await callHandler(server, 'storages', {
+      action: 'update',
+      resource_type: 'application',
+      uuid: 'app-uuid',
+      storage_uuid: 'st-uuid',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('type required');
+  });
+
+  it('update requires storage_uuid', async () => {
+    const result = (await callHandler(server, 'storages', {
+      action: 'update',
+      resource_type: 'application',
+      uuid: 'app-uuid',
+      type: 'persistent',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('storage_uuid required');
+  });
+
+  it('update application dispatches to updateApplicationStorage', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'updateApplicationStorage')
+      .mockResolvedValue({} as never);
+    await callHandler(server, 'storages', {
+      action: 'update',
+      resource_type: 'application',
+      uuid: 'app-uuid',
+      type: 'persistent',
+      storage_uuid: 'st-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', expect.any(Object));
+  });
+
+  it('update database dispatches to updateDatabaseStorage', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'updateDatabaseStorage')
+      .mockResolvedValue({} as never);
+    await callHandler(server, 'storages', {
+      action: 'update',
+      resource_type: 'database',
+      uuid: 'db-uuid',
+      type: 'persistent',
+      storage_uuid: 'st-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith('db-uuid', expect.any(Object));
+  });
+
+  it('update service dispatches to updateServiceStorage', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'updateServiceStorage')
+      .mockResolvedValue({} as never);
+    await callHandler(server, 'storages', {
+      action: 'update',
+      resource_type: 'service',
+      uuid: 'svc-uuid',
+      type: 'persistent',
+      storage_uuid: 'st-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith('svc-uuid', expect.any(Object));
+  });
+
+  it('delete requires storage_uuid', async () => {
+    const result = (await callHandler(server, 'storages', {
+      action: 'delete',
+      resource_type: 'application',
+      uuid: 'app-uuid',
+    })) as { content: Array<{ text: string }> };
+    expect(result.content[0].text).toContain('storage_uuid required');
+  });
+
+  it('delete application dispatches to deleteApplicationStorage', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deleteApplicationStorage')
+      .mockResolvedValue({ message: 'ok' });
+    await callHandler(server, 'storages', {
+      action: 'delete',
+      resource_type: 'application',
+      uuid: 'app-uuid',
+      storage_uuid: 'st-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', 'st-uuid');
+  });
+
+  it('delete database dispatches to deleteDatabaseStorage', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deleteDatabaseStorage')
+      .mockResolvedValue({ message: 'ok' });
+    await callHandler(server, 'storages', {
+      action: 'delete',
+      resource_type: 'database',
+      uuid: 'db-uuid',
+      storage_uuid: 'st-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith('db-uuid', 'st-uuid');
+  });
+
+  it('delete service dispatches to deleteServiceStorage', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'deleteServiceStorage')
+      .mockResolvedValue({ message: 'ok' });
+    await callHandler(server, 'storages', {
+      action: 'delete',
+      resource_type: 'service',
+      uuid: 'svc-uuid',
+      storage_uuid: 'st-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith('svc-uuid', 'st-uuid');
+  });
+});
+
+describe('batch operations — bulk_env_update / restart / stop / redeploy', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('bulk_env_update dispatches to bulkEnvUpdate', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'bulkEnvUpdate')
+      .mockResolvedValue({} as BatchOperationResult);
+    await callHandler(server, 'bulk_env_update', {
+      app_uuids: ['a', 'b'],
+      key: 'MY_KEY',
+      value: 'val',
+    });
+    expect(spy).toHaveBeenCalledWith(['a', 'b'], 'MY_KEY', 'val', undefined);
+  });
+
+  it('restart_project_apps dispatches to restartProjectApps', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'restartProjectApps')
+      .mockResolvedValue({} as BatchOperationResult);
+    await callHandler(server, 'restart_project_apps', { project_uuid: 'proj-uuid' });
+    expect(spy).toHaveBeenCalledWith('proj-uuid');
+  });
+
+  it('stop_all_apps dispatches to stopAllApps', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'stopAllApps')
+      .mockResolvedValue({} as BatchOperationResult);
+    await callHandler(server, 'stop_all_apps', { confirm_stop_all_apps: true });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('redeploy_project dispatches to redeployProjectApps', async () => {
+    const spy = jest
+      .spyOn(server.getClient(), 'redeployProjectApps')
+      .mockResolvedValue({} as BatchOperationResult);
+    await callHandler(server, 'redeploy_project', { project_uuid: 'proj-uuid' });
+    expect(spy).toHaveBeenCalledWith('proj-uuid', true);
   });
 });
