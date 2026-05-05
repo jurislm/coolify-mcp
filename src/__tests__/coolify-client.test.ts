@@ -1644,6 +1644,18 @@ describe('CoolifyClient', () => {
       );
     });
 
+    it('should delete an application preview by pull request id', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Deleted' }));
+
+      const result = await client.deleteApplicationPreview('app-uuid', 42);
+
+      expect(result).toEqual({ message: 'Deleted' });
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/applications/app-uuid/previews/42',
+        expect.objectContaining({ method: 'DELETE' }),
+      );
+    });
+
     it('should get application logs', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse('log line 1\nlog line 2'));
 
@@ -5418,6 +5430,32 @@ describe('CoolifyClient', () => {
         text: async () => '',
       } as Response);
       await expect(client.getHealth()).rejects.toThrow('HTTP 503');
+    });
+  });
+
+  describe('enableApi / disableApi', () => {
+    it('should call enable API endpoint', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'API enabled.' }));
+
+      const result = await client.enableApi();
+
+      expect(result).toEqual({ message: 'API enabled.' });
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/enable',
+        expect.any(Object),
+      );
+    });
+
+    it('should call disable API endpoint', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ message: 'API disabled.' }));
+
+      const result = await client.disableApi();
+
+      expect(result).toEqual({ message: 'API disabled.' });
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/disable',
+        expect.any(Object),
+      );
     });
   });
 });

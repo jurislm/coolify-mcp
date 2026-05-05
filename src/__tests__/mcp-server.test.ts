@@ -265,6 +265,11 @@ describe('CoolifyMcpServer v2', () => {
       expect(typeof client.listResources).toBe('function');
       // Health check
       expect(typeof client.getHealth).toBe('function');
+      // Application preview
+      expect(typeof client.deleteApplicationPreview).toBe('function');
+      // API control
+      expect(typeof client.enableApi).toBe('function');
+      expect(typeof client.disableApi).toBe('function');
     });
   });
 
