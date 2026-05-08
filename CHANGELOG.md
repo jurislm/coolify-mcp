@@ -12,6 +12,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docker_network_alias` tool: generates SSH commands to add a friendly-name docker network alias, working around Coolify upstream bug where DB containers are aliased by UUID only ([#31](https://github.com/jurislm/coolify-mcp/issues/31))
 - `database(action=create)`: response now includes `alias_warning` field with `docker_network_alias` invocation hint when `name` is provided
 
+## [3.4.0](https://github.com/jurislm/coolify-mcp/compare/v3.3.3...v3.4.0) (2026-05-05)
+
+
+### Features
+
+* add API endpoints, improve coverage to 100%, add CI enhancements ([9578b82](https://github.com/jurislm/coolify-mcp/commit/9578b828bb602307b2418684d58468620cc3a579))
+* add missing Coolify API endpoints (preview delete, api control) ([4ebcf7d](https://github.com/jurislm/coolify-mcp/commit/4ebcf7d63abf0b3bd548fe70d92ea80dc10fb72b))
+
+
+### Bug Fixes
+
+* **dev:** switch dev script to bun and add typecheck script ([d6e6871](https://github.com/jurislm/coolify-mcp/commit/d6e687152f9d084235fd1f60a8e939521c508c3c))
+
+
+### Tests
+
+* achieve 100% line coverage for mcp-server.ts ([fee6e4b](https://github.com/jurislm/coolify-mcp/commit/fee6e4b22800df0d999c503590349c0cbd2387c5))
+* improve mcp-server handler coverage to 80%+ ([76c241e](https://github.com/jurislm/coolify-mcp/commit/76c241eda2e90c01b9aa2c9f2b895da54fa57408))
+
+## [3.3.3](https://github.com/jurislm/coolify-mcp/compare/v3.3.2...v3.3.3) (2026-05-04)
+
+
+### Bug Fixes
+
+* diagnose_app deployments.slice crash + env var rename (closes [#24](https://github.com/jurislm/coolify-mcp/issues/24)) ([#25](https://github.com/jurislm/coolify-mcp/issues/25)) ([293939b](https://github.com/jurislm/coolify-mcp/commit/293939b6232aad961bbc058103c0d2eb1c361c1d))
+
+## [3.3.2](https://github.com/jurislm/coolify-mcp/compare/v3.3.1...v3.3.2) (2026-05-02)
+
+
+### Documentation
+
+* add 8 new feature specs and update 3 existing specs from audit ([dde91e5](https://github.com/jurislm/coolify-mcp/commit/dde91e579c8a92505e86254d9142a5e57d2f1ec7))
+* add 8 new feature specs from spec coverage audit ([6d0e3a5](https://github.com/jurislm/coolify-mcp/commit/6d0e3a54b6d26754317d48a67a4b94faafa5571b))
+* add jurislm-tools plugin section and use [@latest](https://github.com/latest) in npx ([96b3387](https://github.com/jurislm/coolify-mcp/commit/96b33875b2b3c7fd046e696d974e7b3aa9caeb21))
+* fix README header to use @jurislm/coolify-mcp package name ([ee46f48](https://github.com/jurislm/coolify-mcp/commit/ee46f48d5d3b17b145fcfd137aa56bbac4131b96))
+* rewrite README to match jurislm MCP standard format ([a8aae22](https://github.com/jurislm/coolify-mcp/commit/a8aae22f51eef5e2f07b208bca57ed19e5e2feda))
+* use bunx instead of npx in MCP configuration example ([36b07cb](https://github.com/jurislm/coolify-mcp/commit/36b07cb4fb223c3b6a4c1fa1acabbd01df5ae7a0))
+
 ## [3.3.1](https://github.com/jurislm/coolify-mcp/compare/v3.3.0...v3.3.1) (2026-04-08)
 
 
