@@ -1,6 +1,6 @@
 # @jurislm/coolify-mcp
 
-MCP (Model Context Protocol) server for [Coolify](https://coolify.io) — provides 43 tools for infrastructure management (servers, applications, databases, deployments, diagnostics) via natural language.
+MCP (Model Context Protocol) server for [Coolify](https://coolify.io) — provides 44 tools for infrastructure management (servers, applications, databases, deployments, diagnostics) via natural language.
 
 ## Tools
 
@@ -45,12 +45,13 @@ MCP (Model Context Protocol) server for [Coolify](https://coolify.io) — provid
 - `application` — Create, update, or delete an application (`action: create_public|create_github|create_key|create_dockerimage|create_dockerfile|update|delete`)
 - `application_logs` — Get application logs
 
-### Databases (4 tools)
+### Databases (5 tools)
 
 - `list_databases` — List all databases (summary)
 - `get_database` — Get database details
 - `database` — Create, update, or delete a database (`action: create|update|delete`, supports postgresql, mysql, mariadb, mongodb, redis, keydb, clickhouse, dragonfly)
 - `database_backups` — Manage backup schedules and execution history (`action: list_schedules|create|update|delete|list_executions`)
+- `docker_network_alias` — Workaround for Coolify upstream bug: generates SSH commands to add a friendly-name docker network alias to a DB container (Coolify aliases by UUID only)
 
 ### Services (3 tools)
 

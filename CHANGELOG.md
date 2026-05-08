@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `docker_network_alias` tool: generates SSH commands to add a friendly-name docker network alias, working around Coolify upstream bug where DB containers are aliased by UUID only ([#31](https://github.com/jurislm/coolify-mcp/issues/31))
+- `database(action=create)`: response now includes `alias_warning` field with `docker_network_alias` invocation hint when `name` is provided
+
 ## [3.3.1](https://github.com/jurislm/coolify-mcp/compare/v3.3.0...v3.3.1) (2026-04-08)
 
 

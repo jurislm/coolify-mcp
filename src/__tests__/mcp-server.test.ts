@@ -2466,3 +2466,124 @@ describe('batch operations — bulk_env_update / restart / stop / redeploy', () 
     expect(spy).toHaveBeenCalledWith('proj-uuid', true);
   });
 });
+
+describe('docker_network_alias tool', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('returns SSH commands with server info when getServer succeeds', async () => {
+    jest.spyOn(server.getClient(), 'getServer').mockResolvedValue({
+      id: 1,
+      uuid: 'srv-uuid',
+      name: 'my-server',
+      ip: '1.2.3.4',
+      user: 'root',
+      port: 22,
+      created_at: '',
+      updated_at: '',
+    } as Server);
+    const result = (await callHandler(server, 'docker_network_alias', {
+      server_uuid: 'srv-uuid',
+      db_uuid: 'db-uuid-123',
+      name: 'shared-db',
+    })) as { content: Array<{ text: string }> };
+    const parsed = JSON.parse(result.content[0].text) as Record<string, unknown>;
+    expect(parsed).toHaveProperty('commands');
+    const commands = parsed.commands as Record<string, unknown>;
+    expect(commands.ssh_connect).toContain('1.2.3.4');
+    expect((commands.add_alias as string[]).join('\n')).toContain('shared-db');
+    expect((commands.add_alias as string[]).join('\n')).toContain('db-uuid-123');
+    expect(commands.verify).toContain('shared-db');
+  });
+
+  it('uses placeholder ssh_connect and server_lookup_failed when getServer fails', async () => {
+    jest.spyOn(server.getClient(), 'getServer').mockRejectedValue(new Error('not found'));
+    const result = (await callHandler(server, 'docker_network_alias', {
+      server_uuid: 'bad-uuid',
+      db_uuid: 'db-uuid-456',
+      name: 'my-db',
+    })) as { content: Array<{ text: string }> };
+    const parsed = JSON.parse(result.content[0].text) as Record<string, unknown>;
+    expect(parsed).toHaveProperty('server_lookup_failed');
+    expect(parsed).not.toHaveProperty('server');
+    const commands = parsed.commands as Record<string, unknown>;
+    expect(commands.ssh_connect).toContain('<server-ip>');
+  });
+
+  it('uses custom network when provided', async () => {
+    jest.spyOn(server.getClient(), 'getServer').mockResolvedValue({
+      id: 1,
+      uuid: 'srv-uuid',
+      name: 'my-server',
+      ip: '5.6.7.8',
+      user: 'ubuntu',
+      port: 2222,
+      created_at: '',
+      updated_at: '',
+    } as Server);
+    const result = (await callHandler(server, 'docker_network_alias', {
+      server_uuid: 'srv-uuid',
+      db_uuid: 'db-uuid-789',
+      name: 'my-db',
+      network: 'custom-net',
+    })) as { content: Array<{ text: string }> };
+    const parsed = JSON.parse(result.content[0].text) as Record<string, unknown>;
+    const commands = parsed.commands as Record<string, unknown>;
+    expect((commands.add_alias as string[]).join('\n')).toContain('custom-net');
+    expect(commands.ssh_connect).toContain('2222');
+  });
+
+  it('includes next_actions pointing to get_database', async () => {
+    jest.spyOn(server.getClient(), 'getServer').mockRejectedValue(new Error('skip'));
+    const result = (await callHandler(server, 'docker_network_alias', {
+      server_uuid: 'srv',
+      db_uuid: 'db-abc',
+      name: 'testdb',
+    })) as { content: Array<{ text: string }> };
+    const parsed = JSON.parse(result.content[0].text) as Record<string, unknown>;
+    const actions = parsed.next_actions as Array<Record<string, unknown>>;
+    expect(actions[0].tool).toBe('get_database');
+  });
+});
+
+describe('database create — alias_warning injected into JSON when name is provided', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('injects alias_warning into valid JSON after postgresql create with name', async () => {
+    jest.spyOn(server.getClient(), 'createPostgresql').mockResolvedValue({ uuid: 'new-db-uuid' });
+    const result = (await callHandler(server, 'database', {
+      action: 'create',
+      type: 'postgresql',
+      server_uuid: 'srv-uuid',
+      project_uuid: 'proj-uuid',
+      name: 'shared-db',
+    })) as { content: Array<{ text: string }> };
+    // Response must be valid JSON
+    const parsed = JSON.parse(result.content[0].text) as Record<string, unknown>;
+    expect(parsed.uuid).toBe('new-db-uuid');
+    expect(parsed).toHaveProperty('alias_warning');
+    const warn = parsed.alias_warning as Record<string, string>;
+    expect(warn.bug).toContain('shared-db');
+    expect(warn.fix).toContain('docker_network_alias');
+    expect(warn.fix).toContain('new-db-uuid');
+  });
+
+  it('does not inject alias_warning when name is not provided', async () => {
+    jest.spyOn(server.getClient(), 'createPostgresql').mockResolvedValue({ uuid: 'new-db-uuid' });
+    const result = (await callHandler(server, 'database', {
+      action: 'create',
+      type: 'postgresql',
+      server_uuid: 'srv-uuid',
+      project_uuid: 'proj-uuid',
+    })) as { content: Array<{ text: string }> };
+    const parsed = JSON.parse(result.content[0].text) as Record<string, unknown>;
+    expect(parsed).not.toHaveProperty('alias_warning');
+  });
+});
