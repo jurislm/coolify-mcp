@@ -1828,9 +1828,15 @@ describe('service get_service and service update', () => {
   });
 
   it('service update dispatches to updateService', async () => {
-    const spy = jest
-      .spyOn(server.getClient(), 'updateService')
-      .mockResolvedValue({ message: 'Updated' } as unknown as Service);
+    const spy = jest.spyOn(server.getClient(), 'updateService').mockResolvedValue({
+      id: 1,
+      uuid: 'svc-uuid',
+      name: 'test-service',
+      type: 'docker-compose',
+      status: 'running' as const,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    } as Service);
     await callHandler(server, 'service', { action: 'update', uuid: 'svc-uuid', name: 'new-name' });
     expect(spy).toHaveBeenCalledWith('svc-uuid', expect.objectContaining({ name: 'new-name' }));
   });
@@ -1859,7 +1865,7 @@ describe('env_vars — database/service paths, application bulk_create, list_dep
   it('database create dispatches to createDatabaseEnvVar', async () => {
     const spy = jest
       .spyOn(server.getClient(), 'createDatabaseEnvVar')
-      .mockResolvedValue({ message: 'ok' } as unknown as UuidResponse);
+      .mockResolvedValue({ uuid: 'env-uuid' } as UuidResponse);
     await callHandler(server, 'env_vars', {
       resource: 'database',
       action: 'create',
@@ -1887,7 +1893,7 @@ describe('env_vars — database/service paths, application bulk_create, list_dep
   it('service create dispatches to createServiceEnvVar', async () => {
     const spy = jest
       .spyOn(server.getClient(), 'createServiceEnvVar')
-      .mockResolvedValue({ message: 'ok' } as unknown as UuidResponse);
+      .mockResolvedValue({ uuid: 'env-uuid' } as UuidResponse);
     await callHandler(server, 'env_vars', {
       resource: 'service',
       action: 'create',
