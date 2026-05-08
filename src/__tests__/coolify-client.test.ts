@@ -1,6 +1,15 @@
 import { jest, describe, it, expect, beforeEach } from 'bun:test';
 import { CoolifyClient } from '../lib/coolify-client.js';
-import type { ServiceType, CreateServiceRequest } from '../types/coolify.js';
+import type {
+  ServiceType,
+  CreateServiceRequest,
+  DatabaseBackup,
+  BackupExecution,
+  PrivateKey,
+  LocalPersistentVolume,
+  EnvironmentVariable,
+  StorageListResponse,
+} from '../types/coolify.js';
 
 // Helper to create mock response
 function mockResponse(data: unknown, ok = true, status = 200): Response {
@@ -48,7 +57,7 @@ describe('CoolifyClient', () => {
       id: 1,
       uuid: 'resource-uuid',
       name: 'test-app',
-      type: 'application',
+      type: 'application' as const,
       status: 'running',
       created_at: '2024-01-01',
       updated_at: '2024-01-01',
@@ -60,7 +69,7 @@ describe('CoolifyClient', () => {
     uuid: 'test-uuid',
     name: 'test-service',
     type: 'code-server' as ServiceType,
-    status: 'running',
+    status: 'running' as const,
     domains: ['test.example.com'],
     created_at: '2024-01-01',
     updated_at: '2024-01-01',
@@ -70,7 +79,7 @@ describe('CoolifyClient', () => {
     id: 1,
     uuid: 'app-uuid',
     name: 'test-app',
-    status: 'running',
+    status: 'running' as const,
     fqdn: 'https://app.example.com',
     git_repository: 'https://github.com/user/repo',
     git_branch: 'main',
@@ -82,9 +91,10 @@ describe('CoolifyClient', () => {
     id: 1,
     uuid: 'db-uuid',
     name: 'test-db',
-    type: 'postgresql',
-    status: 'running',
+    type: 'postgresql' as const,
+    status: 'running' as const,
     is_public: false,
+    image: 'postgres:14',
     created_at: '2024-01-01',
     updated_at: '2024-01-01',
   };
@@ -94,7 +104,7 @@ describe('CoolifyClient', () => {
     uuid: 'dep-uuid',
     deployment_uuid: 'dep-123',
     application_name: 'test-app',
-    status: 'finished',
+    status: 'finished' as const,
     force_rebuild: false,
     is_webhook: false,
     is_api: true,
@@ -118,7 +128,7 @@ describe('CoolifyClient', () => {
 
   beforeEach(() => {
     mockFetch.mockClear();
-    global.fetch = mockFetch;
+    global.fetch = mockFetch as unknown as typeof fetch;
     client = new CoolifyClient({
       baseUrl: 'http://localhost:3000',
       accessToken: 'test-api-key',
@@ -454,7 +464,16 @@ describe('CoolifyClient', () => {
 
   describe('databases', () => {
     it('should list databases', async () => {
-      const mockDbs = [{ id: 1, uuid: 'db-uuid', name: 'test-db' }];
+      const mockDbs = [
+        {
+          id: 1,
+          uuid: 'db-uuid',
+          name: 'test-db',
+          type: 'postgresql',
+          status: 'running',
+          is_public: false,
+        },
+      ];
       mockFetch.mockResolvedValueOnce(mockResponse(mockDbs));
 
       const result = await client.listDatabases();
@@ -473,7 +492,15 @@ describe('CoolifyClient', () => {
 
   describe('teams', () => {
     it('should list teams', async () => {
-      const mockTeams = [{ id: 1, name: 'test-team', personal_team: false }];
+      const mockTeams = [
+        {
+          id: 1,
+          name: 'test-team',
+          personal_team: false,
+          created_at: '2024-01-01',
+          updated_at: '2024-01-01',
+        },
+      ];
       mockFetch.mockResolvedValueOnce(mockResponse(mockTeams));
 
       const result = await client.listTeams();
@@ -482,7 +509,13 @@ describe('CoolifyClient', () => {
     });
 
     it('should get current team', async () => {
-      const mockTeam = { id: 1, name: 'my-team', personal_team: true };
+      const mockTeam = {
+        id: 1,
+        name: 'my-team',
+        personal_team: true,
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+      };
       mockFetch.mockResolvedValueOnce(mockResponse(mockTeam));
 
       const result = await client.getCurrentTeam();
@@ -491,7 +524,13 @@ describe('CoolifyClient', () => {
     });
 
     it('should get team by id', async () => {
-      const mockTeam = { id: 42, name: 'team-42', personal_team: false };
+      const mockTeam = {
+        id: 42,
+        name: 'team-42',
+        personal_team: false,
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+      };
       mockFetch.mockResolvedValueOnce(mockResponse(mockTeam));
 
       const result = await client.getTeam(42);
@@ -504,7 +543,15 @@ describe('CoolifyClient', () => {
     });
 
     it('should get team members by id', async () => {
-      const mockMembers = [{ id: 1, name: 'Alice' }];
+      const mockMembers = [
+        {
+          id: 1,
+          name: 'Alice',
+          email: 'alice@example.com',
+          created_at: '2024-01-01',
+          updated_at: '2024-01-01',
+        },
+      ];
       mockFetch.mockResolvedValueOnce(mockResponse(mockMembers));
 
       const result = await client.getTeamMembers(42);
@@ -517,7 +564,15 @@ describe('CoolifyClient', () => {
     });
 
     it('should get current team members', async () => {
-      const mockMembers = [{ id: 2, name: 'Bob' }];
+      const mockMembers = [
+        {
+          id: 2,
+          name: 'Bob',
+          email: 'bob@example.com',
+          created_at: '2024-01-01',
+          updated_at: '2024-01-01',
+        },
+      ];
       mockFetch.mockResolvedValueOnce(mockResponse(mockMembers));
 
       const result = await client.getCurrentTeamMembers();
@@ -537,7 +592,13 @@ describe('CoolifyClient', () => {
           id: 1,
           uuid: 'dep-uuid',
           deployment_uuid: 'dep-123',
-          status: 'finished',
+          status: 'finished' as const,
+          force_rebuild: false,
+          is_webhook: false,
+          is_api: false,
+          restart_only: false,
+          created_at: '2024-01-01',
+          updated_at: '2024-01-01',
         },
       ];
       mockFetch.mockResolvedValueOnce(mockResponse(mockDeps));
@@ -586,7 +647,18 @@ describe('CoolifyClient', () => {
 
   describe('private keys', () => {
     it('should list private keys', async () => {
-      const mockKeys = [{ id: 1, uuid: 'key-uuid', name: 'my-key' }];
+      const mockKeys = [
+        {
+          id: 1,
+          uuid: 'key-uuid',
+          name: 'my-key',
+          private_key: 'ssh-rsa AAAA...',
+          is_git_related: false,
+          team_id: 1,
+          created_at: '2024-01-01',
+          updated_at: '2024-01-01',
+        },
+      ];
       mockFetch.mockResolvedValueOnce(mockResponse(mockKeys));
 
       const result = await client.listPrivateKeys();
@@ -771,7 +843,7 @@ describe('CoolifyClient', () => {
       } as Response);
 
       const result = await client.deleteServer('test-uuid');
-      expect(result).toEqual({});
+      expect(result as unknown).toEqual({});
     });
 
     it('should handle API errors without message', async () => {
@@ -892,7 +964,7 @@ describe('CoolifyClient', () => {
     });
 
     it('should get server domains', async () => {
-      const mockDomains = [{ domain: 'example.com', ip: '1.2.3.4' }];
+      const mockDomains = [{ ip: '1.2.3.4', domains: ['example.com'] }];
       mockFetch.mockResolvedValueOnce(mockResponse(mockDomains));
 
       const result = await client.getServerDomains('test-uuid');
@@ -905,7 +977,7 @@ describe('CoolifyClient', () => {
     });
 
     it('should validate a server', async () => {
-      const mockValidation = { valid: true };
+      const mockValidation = { valid: true, message: 'Validation completed' };
       mockFetch.mockResolvedValueOnce(mockResponse(mockValidation));
 
       const result = await client.validateServer('test-uuid');
@@ -1932,7 +2004,7 @@ describe('CoolifyClient', () => {
 
       const result = await client.listDatabaseBackups('db-uuid');
 
-      expect(result).toEqual(mockBackups);
+      expect(result).toEqual(mockBackups as unknown as DatabaseBackup[]);
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/databases/db-uuid/backups',
         expect.any(Object),
@@ -1945,7 +2017,7 @@ describe('CoolifyClient', () => {
 
       const result = await client.getDatabaseBackup('db-uuid', 'backup-uuid');
 
-      expect(result).toEqual(mockBackup);
+      expect(result).toEqual(mockBackup as unknown as DatabaseBackup);
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/databases/db-uuid/backups/backup-uuid',
         expect.any(Object),
@@ -1965,7 +2037,7 @@ describe('CoolifyClient', () => {
         database_backup_retention_days_s3: 7,
       });
 
-      expect(result).toEqual(mockBackup);
+      expect(result).toEqual(mockBackup as unknown as DatabaseBackup);
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/databases/db-uuid/backups',
         expect.objectContaining({ method: 'POST' }),
@@ -2022,7 +2094,7 @@ describe('CoolifyClient', () => {
 
       const result = await client.listBackupExecutions('db-uuid', 'backup-uuid');
 
-      expect(result).toEqual(mockExecutions);
+      expect(result).toEqual(mockExecutions as unknown as BackupExecution[]);
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/databases/db-uuid/backups/backup-uuid/executions',
         expect.any(Object),
@@ -2035,7 +2107,7 @@ describe('CoolifyClient', () => {
 
       const result = await client.getBackupExecution('db-uuid', 'backup-uuid', 'exec-uuid');
 
-      expect(result).toEqual(mockExecution);
+      expect(result).toEqual(mockExecution as unknown as BackupExecution);
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/databases/db-uuid/backups/backup-uuid/executions/exec-uuid',
         expect.any(Object),
@@ -2356,6 +2428,7 @@ describe('CoolifyClient', () => {
       uuid: 'svc-env-uuid',
       key: 'SVC_KEY',
       value: 'svc-value',
+      is_build_time: false,
     };
 
     it('should list service env vars', async () => {
@@ -2363,7 +2436,7 @@ describe('CoolifyClient', () => {
 
       const result = await client.listServiceEnvVars('test-uuid');
 
-      expect(result).toEqual([mockEnvVar]);
+      expect(result).toEqual([mockEnvVar] as unknown as EnvironmentVariable[]);
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/services/test-uuid/envs',
         expect.any(Object),
@@ -2410,6 +2483,7 @@ describe('CoolifyClient', () => {
       uuid: 'db-env-uuid',
       key: 'DB_VAR',
       value: 'db-value',
+      is_build_time: false,
     };
 
     it('should list database env vars', async () => {
@@ -2700,7 +2774,13 @@ describe('CoolifyClient', () => {
   // =========================================================================
   describe('teams extended', () => {
     it('should get a team by id', async () => {
-      const mockTeam = { id: 1, name: 'team-one', personal_team: false };
+      const mockTeam = {
+        id: 1,
+        name: 'team-one',
+        personal_team: false,
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+      };
       mockFetch.mockResolvedValueOnce(mockResponse(mockTeam));
 
       const result = await client.getTeam(1);
@@ -2713,7 +2793,15 @@ describe('CoolifyClient', () => {
     });
 
     it('should get team members', async () => {
-      const mockMembers = [{ id: 1, name: 'User One', email: 'user@example.com' }];
+      const mockMembers = [
+        {
+          id: 1,
+          name: 'User One',
+          email: 'user@example.com',
+          created_at: '2024-01-01',
+          updated_at: '2024-01-01',
+        },
+      ];
       mockFetch.mockResolvedValueOnce(mockResponse(mockMembers));
 
       const result = await client.getTeamMembers(1);
@@ -2726,7 +2814,15 @@ describe('CoolifyClient', () => {
     });
 
     it('should get current team members', async () => {
-      const mockMembers = [{ id: 1, name: 'Current User', email: 'current@example.com' }];
+      const mockMembers = [
+        {
+          id: 1,
+          name: 'Current User',
+          email: 'current@example.com',
+          created_at: '2024-01-01',
+          updated_at: '2024-01-01',
+        },
+      ];
       mockFetch.mockResolvedValueOnce(mockResponse(mockMembers));
 
       const result = await client.getCurrentTeamMembers();
@@ -2744,10 +2840,16 @@ describe('CoolifyClient', () => {
   // =========================================================================
   describe('private keys extended', () => {
     const mockPrivateKey = {
+      id: 1,
       uuid: 'key-uuid',
       name: 'my-key',
       fingerprint: 'SHA256:xxx',
-    };
+      private_key: 'ssh-rsa AAAA...',
+      is_git_related: false,
+      team_id: 1,
+      created_at: '2024-01-01',
+      updated_at: '2024-01-01',
+    } as PrivateKey;
 
     it('should get a private key', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse(mockPrivateKey));
@@ -2787,9 +2889,13 @@ describe('CoolifyClient', () => {
   // =========================================================================
   describe('cloud tokens', () => {
     const mockCloudToken = {
+      id: 1,
       uuid: 'token-uuid',
       name: 'hetzner-token',
-      provider: 'hetzner',
+      provider: 'hetzner' as const,
+      team_id: 1,
+      created_at: '2024-01-01',
+      updated_at: '2024-01-01',
     };
 
     it('should list cloud tokens', async () => {
@@ -2845,11 +2951,11 @@ describe('CoolifyClient', () => {
     });
 
     it('should validate a cloud token', async () => {
-      mockFetch.mockResolvedValueOnce(mockResponse({ valid: true }));
+      mockFetch.mockResolvedValueOnce(mockResponse({ valid: true, message: 'ok' }));
 
       const result = await client.validateCloudToken('token-uuid');
 
-      expect(result).toEqual({ valid: true });
+      expect(result).toEqual({ valid: true, message: 'ok' });
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/cloud-tokens/token-uuid/validate',
         expect.objectContaining({ method: 'POST' }),
@@ -2941,11 +3047,13 @@ describe('CoolifyClient', () => {
         id: 1,
         uuid: 'backup-uuid-1',
         database_id: 1,
-        database_type: 'postgresql',
+        database_type: 'postgresql' as const,
         database_uuid: 'db-uuid',
+        status: 'success' as const,
         enabled: true,
         frequency: '0 0 * * *',
         save_s3: false,
+        dump_all: false,
         created_at: '2024-01-01',
         updated_at: '2024-01-01',
       },
@@ -2956,7 +3064,7 @@ describe('CoolifyClient', () => {
         id: 1,
         uuid: 'exec-uuid-1',
         scheduled_database_backup_id: 1,
-        status: 'success',
+        status: 'success' as const,
         message: 'Backup completed',
         size: 1024,
         filename: 'backup-20240101.sql',
@@ -4090,8 +4198,13 @@ describe('CoolifyClient', () => {
     const mockStorageList = {
       persistent_storages: [{ id: 1, uuid: 'pv-uuid', name: 'data', mount_path: '/data' }],
       file_storages: [{ id: 2, uuid: 'fv-uuid', mount_path: '/config', content: 'key=value' }],
-    };
-    const mockPersistentStorage = { id: 1, uuid: 'pv-uuid', name: 'data', mount_path: '/data' };
+    } as unknown as StorageListResponse;
+    const mockPersistentStorage = {
+      id: 1,
+      uuid: 'pv-uuid',
+      name: 'data',
+      mount_path: '/data',
+    } as unknown as LocalPersistentVolume;
     const mockDeleteResponse = { message: 'Storage deleted.' };
 
     describe('Application Storages', () => {
@@ -4288,7 +4401,7 @@ describe('CoolifyClient', () => {
     };
     const mockExecution = {
       uuid: 'exec-uuid',
-      status: 'success',
+      status: 'success' as const,
       message: null,
       retry_count: 0,
       duration: 12,

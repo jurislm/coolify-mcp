@@ -86,7 +86,7 @@ describeFn('Diagnostic Integration Tests', () => {
 
       // Should have application info
       expect(result.application).not.toBeNull();
-      expect(result.application?.uuid).toBe(TEST_DATA.APP_UUID);
+      expect(result.application?.uuid).toBe(TEST_DATA.APP_UUID as string);
       expect(result.application?.name).toBeDefined();
 
       // Should have health assessment
@@ -178,7 +178,7 @@ describeFn('Diagnostic Integration Tests', () => {
 
       // Should have server info
       expect(result.server).not.toBeNull();
-      expect(result.server?.uuid).toBe(TEST_DATA.SERVER_UUID);
+      expect(result.server?.uuid).toBe(TEST_DATA.SERVER_UUID as string);
       expect(result.server?.name).toBeDefined();
       expect(result.server?.ip).toBeDefined();
 

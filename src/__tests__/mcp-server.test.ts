@@ -31,6 +31,9 @@ import type {
   HetznerImage,
   HetznerSSHKey,
   CreateHetznerServerResponse,
+  ServiceCreateResponse,
+  Service,
+  StorageListResponse,
 } from '../types/coolify.js';
 
 type RegisteredToolMap = Record<
@@ -1239,7 +1242,7 @@ describe('wrap() and wrapWithActions() error paths', () => {
       uuid: 'app-uuid',
       name: 'test',
       status: 'running:healthy',
-    } as Application);
+    } as unknown as Application);
     const result = (await callHandler(server, 'get_application', { uuid: 'app-uuid' })) as {
       content: Array<{ type: string; text: string }>;
     };
@@ -1513,7 +1516,7 @@ describe('service tool handler dispatch', () => {
   it('create action calls createService', async () => {
     const spy = jest
       .spyOn(server.getClient(), 'createService')
-      .mockResolvedValue({ uuid: 'svc-uuid' } as { uuid: string });
+      .mockResolvedValue({ uuid: 'svc-uuid', domains: [] } as ServiceCreateResponse);
     await callHandler(server, 'service', {
       action: 'create',
       server_uuid: 'srv-uuid',
@@ -1664,8 +1667,8 @@ describe('CoolifyMcpServer connect() method', () => {
       baseUrl: 'http://localhost:3000',
       accessToken: 'test-token',
     });
-    const mockTransport = { start: jest.fn().mockResolvedValue(undefined) } as never;
-    await server.connect(mockTransport);
+    const mockTransport = { start: jest.fn().mockResolvedValue(undefined) };
+    await server.connect(mockTransport as never);
     expect(mockTransport.start).toHaveBeenCalled();
   });
 });
@@ -1825,9 +1828,15 @@ describe('service get_service and service update', () => {
   });
 
   it('service update dispatches to updateService', async () => {
-    const spy = jest
-      .spyOn(server.getClient(), 'updateService')
-      .mockResolvedValue({ message: 'Updated' });
+    const spy = jest.spyOn(server.getClient(), 'updateService').mockResolvedValue({
+      id: 1,
+      uuid: 'svc-uuid',
+      name: 'test-service',
+      type: 'docker-compose',
+      status: 'running' as const,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    } as Service);
     await callHandler(server, 'service', { action: 'update', uuid: 'svc-uuid', name: 'new-name' });
     expect(spy).toHaveBeenCalledWith('svc-uuid', expect.objectContaining({ name: 'new-name' }));
   });
@@ -1856,7 +1865,7 @@ describe('env_vars — database/service paths, application bulk_create, list_dep
   it('database create dispatches to createDatabaseEnvVar', async () => {
     const spy = jest
       .spyOn(server.getClient(), 'createDatabaseEnvVar')
-      .mockResolvedValue({ message: 'ok' });
+      .mockResolvedValue({ uuid: 'env-uuid' } as UuidResponse);
     await callHandler(server, 'env_vars', {
       resource: 'database',
       action: 'create',
@@ -1884,7 +1893,7 @@ describe('env_vars — database/service paths, application bulk_create, list_dep
   it('service create dispatches to createServiceEnvVar', async () => {
     const spy = jest
       .spyOn(server.getClient(), 'createServiceEnvVar')
-      .mockResolvedValue({ message: 'ok' });
+      .mockResolvedValue({ uuid: 'env-uuid' } as UuidResponse);
     await callHandler(server, 'env_vars', {
       resource: 'service',
       action: 'create',
@@ -2179,7 +2188,9 @@ describe('storages tool handler dispatch', () => {
   });
 
   it('list application dispatches to listApplicationStorages', async () => {
-    const spy = jest.spyOn(server.getClient(), 'listApplicationStorages').mockResolvedValue([]);
+    const spy = jest
+      .spyOn(server.getClient(), 'listApplicationStorages')
+      .mockResolvedValue({ persistent_storages: [], file_storages: [] } as StorageListResponse);
     await callHandler(server, 'storages', {
       action: 'list',
       resource_type: 'application',
@@ -2189,7 +2200,9 @@ describe('storages tool handler dispatch', () => {
   });
 
   it('list database dispatches to listDatabaseStorages', async () => {
-    const spy = jest.spyOn(server.getClient(), 'listDatabaseStorages').mockResolvedValue([]);
+    const spy = jest
+      .spyOn(server.getClient(), 'listDatabaseStorages')
+      .mockResolvedValue({ persistent_storages: [], file_storages: [] } as StorageListResponse);
     await callHandler(server, 'storages', {
       action: 'list',
       resource_type: 'database',
@@ -2199,7 +2212,9 @@ describe('storages tool handler dispatch', () => {
   });
 
   it('list service dispatches to listServiceStorages', async () => {
-    const spy = jest.spyOn(server.getClient(), 'listServiceStorages').mockResolvedValue([]);
+    const spy = jest
+      .spyOn(server.getClient(), 'listServiceStorages')
+      .mockResolvedValue({ persistent_storages: [], file_storages: [] } as StorageListResponse);
     await callHandler(server, 'storages', {
       action: 'list',
       resource_type: 'service',
