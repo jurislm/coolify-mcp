@@ -1139,7 +1139,7 @@ export class CoolifyMcpServer extends McpServer {
           commands: {
             ssh_connect: serverInfo
               ? `ssh -p ${serverInfo.port} ${serverInfo.user}@${serverInfo.ip}`
-              : `ssh <user>@<server-ip>`,
+              : `ssh -p <port> <user>@<server-ip>`,
             add_alias: [
               `docker network disconnect ${sq(network)} ${sq(db_uuid)}`,
               `docker network connect ${sq(network)} ${sq(db_uuid)} --alias ${sq(name)} --alias ${sq(db_uuid)}`,
