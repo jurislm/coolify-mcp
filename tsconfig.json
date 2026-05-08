@@ -22,8 +22,6 @@
   //      polluting production types
   // bun test only transpiles `.ts`; it does NOT statically type-check
   // test code. Tests can be type-checked via `bun run typecheck:tests`
-  // (uses tsconfig.test.json). That script is currently informational —
-  // pre-existing test type errors must be addressed before it can be
-  // gated on prepublishOnly. Tracking issue: #26.
+  // (uses tsconfig.test.json), which is gated in prepublishOnly.
   "exclude": ["node_modules", "dist", "tests", "src/__tests__"]
 }

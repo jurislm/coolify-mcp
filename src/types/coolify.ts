@@ -111,6 +111,7 @@ export interface ServerDomain {
 }
 
 export interface ServerValidation {
+  valid?: boolean;
   message: string;
   validation_logs?: string;
 }
