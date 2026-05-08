@@ -23,6 +23,7 @@ import type {
   ResponseAction,
   ResponsePagination,
   Deployment,
+  CreateDatabaseResponse,
 } from '../types/coolify.js';
 
 const _require = createRequire(import.meta.url);
@@ -964,19 +965,20 @@ export class CoolifyMcpServer extends McpServer {
               instant_deploy: args.instant_deploy,
             };
             // Dispatch with explicit per-type field picking to avoid cross-type credential leakage
+            let createFn: (() => Promise<CreateDatabaseResponse>) | null = null;
             switch (type) {
               case 'postgresql':
-                return wrap(() =>
+                createFn = () =>
                   this.client.createPostgresql({
                     ...base,
                     postgres_user: args.postgres_user,
                     postgres_password: args.postgres_password,
                     postgres_db: args.postgres_db,
                     postgres_conf: args.postgres_conf,
-                  }),
-                );
+                  });
+                break;
               case 'mysql':
-                return wrap(() =>
+                createFn = () =>
                   this.client.createMysql({
                     ...base,
                     mysql_root_password: args.mysql_root_password,
@@ -984,10 +986,10 @@ export class CoolifyMcpServer extends McpServer {
                     mysql_password: args.mysql_password,
                     mysql_database: args.mysql_database,
                     mysql_conf: args.mysql_conf,
-                  }),
-                );
+                  });
+                break;
               case 'mariadb':
-                return wrap(() =>
+                createFn = () =>
                   this.client.createMariadb({
                     ...base,
                     mariadb_root_password: args.mariadb_root_password,
@@ -995,52 +997,122 @@ export class CoolifyMcpServer extends McpServer {
                     mariadb_password: args.mariadb_password,
                     mariadb_database: args.mariadb_database,
                     mariadb_conf: args.mariadb_conf,
-                  }),
-                );
+                  });
+                break;
               case 'mongodb':
-                return wrap(() =>
+                createFn = () =>
                   this.client.createMongodb({
                     ...base,
                     mongo_initdb_root_username: args.mongo_initdb_root_username,
                     mongo_initdb_root_password: args.mongo_initdb_root_password,
                     mongo_initdb_database: args.mongo_initdb_database,
                     mongo_conf: args.mongo_conf,
-                  }),
-                );
+                  });
+                break;
               case 'redis':
-                return wrap(() =>
+                createFn = () =>
                   this.client.createRedis({
                     ...base,
                     redis_password: args.redis_password,
                     redis_conf: args.redis_conf,
-                  }),
-                );
+                  });
+                break;
               case 'keydb':
-                return wrap(() =>
-                  this.client.createKeydb({ ...base, keydb_password: args.keydb_password }),
-                );
+                createFn = () =>
+                  this.client.createKeydb({ ...base, keydb_password: args.keydb_password });
+                break;
               case 'clickhouse':
-                return wrap(() =>
+                createFn = () =>
                   this.client.createClickhouse({
                     ...base,
                     clickhouse_admin_user: args.clickhouse_admin_user,
                     clickhouse_admin_password: args.clickhouse_admin_password,
-                  }),
-                );
+                  });
+                break;
               case 'dragonfly':
-                return wrap(() =>
+                createFn = () =>
                   this.client.createDragonfly({
                     ...base,
                     dragonfly_password: args.dragonfly_password,
-                  }),
-                );
+                  });
+                break;
             }
-            return {
-              content: [{ type: 'text' as const, text: 'Error: unknown database type' }],
-            };
+            if (!createFn) {
+              return {
+                content: [{ type: 'text' as const, text: 'Error: unknown database type' }],
+              };
+            }
+            const createResult = await wrap(createFn);
+            // Coolify upstream bug: containers are aliased by UUID only, not by friendly name.
+            // Append guidance to run docker_network_alias when a name was provided.
+            if (
+              args.name &&
+              createResult.content[0]?.text &&
+              !createResult.content[0].text.startsWith('Error:')
+            ) {
+              try {
+                const parsed = JSON.parse(createResult.content[0].text) as { uuid?: string };
+                if (parsed.uuid) {
+                  const aliasNote =
+                    `\n\n⚠️  Coolify bug: DB container is aliased by UUID only, not by name "${args.name}". ` +
+                    `DNS resolution via the friendly name will fail until you run:\n` +
+                    `  docker_network_alias { server_uuid: "${args.server_uuid}", db_uuid: "${parsed.uuid}", name: "${args.name}" }`;
+                  return {
+                    content: [
+                      { type: 'text' as const, text: createResult.content[0].text + aliasNote },
+                    ],
+                  };
+                }
+              } catch {
+                /* return original result on parse error */
+              }
+            }
+            return createResult;
           }
         }
         return { content: [{ type: 'text' as const, text: 'Error: unknown action' }] };
+      },
+    );
+
+    // Workaround tool for Coolify upstream bug: UUID-only docker network aliases
+    this.tool(
+      'docker_network_alias',
+      'Workaround for Coolify upstream bug: DB containers are aliased by UUID only, not by friendly name. Generates SSH commands to add the friendly-name alias. Run after database create + start. Warning: alias is lost on container rebuild/redeploy.',
+      {
+        server_uuid: z.string().describe('Coolify server UUID hosting the container'),
+        db_uuid: z.string().describe('Database container UUID'),
+        name: z.string().describe('Friendly name to add as docker network alias'),
+        network: z.string().optional().describe('Docker network name (default: coolify)'),
+      },
+      async ({ server_uuid, db_uuid, name, network = 'coolify' }) => {
+        let serverInfo: { ip: string; user: string; port: number } | null = null;
+        try {
+          const srv = await this.client.getServer(server_uuid);
+          serverInfo = { ip: srv.ip, user: srv.user, port: srv.port };
+        } catch {
+          /* use placeholder values if server lookup fails */
+        }
+        const ip = serverInfo?.ip ?? '<server-ip>';
+        const user = serverInfo?.user ?? 'root';
+        const port = serverInfo?.port ?? 22;
+        const result = {
+          bug: 'Coolify creates DB containers with UUID-only docker network alias. DNS resolution via the friendly name fails until this workaround is applied.',
+          warning:
+            'This alias is temporary — it will be lost when the container is rebuilt or redeployed.',
+          server: serverInfo ?? { ip: '<unknown>', user: '<unknown>', port: 22 },
+          commands: {
+            ssh_connect: `ssh -p ${port} ${user}@${ip}`,
+            add_alias: [
+              `docker network disconnect ${network} ${db_uuid}`,
+              `docker network connect ${network} ${db_uuid} --alias ${name} --alias ${db_uuid}`,
+            ],
+            verify: `docker exec <any-app-container> getent hosts ${name}`,
+          },
+          next_actions: [
+            { tool: 'get_database', args: { uuid: db_uuid }, hint: 'Check database status' },
+          ],
+        };
+        return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
       },
     );
 
