@@ -2494,9 +2494,10 @@ describe('docker_network_alias tool', () => {
     expect(parsed).toHaveProperty('commands');
     const commands = parsed.commands as Record<string, unknown>;
     expect(commands.ssh_connect).toContain('1.2.3.4');
-    expect((commands.add_alias as string[]).join('\n')).toContain('shared-db');
-    expect((commands.add_alias as string[]).join('\n')).toContain('db-uuid-123');
-    expect(commands.verify).toContain('shared-db');
+    // Shell-quoted values are wrapped in single quotes
+    expect((commands.add_alias as string[]).join('\n')).toContain("'shared-db'");
+    expect((commands.add_alias as string[]).join('\n')).toContain("'db-uuid-123'");
+    expect(commands.verify).toContain("'shared-db'");
   });
 
   it('uses placeholder ssh_connect and server_lookup_failed when getServer fails', async () => {
@@ -2585,5 +2586,21 @@ describe('database create — alias_warning injected into JSON when name is prov
     })) as { content: Array<{ text: string }> };
     const parsed = JSON.parse(result.content[0].text) as Record<string, unknown>;
     expect(parsed).not.toHaveProperty('alias_warning');
+  });
+
+  it('injects sanitized-name hint when name contains invalid alias characters', async () => {
+    jest.spyOn(server.getClient(), 'createPostgresql').mockResolvedValue({ uuid: 'new-db-uuid' });
+    const result = (await callHandler(server, 'database', {
+      action: 'create',
+      type: 'postgresql',
+      server_uuid: 'srv-uuid',
+      project_uuid: 'proj-uuid',
+      name: 'my db name!', // contains space and ! — invalid docker alias
+    })) as { content: Array<{ text: string }> };
+    const parsed = JSON.parse(result.content[0].text) as Record<string, unknown>;
+    expect(parsed).toHaveProperty('alias_warning');
+    const warn = parsed.alias_warning as Record<string, string>;
+    expect(warn.fix).toContain('<sanitized-name>');
+    expect(warn.fix).not.toMatch(/docker_network_alias \{[^}]+name: "my db name!"/);
   });
 });

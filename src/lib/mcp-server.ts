@@ -1045,6 +1045,7 @@ export class CoolifyMcpServer extends McpServer {
             const createResult = await wrap(createFn);
             // Coolify upstream bug: containers are aliased by UUID only, not by friendly name.
             // Inject alias_warning into the JSON response when a name was provided.
+            const ALIAS_NAME_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,62}$/;
             if (
               args.name &&
               createResult.content[0]?.text &&
@@ -1053,11 +1054,14 @@ export class CoolifyMcpServer extends McpServer {
               try {
                 const parsed = JSON.parse(createResult.content[0].text) as { uuid?: string };
                 if (parsed.uuid) {
+                  const nameIsValidAlias = ALIAS_NAME_RE.test(args.name);
                   const withWarning = {
                     ...parsed,
                     alias_warning: {
                       bug: `Coolify containers are aliased by UUID only, not by friendly name "${args.name}". DNS resolution via the friendly name will fail.`,
-                      fix: `docker_network_alias { server_uuid: "${args.server_uuid}", db_uuid: "${parsed.uuid}", name: "${args.name}" }`,
+                      fix: nameIsValidAlias
+                        ? `docker_network_alias { server_uuid: "${args.server_uuid}", db_uuid: "${parsed.uuid}", name: "${args.name}" }`
+                        : `Name "${args.name}" contains characters not allowed in docker aliases. Provide a sanitized alias name to docker_network_alias { server_uuid: "${args.server_uuid}", db_uuid: "${parsed.uuid}", name: "<sanitized-name>" }`,
                     },
                   };
                   return {
@@ -1085,8 +1089,20 @@ export class CoolifyMcpServer extends McpServer {
       'docker_network_alias',
       'Workaround for Coolify upstream bug: DB containers are aliased by UUID only, not by friendly name. Generates SSH commands to add the friendly-name alias. Run after database create + start. Warning: alias is lost on container rebuild/redeploy.',
       {
-        server_uuid: z.string().describe('Coolify server UUID hosting the container'),
-        db_uuid: z.string().describe('Database container UUID'),
+        server_uuid: z
+          .string()
+          .regex(
+            /^[a-zA-Z0-9-]{1,64}$/,
+            'Invalid server_uuid: must contain only letters, digits, hyphens (max 64 chars)',
+          )
+          .describe('Coolify server UUID hosting the container'),
+        db_uuid: z
+          .string()
+          .regex(
+            /^[a-zA-Z0-9-]{1,64}$/,
+            'Invalid db_uuid: must contain only letters, digits, hyphens (max 64 chars)',
+          )
+          .describe('Database container UUID'),
         name: z
           .string()
           .regex(
@@ -1104,6 +1120,8 @@ export class CoolifyMcpServer extends McpServer {
           .describe('Docker network name (default: coolify)'),
       },
       async ({ server_uuid, db_uuid, name, network = 'coolify' }) => {
+        // Shell-quote a validated value (single-quote wrap, escape inner single quotes)
+        const sq = (s: string) => `'${s.replace(/'/g, "'\\''")}'`;
         let serverInfo: { ip: string; user: string; port: number } | null = null;
         try {
           const srv = await this.client.getServer(server_uuid);
@@ -1123,10 +1141,10 @@ export class CoolifyMcpServer extends McpServer {
               ? `ssh -p ${serverInfo.port} ${serverInfo.user}@${serverInfo.ip}`
               : `ssh <user>@<server-ip>`,
             add_alias: [
-              `docker network disconnect ${network} ${db_uuid}`,
-              `docker network connect ${network} ${db_uuid} --alias ${name} --alias ${db_uuid}`,
+              `docker network disconnect ${sq(network)} ${sq(db_uuid)}`,
+              `docker network connect ${sq(network)} ${sq(db_uuid)} --alias ${sq(name)} --alias ${sq(db_uuid)}`,
             ],
-            verify: `docker exec <any-app-container> getent hosts ${name}`,
+            verify: `docker exec <any-app-container> getent hosts ${sq(name)}`,
           },
           next_actions: [
             { tool: 'get_database', args: { uuid: db_uuid }, hint: 'Check database status' },
