@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0](https://github.com/jurislm/coolify-mcp/compare/v3.3.3...v3.4.0) (2026-05-05)
+
+
+### Features
+
+* add API endpoints, improve coverage to 100%, add CI enhancements ([9578b82](https://github.com/jurislm/coolify-mcp/commit/9578b828bb602307b2418684d58468620cc3a579))
+* add missing Coolify API endpoints (preview delete, api control) ([4ebcf7d](https://github.com/jurislm/coolify-mcp/commit/4ebcf7d63abf0b3bd548fe70d92ea80dc10fb72b))
+
+
+### Bug Fixes
+
+* **dev:** switch dev script to bun and add typecheck script ([d6e6871](https://github.com/jurislm/coolify-mcp/commit/d6e687152f9d084235fd1f60a8e939521c508c3c))
+
+
+### Tests
+
+* achieve 100% line coverage for mcp-server.ts ([fee6e4b](https://github.com/jurislm/coolify-mcp/commit/fee6e4b22800df0d999c503590349c0cbd2387c5))
+* improve mcp-server handler coverage to 80%+ ([76c241e](https://github.com/jurislm/coolify-mcp/commit/76c241eda2e90c01b9aa2c9f2b895da54fa57408))
+
 ## [3.3.3](https://github.com/jurislm/coolify-mcp/compare/v3.3.2...v3.3.3) (2026-05-04)
 
 
