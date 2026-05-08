@@ -2484,7 +2484,7 @@ describe('docker_network_alias tool', () => {
     expect(commands.verify).toContain('shared-db');
   });
 
-  it('uses placeholder values when getServer fails', async () => {
+  it('uses placeholder ssh_connect and server_lookup_failed when getServer fails', async () => {
     jest.spyOn(server.getClient(), 'getServer').mockRejectedValue(new Error('not found'));
     const result = (await callHandler(server, 'docker_network_alias', {
       server_uuid: 'bad-uuid',
@@ -2492,6 +2492,8 @@ describe('docker_network_alias tool', () => {
       name: 'my-db',
     })) as { content: Array<{ text: string }> };
     const parsed = JSON.parse(result.content[0].text) as Record<string, unknown>;
+    expect(parsed).toHaveProperty('server_lookup_failed');
+    expect(parsed).not.toHaveProperty('server');
     const commands = parsed.commands as Record<string, unknown>;
     expect(commands.ssh_connect).toContain('<server-ip>');
   });
@@ -2532,14 +2534,14 @@ describe('docker_network_alias tool', () => {
   });
 });
 
-describe('database create — alias warning appended when name is provided', () => {
+describe('database create — alias_warning injected into JSON when name is provided', () => {
   let server: TestableMcpServer;
 
   beforeEach(() => {
     server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
   });
 
-  it('appends alias warning with docker_network_alias hint after postgresql create with name', async () => {
+  it('injects alias_warning into valid JSON after postgresql create with name', async () => {
     jest.spyOn(server.getClient(), 'createPostgresql').mockResolvedValue({ uuid: 'new-db-uuid' });
     const result = (await callHandler(server, 'database', {
       action: 'create',
@@ -2548,13 +2550,17 @@ describe('database create — alias warning appended when name is provided', () 
       project_uuid: 'proj-uuid',
       name: 'shared-db',
     })) as { content: Array<{ text: string }> };
-    expect(result.content[0].text).toContain('Coolify bug');
-    expect(result.content[0].text).toContain('shared-db');
-    expect(result.content[0].text).toContain('docker_network_alias');
-    expect(result.content[0].text).toContain('new-db-uuid');
+    // Response must be valid JSON
+    const parsed = JSON.parse(result.content[0].text) as Record<string, unknown>;
+    expect(parsed.uuid).toBe('new-db-uuid');
+    expect(parsed).toHaveProperty('alias_warning');
+    const warn = parsed.alias_warning as Record<string, string>;
+    expect(warn.bug).toContain('shared-db');
+    expect(warn.fix).toContain('docker_network_alias');
+    expect(warn.fix).toContain('new-db-uuid');
   });
 
-  it('does not append warning when name is not provided', async () => {
+  it('does not inject alias_warning when name is not provided', async () => {
     jest.spyOn(server.getClient(), 'createPostgresql').mockResolvedValue({ uuid: 'new-db-uuid' });
     const result = (await callHandler(server, 'database', {
       action: 'create',
@@ -2562,7 +2568,7 @@ describe('database create — alias warning appended when name is provided', () 
       server_uuid: 'srv-uuid',
       project_uuid: 'proj-uuid',
     })) as { content: Array<{ text: string }> };
-    expect(result.content[0].text).not.toContain('Coolify bug');
-    expect(result.content[0].text).not.toContain('docker_network_alias');
+    const parsed = JSON.parse(result.content[0].text) as Record<string, unknown>;
+    expect(parsed).not.toHaveProperty('alias_warning');
   });
 });

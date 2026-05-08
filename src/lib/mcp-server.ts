@@ -1044,7 +1044,7 @@ export class CoolifyMcpServer extends McpServer {
             }
             const createResult = await wrap(createFn);
             // Coolify upstream bug: containers are aliased by UUID only, not by friendly name.
-            // Append guidance to run docker_network_alias when a name was provided.
+            // Inject alias_warning into the JSON response when a name was provided.
             if (
               args.name &&
               createResult.content[0]?.text &&
@@ -1053,13 +1053,19 @@ export class CoolifyMcpServer extends McpServer {
               try {
                 const parsed = JSON.parse(createResult.content[0].text) as { uuid?: string };
                 if (parsed.uuid) {
-                  const aliasNote =
-                    `\n\n⚠️  Coolify bug: DB container is aliased by UUID only, not by name "${args.name}". ` +
-                    `DNS resolution via the friendly name will fail until you run:\n` +
-                    `  docker_network_alias { server_uuid: "${args.server_uuid}", db_uuid: "${parsed.uuid}", name: "${args.name}" }`;
+                  const withWarning = {
+                    ...parsed,
+                    alias_warning: {
+                      bug: `Coolify containers are aliased by UUID only, not by friendly name "${args.name}". DNS resolution via the friendly name will fail.`,
+                      fix: `docker_network_alias { server_uuid: "${args.server_uuid}", db_uuid: "${parsed.uuid}", name: "${args.name}" }`,
+                    },
+                  };
                   return {
                     content: [
-                      { type: 'text' as const, text: createResult.content[0].text + aliasNote },
+                      {
+                        type: 'text' as const,
+                        text: JSON.stringify(withWarning, null, 2),
+                      },
                     ],
                   };
                 }
@@ -1081,8 +1087,21 @@ export class CoolifyMcpServer extends McpServer {
       {
         server_uuid: z.string().describe('Coolify server UUID hosting the container'),
         db_uuid: z.string().describe('Database container UUID'),
-        name: z.string().describe('Friendly name to add as docker network alias'),
-        network: z.string().optional().describe('Docker network name (default: coolify)'),
+        name: z
+          .string()
+          .regex(
+            /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,62}$/,
+            'Invalid docker alias name: must start with alphanumeric and contain only letters, digits, dots, underscores, hyphens (max 63 chars)',
+          )
+          .describe('Friendly name to add as docker network alias'),
+        network: z
+          .string()
+          .regex(
+            /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,62}$/,
+            'Invalid docker network name: must start with alphanumeric and contain only letters, digits, dots, underscores, hyphens (max 63 chars)',
+          )
+          .optional()
+          .describe('Docker network name (default: coolify)'),
       },
       async ({ server_uuid, db_uuid, name, network = 'coolify' }) => {
         let serverInfo: { ip: string; user: string; port: number } | null = null;
@@ -1090,18 +1109,19 @@ export class CoolifyMcpServer extends McpServer {
           const srv = await this.client.getServer(server_uuid);
           serverInfo = { ip: srv.ip, user: srv.user, port: srv.port };
         } catch {
-          /* use placeholder values if server lookup fails */
+          /* server lookup failed — commands will include placeholder values */
         }
-        const ip = serverInfo?.ip ?? '<server-ip>';
-        const user = serverInfo?.user ?? 'root';
-        const port = serverInfo?.port ?? 22;
         const result = {
           bug: 'Coolify creates DB containers with UUID-only docker network alias. DNS resolution via the friendly name fails until this workaround is applied.',
           warning:
             'This alias is temporary — it will be lost when the container is rebuilt or redeployed.',
-          server: serverInfo ?? { ip: '<unknown>', user: '<unknown>', port: 22 },
+          ...(serverInfo
+            ? { server: serverInfo }
+            : { server_lookup_failed: 'Could not retrieve server details — verify server_uuid' }),
           commands: {
-            ssh_connect: `ssh -p ${port} ${user}@${ip}`,
+            ssh_connect: serverInfo
+              ? `ssh -p ${serverInfo.port} ${serverInfo.user}@${serverInfo.ip}`
+              : `ssh <user>@<server-ip>`,
             add_alias: [
               `docker network disconnect ${network} ${db_uuid}`,
               `docker network connect ${network} ${db_uuid} --alias ${name} --alias ${db_uuid}`,
