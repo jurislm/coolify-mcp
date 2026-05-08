@@ -11,6 +11,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `docker_network_alias` tool: generates SSH commands to add a friendly-name docker network alias, working around Coolify upstream bug where DB containers are aliased by UUID only ([#31](https://github.com/jurislm/coolify-mcp/issues/31))
 - `database(action=create)`: response now includes `alias_warning` field with `docker_network_alias` invocation hint when `name` is provided
+- **Hetzner 雲端整合** (`hetzner` 工具)：新增 `hetzner` 工具，支援查詢機房位置 (`locations`)、伺服器規格 (`server_types`)、映像 (`images`)、SSH 金鑰 (`ssh_keys`)，以及建立 Hetzner 雲端伺服器 (`create_server`)
+- **資源聚合** (`list_resources` 工具)：跨類型列出所有資源（應用程式、資料庫、服務），對應 `GET /resources`
+- **健康檢查** (`health` 工具)：查詢 Coolify API 健康狀態，對應 `GET /health`
+- **Service 批量環境變數更新**：`env_vars` 工具新增對 `service` resource 的 `bulk_create` action，對應 `PATCH /services/{uuid}/envs/bulk`
+- **PR Preview 部署**：`deploy` 工具新增 `pr` 參數，支援拉取請求預覽部署（需啟用 GitHub App 整合）
+- Coolify 版本更新至 v4.0.0-beta.471
+- **Storage Management** - New `storages` tool for managing persistent volumes and file storages
+- **Server CRUD** - New `server` tool for create/update/delete server management
+- **Database Update** - Extended `database` tool with `update` action for modifying database configuration
+- **Application Dockerfile** - Extended `application` tool with `create_dockerfile` action
+- **Teams** - New `teams` tool for team management (list, current, members)
+- **Backup Execution Deletion** - Extended `database_backups` tool with `delete_execution` action
+- **Cloud Provider Tokens** - New `cloud_tokens` tool for managing Hetzner/DigitalOcean credentials
+- **GitHub Apps Repositories** - Extended `github_apps` tool with `list_repositories` and `list_branches` actions
+- **Scheduled Tasks** - New `scheduled_tasks` tool for managing cron-based tasks
+- **Database Environment Variables** - Extended `env_vars` tool to support `resource: 'database'`
+
+### Changed
+
+- 工具總數從 40 增加至 44
+- **BREAKING: `docker_compose_raw` always base64-encoded**: Pass raw (unencoded) YAML — the client handles base64 encoding automatically
+- **BREAKING: `stop_all_apps` confirmation parameter renamed** - The `confirm` parameter is now `confirm_stop_all_apps`
+- **Security: update handlers now use explicit allowlists** - Create-only fields are no longer forwarded to PATCH endpoints
+- **BREAKING**: Package renamed from `@masonator/coolify-mcp` to `@jurislm/coolify-mcp`
+- **BREAKING: `UpdateServiceRequest.fqdn` removed** — Update service domains via Traefik labels in `docker_compose_raw` instead
+
+### Fixed
+
+- `createApplicationDockerfile` now correctly maps `fqdn` → `domains`
+- `application` update no longer incorrectly forwards `build_pack` to PATCH endpoint
+- `deployByTagOrUuid` no longer unnecessarily applies `encodeURIComponent` to static key names
+
+### Known Limitations
+
+- **Service domain updates not supported via API**: Domain changes for services must be applied by updating the Traefik labels inside `docker_compose_raw`
 
 ## [3.4.0](https://github.com/jurislm/coolify-mcp/compare/v3.3.3...v3.4.0) (2026-05-05)
 
@@ -84,21 +119,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features
 
 * add Hetzner, list_resources, health tools + migrate package manager to bun ([#12](https://github.com/jurislm/coolify-mcp/issues/12)) ([cf57747](https://github.com/jurislm/coolify-mcp/commit/cf57747344f77f5948c1457fd76adb663441b265))
-
-## [Unreleased]
-
-### Added
-
-- **Hetzner 雲端整合** (`hetzner` 工具)：新增 `hetzner` 工具，支援查詢機房位置 (`locations`)、伺服器規格 (`server_types`)、映像 (`images`)、SSH 金鑰 (`ssh_keys`)，以及建立 Hetzner 雲端伺服器 (`create_server`)
-- **資源聚合** (`list_resources` 工具)：跨類型列出所有資源（應用程式、資料庫、服務），對應 `GET /resources`
-- **健康檢查** (`health` 工具)：查詢 Coolify API 健康狀態，對應 `GET /health`
-- **Service 批量環境變數更新**：`env_vars` 工具新增對 `service` resource 的 `bulk_create` action，對應 `PATCH /services/{uuid}/envs/bulk`
-- **PR Preview 部署**：`deploy` 工具新增 `pr` 參數，支援拉取請求預覽部署（需啟用 GitHub App 整合）
-- Coolify 版本更新至 v4.0.0-beta.471
-
-### Changed
-
-- 工具總數從 40 增加至 43
 
 ## [3.0.0](https://github.com/jurislm/coolify-mcp/compare/v2.7.0...v3.0.0) (2026-04-06)
 
@@ -219,63 +239,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add fqdn support for Service updates ([7b65c3f](https://github.com/jurislm/coolify-mcp/commit/7b65c3fdae3bd2943ed56be164fea3a25e68a927))
 - correct API path for listing application deployments ([#120](https://github.com/jurislm/coolify-mcp/issues/120)) ([2fba62c](https://github.com/jurislm/coolify-mcp/commit/2fba62c03427167a5ecfd8676eaba6381c628ee9))
 - Map fqdn to domains for Coolify API compatibility ([5f0483b](https://github.com/jurislm/coolify-mcp/commit/5f0483bb8b92cc332c3c05340d57058d86e03a21))
-
-## [Unreleased]
-
-### Added
-
-- **Storage Management** - New `storages` tool for managing persistent volumes and file storages:
-  - Supports applications, databases, and services via `resource_type` parameter
-  - Actions: `list`, `create`, `update`, `delete`
-  - Persistent volumes: named Docker volumes with optional host path binding
-  - File storages: mounted config files or directories with optional inline content
-  - Service storages require `service_resource_uuid` to target a specific sub-resource
-  - 12 new client methods across all resource types
-
-- **Server CRUD** - New `server` tool for create/update/delete server management
-- **Database Update** - Extended `database` tool with `update` action for modifying database configuration
-- **Application Dockerfile** - Extended `application` tool with `create_dockerfile` action
-- **Teams** - New `teams` tool for team management (list, current, members)
-
-- **Backup Execution Deletion** - Extended `database_backups` tool with `delete_execution` action:
-  - Delete individual backup execution records
-  - Optional `delete_s3` parameter to also remove S3 backup files
-
-- **Cloud Provider Tokens** - New `cloud_tokens` tool for managing Hetzner/DigitalOcean credentials:
-  - Actions: `list`, `get`, `create`, `update`, `delete`, `validate`
-  - `name` is required for `update` action; optional in the TypeScript type to allow partial construction
-
-- **GitHub Apps Repositories** - Extended `github_apps` tool with repository and branch listing:
-  - `list_repositories` action: browse repositories accessible to a GitHub App
-  - `list_branches` action: list branches of a specific repository
-  - Repository responses are context-optimized (5 fields per repo)
-
-- **Scheduled Tasks** - New `scheduled_tasks` tool for managing cron-based tasks:
-  - Supports applications and services via `resource_type` parameter
-  - Actions: `list`, `create`, `update`, `delete`, `list_executions`
-  - 10 new client methods across application and service resource types
-
-- **Database Environment Variables** - Extended `env_vars` tool to support `resource: 'database'`:
-  - Actions: `list`, `create`, `update`, `delete`, `bulk_create`
-  - 5 new client methods: `listDatabaseEnvVars`, `createDatabaseEnvVar`, `updateDatabaseEnvVar`, `bulkUpdateDatabaseEnvVars`, `deleteDatabaseEnvVar`
-
-### Changed
-
-- **BREAKING: `docker_compose_raw` always base64-encoded**: The `docker_compose_raw` field is now always base64-encoded by the client (`toBase64()` no longer passes through already-encoded content). **Migration**: Pass raw (unencoded) YAML strings — the client handles base64 encoding automatically. If you were previously passing a base64 string, decode it to raw YAML first.
-- **BREAKING: `stop_all_apps` confirmation parameter renamed** - The `confirm` parameter is now `confirm_stop_all_apps`. Update any existing automation passing `confirm: true` to use `confirm_stop_all_apps: true`.
-- **Security: update handlers now use explicit allowlists** - `server`, `application`, `database`, and `github_apps` update actions build payloads from explicit field allowlists rather than spreading the full args object. Create-only fields (`project_uuid`, `server_uuid`, etc.) are no longer forwarded to PATCH endpoints.
-- **BREAKING**: Package renamed from `@masonator/coolify-mcp` to `@jurislm/coolify-mcp` — update your `package.json` dependency name accordingly
-- **BREAKING: `UpdateServiceRequest.fqdn` removed** — The `fqdn` field is now typed as `never`. Any TypeScript code passing `fqdn` to service update calls will get a compile error. Update service domains via Traefik labels in `docker_compose_raw` instead.
-
-### Fixed
-
-- `createApplicationDockerfile` now correctly maps `fqdn` → `domains` (consistent with other create methods)
-- `application` update no longer incorrectly forwards `build_pack` to PATCH endpoint (`build_pack` is create-only and is not in `UpdateApplicationRequest`)
-- `deployByTagOrUuid` no longer unnecessarily applies `encodeURIComponent` to static key name (`'uuid'`/`'tag'`) and boolean `force` value
-
-### Known Limitations
-
-- **Service domain updates not supported via API**: The Coolify `PATCH /services/{uuid}` endpoint only accepts `name`, `description`, and `docker_compose_raw`. Domain changes for services must be applied by updating the Traefik labels inside `docker_compose_raw`.
 
 ## [2.6.2] - 2026-01-31
 
