@@ -34,7 +34,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky",
-    "prepublishOnly": "bun run build && bun run test && bun run lint",
+    "prepublishOnly": "bun run build && bun run test && bun run typecheck:tests && bun run lint",
     "start": "bun dist/index.js"
   },
   "keywords": [

@@ -111,6 +111,7 @@ export interface ServerDomain {
 }
 
 export interface ServerValidation {
+  valid?: boolean;
   message: string;
   validation_logs?: string;
 }
@@ -1133,10 +1134,7 @@ export interface ServerDiagnostic {
     ip: string;
     domains: string[];
   }>;
-  validation: {
-    message: string;
-    validation_logs?: string;
-  } | null;
+  validation: ServerValidation | null;
   errors?: string[];
 }
 
