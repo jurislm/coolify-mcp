@@ -357,6 +357,7 @@ export interface UpdateApplicationRequest {
   docker_registry_image_tag?: string;
   docker_compose_raw?: string;
   docker_compose_location?: string;
+  docker_compose_domains?: Array<{ name: string; domain: string }>;
   base_directory?: string;
   publish_directory?: string;
   install_command?: string;

@@ -1445,6 +1445,19 @@ describe('CoolifyClient', () => {
       expect(callBody.docker_compose_raw).toBe(Buffer.from(compose).toString('base64'));
     });
 
+    it('should pass docker_compose_domains array to updateApplication', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(mockApplication));
+
+      await client.updateApplication('app-uuid', {
+        docker_compose_domains: [{ name: 'drone-server', domain: 'https://ci.example.com' }],
+      });
+
+      const callBody = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(callBody.docker_compose_domains).toEqual([
+        { name: 'drone-server', domain: 'https://ci.example.com' },
+      ]);
+    });
+
     it('should not modify request body when fqdn is not provided', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse({ uuid: 'new-app-uuid' }));
 
