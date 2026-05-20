@@ -529,12 +529,18 @@ export class CoolifyMcpServer extends McpServer {
         health_check_timeout: z.number().int().min(1).max(3600).optional(),
         health_check_retries: z.number().int().min(0).max(100).optional(),
         health_check_start_period: z.number().int().min(0).max(3600).optional(),
-        // Docker Compose update field
+        // Docker Compose update fields
         docker_compose_raw: z
           .string()
           .optional()
           .describe(
             'Raw (unencoded) docker-compose YAML to update (client auto base64-encodes; Docker Compose apps only)',
+          ),
+        docker_compose_domains: z
+          .array(z.object({ name: z.string(), domain: z.string() }))
+          .optional()
+          .describe(
+            'Domain mappings for docker-compose Application type: [{name: "service-name", domain: "https://example.com"}]. Use instead of fqdn/domains for dockercompose build pack apps.',
           ),
         // Domain & routing (update)
         domains: z.string().optional().describe('Comma-separated domain URLs (update)'),
@@ -756,6 +762,7 @@ export class CoolifyMcpServer extends McpServer {
                 health_check_retries: args.health_check_retries,
                 health_check_start_period: args.health_check_start_period,
                 docker_compose_raw: args.docker_compose_raw,
+                docker_compose_domains: args.docker_compose_domains,
                 domains: args.domains,
                 redirect: args.redirect,
                 is_force_https_enabled: args.is_force_https_enabled,
