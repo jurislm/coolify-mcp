@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>coolify-mcp — MCP Server for Coolify</title>
+    <meta
+      name="description"
+      content="45-tool MCP server for Coolify. Manage servers, apps, databases, deployments and more through AI assistants like Claude."
+    />
+    <meta property="og:title" content="coolify-mcp" />
+    <meta
+      property="og:description"
+      content="45-tool MCP server for Coolify — manage your self-hosted PaaS through AI."
+    />
+    <meta property="og:url" content="https://jurislm.github.io/coolify-mcp" />
+    <style>
+      :root {
+        --bg: #0d1117;
+        --surface: #161b22;
+        --border: #30363d;
+        --text: #e6edf3;
+        --muted: #8b949e;
+        --accent: #58a6ff;
+        --accent-dim: #1f6feb33;
+        --green: #3fb950;
+        --orange: #d29922;
+        --purple: #bc8cff;
+        --code-bg: #1f2937;
+        --radius: 8px;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+
+      /* Layout */
+      .container {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+
+      /* Nav */
+      nav {
+        border-bottom: 1px solid var(--border);
+        padding: 16px 0;
+      }
+      nav .container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .nav-brand {
+        font-weight: 700;
+        font-size: 15px;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .nav-brand svg {
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+      }
+      .nav-links {
+        display: flex;
+        gap: 20px;
+        font-size: 14px;
+      }
+
+      /* Hero */
+      .hero {
+        padding: 72px 0 56px;
+        text-align: center;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--accent-dim);
+        border: 1px solid #1f6feb;
+        border-radius: 999px;
+        padding: 4px 14px;
+        font-size: 13px;
+        color: var(--accent);
+        margin-bottom: 24px;
+      }
+      .hero h1 {
+        font-size: clamp(2rem, 5vw, 3rem);
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        margin-bottom: 16px;
+        line-height: 1.15;
+      }
+      .hero h1 span {
+        color: var(--accent);
+      }
+      .hero p {
+        font-size: 1.15rem;
+        color: var(--muted);
+        max-width: 540px;
+        margin: 0 auto 36px;
+      }
+      .hero-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: var(--radius);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        text-decoration: none;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #0d1117;
+      }
+      .btn-primary:hover {
+        background: #79c0ff;
+        text-decoration: none;
+      }
+      .btn-secondary {
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      .btn-secondary:hover {
+        background: #21262d;
+        text-decoration: none;
+      }
+
+      /* Install block */
+      .install-block {
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px 20px;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        font-size: 13.5px;
+        margin: 40px 0 0;
+        text-align: left;
+        position: relative;
+        overflow-x: auto;
+      }
+      .install-block .comment {
+        color: var(--muted);
+      }
+      .install-block .key {
+        color: #79c0ff;
+      }
+      .install-block .val {
+        color: var(--green);
+      }
+      .install-block .str {
+        color: #a5d6ff;
+      }
+
+      /* Stats row */
+      .stats {
+        display: flex;
+        gap: 0;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        margin: 56px 0;
+      }
+      .stat {
+        flex: 1;
+        text-align: center;
+        padding: 24px 16px;
+        border-right: 1px solid var(--border);
+      }
+      .stat:last-child {
+        border-right: none;
+      }
+      .stat-num {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--accent);
+        display: block;
+      }
+      .stat-label {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      /* Section */
+      section {
+        padding: 48px 0;
+        border-top: 1px solid var(--border);
+      }
+      section h2 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      section .subtitle {
+        color: var(--muted);
+        font-size: 14px;
+        margin-bottom: 28px;
+      }
+
+      /* Tool grid */
+      .tool-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+      }
+      .tool-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+      }
+      .tool-card-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+      .tool-icon {
+        font-size: 16px;
+        line-height: 1;
+      }
+      .tool-category {
+        font-weight: 700;
+        font-size: 13px;
+      }
+      .tool-count {
+        margin-left: auto;
+        background: var(--accent-dim);
+        color: var(--accent);
+        border-radius: 999px;
+        padding: 1px 8px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .tool-desc {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      /* Features */
+      .feature-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
+      }
+      .feature {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .feature-icon {
+        font-size: 18px;
+        line-height: 1;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .feature h3 {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 3px;
+      }
+      .feature p {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      /* Code block */
+      pre {
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 20px;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        font-size: 13px;
+        overflow-x: auto;
+        line-height: 1.7;
+      }
+      .hl-key {
+        color: #79c0ff;
+      }
+      .hl-str {
+        color: #a5d6ff;
+      }
+      .hl-comment {
+        color: var(--muted);
+      }
+      .hl-bool {
+        color: var(--orange);
+      }
+
+      /* Footer */
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 32px 0;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      footer .container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      footer a {
+        color: var(--muted);
+      }
+      footer a:hover {
+        color: var(--text);
+      }
+
+      @media (max-width: 600px) {
+        .stats {
+          flex-direction: column;
+        }
+        .stat {
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+        .stat:last-child {
+          border-bottom: none;
+        }
+        nav .nav-links {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Nav -->
+    <nav>
+      <div class="container">
+        <span class="nav-brand">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2" />
+            <path d="M8 21h8M12 17v4" />
+          </svg>
+          coolify-mcp
+        </span>
+        <div class="nav-links">
+          <a href="https://github.com/jurislm/coolify-mcp">GitHub</a>
+          <a href="https://www.npmjs.com/package/@jurislm/coolify-mcp">npm</a>
+          <a href="https://coolify.io">Coolify</a>
+          <a href="https://github.com/jurislm/coolify-mcp#readme">Docs</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="container">
+        <div class="badge">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+            <path
+              d="M8 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"
+            /><path
+              fill-rule="evenodd"
+              d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0z"
+            />
+          </svg>
+          Model Context Protocol
+        </div>
+        <h1>Manage <span>Coolify</span><br />through AI</h1>
+        <p>
+          45-tool MCP server for Coolify. Control servers, applications, databases, deployments and
+          diagnostics — all through natural language.
+        </p>
+        <div class="hero-actions">
+          <a
+            href="https://www.npmjs.com/package/@jurislm/coolify-mcp"
+            class="btn btn-primary"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+            Get on npm
+          </a>
+          <a
+            href="https://github.com/jurislm/coolify-mcp"
+            class="btn btn-secondary"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+              />
+            </svg>
+            View on GitHub
+          </a>
+        </div>
+
+        <div class="install-block">
+          <span class="comment">// .mcp.json or ~/.claude/settings.json</span><br />
+          {<br />
+          &nbsp;&nbsp;<span class="key">"mcpServers"</span>: {<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"coolify"</span>: {<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"command"</span>:
+          <span class="str">"bunx"</span>,<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"args"</span>: [<span class="str">"@jurislm/coolify-mcp@latest"</span>],<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"env"</span>: {<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"COOLIFY_TOKEN"</span>:
+          <span class="str">"your-api-token"</span>,<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"COOLIFY_URL"</span>:
+          <span class="str">"https://your-coolify-instance.com"</span><br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br />
+          &nbsp;&nbsp;&nbsp;&nbsp;}<br />
+          &nbsp;&nbsp;}<br />
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <!-- Stats -->
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-num">45</span>
+          <div class="stat-label">MCP Tools</div>
+        </div>
+        <div class="stat">
+          <span class="stat-num">85%</span>
+          <div class="stat-label">Token reduction vs raw API</div>
+        </div>
+        <div class="stat">
+          <span class="stat-num">MIT</span>
+          <div class="stat-label">License</div>
+        </div>
+        <div class="stat">
+          <span class="stat-num">v3</span>
+          <div class="stat-label">Latest major</div>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <section>
+        <h2>Why coolify-mcp</h2>
+        <p class="subtitle">
+          Purpose-built for AI-assisted infrastructure management on Coolify
+        </p>
+        <div class="feature-list">
+          <div class="feature">
+            <div class="feature-icon">⚡</div>
+            <div>
+              <h3>Token-optimized</h3>
+              <p>
+                List endpoints return compact summaries. Full details only when you ask. 85% fewer
+                tokens than raw API.
+              </p>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">🔍</div>
+            <div>
+              <h3>Smart diagnostics</h3>
+              <p>
+                <code>diagnose_app</code>, <code>diagnose_server</code>, and
+                <code>find_issues</code> surface problems in one natural language query.
+              </p>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">🛡️</div>
+            <div>
+              <h3>Input validation</h3>
+              <p>
+                UUID allow-lists, size caps on private keys and cloud-init scripts, SSRF and path
+                traversal prevention.
+              </p>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">🔁</div>
+            <div>
+              <h3>Batch operations</h3>
+              <p>
+                Restart a project, bulk-update env vars, or emergency-stop all apps — single tool
+                calls.
+              </p>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">🔐</div>
+            <div>
+              <h3>Read-before-write actions</h3>
+              <p>
+                Destructive operations include built-in confirmation hints, reducing accidental
+                changes.
+              </p>
+            </div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">🌐</div>
+            <div>
+              <h3>Full API coverage</h3>
+              <p>
+                Servers, apps, databases, deployments, env vars, private keys, GitHub Apps, storage,
+                scheduled tasks, and more.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tool categories -->
+      <section>
+        <h2>45 tools across 20 categories</h2>
+        <p class="subtitle">Everything you need to manage a Coolify instance</p>
+        <div class="tool-grid">
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">🏗️</span>
+              <span class="tool-category">Infrastructure</span>
+              <span class="tool-count">4</span>
+            </div>
+            <div class="tool-desc">Overview, health check, API &amp; MCP version</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">🔎</span>
+              <span class="tool-category">Diagnostics</span>
+              <span class="tool-count">3</span>
+            </div>
+            <div class="tool-desc">App/server diagnostics, scan all infra for issues</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">🖥️</span>
+              <span class="tool-category">Servers</span>
+              <span class="tool-count">6</span>
+            </div>
+            <div class="tool-desc">List, get, create, update, delete, validate</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">📦</span>
+              <span class="tool-category">Applications</span>
+              <span class="tool-count">4</span>
+            </div>
+            <div class="tool-desc">List, get, CRUD, logs; 6 app create types</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">🗄️</span>
+              <span class="tool-category">Databases</span>
+              <span class="tool-count">5</span>
+            </div>
+            <div class="tool-desc">PostgreSQL, MySQL, Redis, MongoDB + backups</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">⚙️</span>
+              <span class="tool-category">Services</span>
+              <span class="tool-count">3</span>
+            </div>
+            <div class="tool-desc">Docker Compose service management</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">🚀</span>
+              <span class="tool-category">Deployments</span>
+              <span class="tool-count">3</span>
+            </div>
+            <div class="tool-desc">Deploy by tag/UUID, PR previews, cancel</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">🔧</span>
+              <span class="tool-category">Env Vars</span>
+              <span class="tool-count">1</span>
+            </div>
+            <div class="tool-desc">CRUD &amp; bulk upsert across app/db/service</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">🌍</span>
+              <span class="tool-category">Projects</span>
+              <span class="tool-count">1</span>
+            </div>
+            <div class="tool-desc">List, get, create, update, delete</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">🔑</span>
+              <span class="tool-category">Private Keys</span>
+              <span class="tool-count">1</span>
+            </div>
+            <div class="tool-desc">SSH key lifecycle management</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">🐙</span>
+              <span class="tool-category">GitHub Apps</span>
+              <span class="tool-count">1</span>
+            </div>
+            <div class="tool-desc">Manage GitHub App integrations</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">🕐</span>
+              <span class="tool-category">Scheduled Tasks</span>
+              <span class="tool-count">1</span>
+            </div>
+            <div class="tool-desc">Cron jobs + execution history</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">💾</span>
+              <span class="tool-category">Storages</span>
+              <span class="tool-count">1</span>
+            </div>
+            <div class="tool-desc">Persistent volumes for app/db/service</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">☁️</span>
+              <span class="tool-category">Hetzner</span>
+              <span class="tool-count">1</span>
+            </div>
+            <div class="tool-desc">Create Hetzner Cloud servers from Claude</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">📦</span>
+              <span class="tool-category">Batch Ops</span>
+              <span class="tool-count">4</span>
+            </div>
+            <div class="tool-desc">Restart project, bulk env, stop all, redeploy</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">👥</span>
+              <span class="tool-category">Teams</span>
+              <span class="tool-count">1</span>
+            </div>
+            <div class="tool-desc">Team and member information</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Setup -->
+      <section>
+        <h2>Setup</h2>
+        <p class="subtitle">Add to your MCP config and start managing Coolify through Claude</p>
+
+        <p style="font-size: 14px; color: var(--muted); margin-bottom: 12px">
+          1. Get your API token from <strong style="color: var(--text)">Coolify &rarr; Settings &rarr; API</strong>
+        </p>
+        <p style="font-size: 14px; color: var(--muted); margin-bottom: 12px">
+          2. Add to <code style="background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 12px">.mcp.json</code>:
+        </p>
+
+        <pre>{
+  <span class="hl-key">"mcpServers"</span>: {
+    <span class="hl-key">"coolify"</span>: {
+      <span class="hl-key">"command"</span>: <span class="hl-str">"bunx"</span>,
+      <span class="hl-key">"args"</span>: [<span class="hl-str">"@jurislm/coolify-mcp@latest"</span>],
+      <span class="hl-key">"env"</span>: {
+        <span class="hl-key">"COOLIFY_TOKEN"</span>: <span class="hl-str">"your-api-token"</span>,
+        <span class="hl-key">"COOLIFY_URL"</span>: <span class="hl-str">"https://your-coolify-instance.com"</span>
+      }
+    }
+  }
+}</pre>
+
+        <p style="font-size: 14px; color: var(--muted); margin-top: 20px">
+          3. Restart Claude Code. You now have 45 Coolify tools available.
+        </p>
+      </section>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <div class="container">
+        <span
+          >Built by <a href="https://github.com/jurislm">jurislm</a> &bull; MIT License</span
+        >
+        <div style="display: flex; gap: 20px">
+          <a href="https://github.com/jurislm/coolify-mcp/releases">Changelog</a>
+          <a href="https://github.com/jurislm/coolify-mcp/issues">Issues</a>
+          <a href="https://coolify.io">Coolify</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
