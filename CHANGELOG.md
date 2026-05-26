@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0](https://github.com/jurislm/coolify-mcp/compare/v3.4.1...v3.5.0) (2026-05-20)
+
+
+### Features
+
+* add docker_compose_domains support for docker-compose app FQDN updates ([f3d0b44](https://github.com/jurislm/coolify-mcp/commit/f3d0b44b14a6262bdb9fe8d8fbf6d5ace0e3b219))
+* add docker_compose_domains support for docker-compose app FQDN updates ([d9503b5](https://github.com/jurislm/coolify-mcp/commit/d9503b50165ffae6bd868c77a10a81247b7f6e58)), closes [#36](https://github.com/jurislm/coolify-mcp/issues/36)
+
+## [3.4.1](https://github.com/jurislm/coolify-mcp/compare/v3.4.0...v3.4.1) (2026-05-08)
+
+
+### Bug Fixes
+
+* address PR [#34](https://github.com/jurislm/coolify-mcp/issues/34) Copilot review — uuid validation + shell quoting ([7d47ecf](https://github.com/jurislm/coolify-mcp/commit/7d47ecfe582c5e869bae72164ab01a87e340357d))
+* align ServerDiagnostic.validation with ServerValidation type ([106368e](https://github.com/jurislm/coolify-mcp/commit/106368e9eb12c09b15624c5959bb2ff43bf04316))
+* trim [Unreleased] CHANGELOG to this PR only; fix ssh fallback format ([aa9f48e](https://github.com/jurislm/coolify-mcp/commit/aa9f48e1a45cc3c04f87ee628261893beeef938e))
+
+
+### Documentation
+
+* consolidate duplicate [Unreleased] CHANGELOG sections ([a3cf5af](https://github.com/jurislm/coolify-mcp/commit/a3cf5af031486d481627dcb96a0341979932b6d0))
+
 ## [Unreleased]
 
 ### Added
