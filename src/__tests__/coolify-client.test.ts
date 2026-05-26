@@ -172,6 +172,18 @@ describe('CoolifyClient', () => {
       ).toThrow('COOLIFY_URL must not contain a path prefix');
     });
 
+    it('should throw error if baseUrl contains a query string', () => {
+      expect(() => new CoolifyClient({ baseUrl: 'https://host?x=1', accessToken: 'test' })).toThrow(
+        'COOLIFY_URL must not contain a query string or fragment',
+      );
+    });
+
+    it('should throw error if baseUrl contains a hash fragment', () => {
+      expect(
+        () => new CoolifyClient({ baseUrl: 'https://host/#anchor', accessToken: 'test' }),
+      ).toThrow('COOLIFY_URL must not contain a query string or fragment');
+    });
+
     it('should accept baseUrl with only trailing slash (treated as root)', () => {
       expect(
         () => new CoolifyClient({ baseUrl: 'http://localhost:3000/', accessToken: 'test' }),

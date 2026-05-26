@@ -2760,6 +2760,15 @@ describe('uuidSchema — input validation', () => {
   it('rejects empty string', () => {
     expect(uuidSchema.safeParse('').success).toBe(false);
   });
+
+  it('error message mentions identifier, not UUID', () => {
+    const result = uuidSchema.safeParse('../etc/passwd');
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).not.toContain('Invalid UUID');
+      expect(result.error.issues[0].message.toLowerCase()).toContain('identifier');
+    }
+  });
 });
 
 describe('size caps — cloudInitScriptSchema and privateKeySchema', () => {
