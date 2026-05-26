@@ -436,6 +436,23 @@ describe('diagnose_app — log truncation', () => {
     expect(text).toContain('...[truncated]...');
     expect(text.length).toBeLessThanOrEqual(60000);
   });
+
+  it('does not mutate the original result object from diagnoseApplication', async () => {
+    const hugeLogs = 'x'.repeat(60000);
+    const mockResult = {
+      application: null,
+      health: { status: 'unknown' as const, issues: [] },
+      logs: hugeLogs,
+      environment_variables: { count: 0, variables: [] },
+      recent_deployments: [],
+      errors: [],
+    };
+    jest.spyOn(server.getClient(), 'diagnoseApplication').mockResolvedValue(mockResult as never);
+    await callHandler(server, 'diagnose_app', { query: 'app-uuid' });
+    // Original mock object must be unchanged
+    expect(mockResult.logs).toBe(hugeLogs);
+    expect(mockResult.logs.length).toBe(60000);
+  });
 });
 
 // =============================================================================
@@ -2791,6 +2808,27 @@ describe('private_keys uuid field — injection prevention', () => {
   });
 });
 
+describe('database_backups backup_uuid and execution_uuid — injection prevention', () => {
+  it('uuidSchema rejects path traversal in backup_uuid', () => {
+    expect(uuidSchema.optional().safeParse('../etc/passwd').success).toBe(false);
+    expect(uuidSchema.optional().safeParse('backup/../../etc').success).toBe(false);
+  });
+
+  it('uuidSchema rejects shell injection in execution_uuid', () => {
+    expect(uuidSchema.optional().safeParse('$(whoami)').success).toBe(false);
+    expect(uuidSchema.optional().safeParse('exec; rm -rf /').success).toBe(false);
+  });
+
+  it('uuidSchema accepts valid backup UUID', () => {
+    expect(uuidSchema.optional().safeParse('backup-abc123').success).toBe(true);
+    expect(uuidSchema.optional().safeParse('ks4g4c0gscckkso04g8s4c0k').success).toBe(true);
+  });
+
+  it('uuidSchema accepts undefined (optional)', () => {
+    expect(uuidSchema.optional().safeParse(undefined).success).toBe(true);
+  });
+});
+
 describe('tagOrUuidSchema — deploy tag/UUID input validation', () => {
   it('accepts a standard UUID', () => {
     expect(tagOrUuidSchema.safeParse('550e8400-e29b-41d4-a716-446655440000').success).toBe(true);
@@ -2822,5 +2860,14 @@ describe('tagOrUuidSchema — deploy tag/UUID input validation', () => {
 
   it('rejects strings exceeding 128 characters', () => {
     expect(tagOrUuidSchema.safeParse('a'.repeat(129)).success).toBe(false);
+  });
+
+  it('accepts Docker image digest references with @', () => {
+    expect(
+      tagOrUuidSchema.safeParse(
+        'nginx@sha256:a3b2c1d4e5f6a3b2c1d4e5f6a3b2c1d4e5f6a3b2c1d4e5f6a3b2c1d4e5f6a3b2',
+      ).success,
+    ).toBe(true);
+    expect(tagOrUuidSchema.safeParse('myimage@sha256:abc123').success).toBe(true);
   });
 });

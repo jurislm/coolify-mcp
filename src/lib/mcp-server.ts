@@ -61,7 +61,7 @@ export const uuidSchema = z
 
 /**
  * Schema for deploy tag_or_uuid — accepts Coolify UUIDs, Docker image tags
- * (semver dots, underscores, slashes) and git branch names.
+ * (semver dots, underscores, slashes, @ for digest refs) and git branch names.
  * Blocks shell injection while allowing all valid tag characters.
  */
 export const tagOrUuidSchema = z
@@ -69,8 +69,8 @@ export const tagOrUuidSchema = z
   .min(1)
   .max(128)
   .regex(
-    /^[a-zA-Z0-9._/:-]+$/,
-    'Invalid tag/UUID: must contain only letters, digits, dots, underscores, slashes, colons, or hyphens (max 128 chars)',
+    /^[a-zA-Z0-9._/:@-]+$/,
+    'Invalid tag/UUID: must contain only letters, digits, dots, underscores, slashes, colons, @ or hyphens (max 128 chars)',
   );
 
 /** Optional private key schema with size cap to prevent memory exhaustion */
@@ -285,10 +285,9 @@ export class CoolifyMcpServer extends McpServer {
       async ({ query }) =>
         wrap(async () => {
           const result = await this.client.diagnoseApplication(query);
-          if (typeof result.logs === 'string') {
-            result.logs = truncateLogs(result.logs);
-          }
-          return result;
+          return typeof result.logs === 'string'
+            ? { ...result, logs: truncateLogs(result.logs) }
+            : result;
         }),
     );
 
@@ -1843,8 +1842,8 @@ export class CoolifyMcpServer extends McpServer {
           'delete',
         ]),
         database_uuid: uuidSchema,
-        backup_uuid: z.string().optional(),
-        execution_uuid: z.string().optional(),
+        backup_uuid: uuidSchema.optional(),
+        execution_uuid: uuidSchema.optional(),
         delete_s3: z
           .boolean()
           .optional()

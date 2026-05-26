@@ -3068,13 +3068,13 @@ describe('CoolifyClient', () => {
       );
     });
 
-    it('should use default lines for getApplicationLogs', async () => {
+    it('should use default lines=200 for getApplicationLogs', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse('log output'));
 
       await client.getApplicationLogs('app-uuid');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/v1/applications/app-uuid/logs?lines=100',
+        'http://localhost:3000/api/v1/applications/app-uuid/logs?lines=200',
         expect.any(Object),
       );
     });
