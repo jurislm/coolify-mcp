@@ -14,6 +14,10 @@ import {
   getApplicationActions,
   getDeploymentActions,
   getPagination,
+  uuidSchema,
+  tagOrUuidSchema,
+  privateKeySchema,
+  cloudInitScriptSchema,
 } from '../lib/mcp-server.js';
 import { CoolifyClient } from '../lib/coolify-client.js';
 import type {
@@ -337,6 +341,117 @@ describe('truncateLogs', () => {
     const logs = 'x'.repeat(1000);
     const result = truncateLogs(logs, 200, 100);
     expect(result.length).toBe(100);
+  });
+});
+
+// =============================================================================
+// application_logs truncation
+// =============================================================================
+describe('application_logs — response truncation', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('truncates logs exceeding 50000 characters', async () => {
+    // Single huge line (no newlines) to trigger char-limit truncation with prefix
+    const hugeLogs = 'x'.repeat(60000);
+    jest.spyOn(server.getClient(), 'getApplicationLogs').mockResolvedValue(hugeLogs);
+    const result = (await callHandler(server, 'application_logs', { uuid: 'app-uuid' })) as {
+      content: Array<{ text: string }>;
+    };
+    // wrap() JSON.stringifies the string — check the raw JSON text for truncation marker
+    const text = result.content[0].text;
+    expect(text).toContain('...[truncated]...');
+    // JSON-encoded string has overhead but must stay bounded
+    expect(text.length).toBeLessThanOrEqual(55000);
+  });
+
+  it('does not truncate short logs', async () => {
+    const shortLogs = 'line1\nline2\nline3\n';
+    jest.spyOn(server.getClient(), 'getApplicationLogs').mockResolvedValue(shortLogs);
+    const result = (await callHandler(server, 'application_logs', { uuid: 'app-uuid' })) as {
+      content: Array<{ text: string }>;
+    };
+    // wrap() JSON.stringifies the string, so check it contains the log content
+    expect(result.content[0].text).toContain('line1');
+    expect(result.content[0].text).not.toContain('...[truncated]...');
+  });
+
+  it('respects lines param — truncates to requested line count', async () => {
+    // 10 unique lines; request only 5 → truncateLogs(logs, 5) keeps last 5
+    const logLines = [
+      'alpha',
+      'beta',
+      'gamma',
+      'delta',
+      'epsilon',
+      'zeta',
+      'eta',
+      'theta',
+      'iota',
+      'kappa',
+    ];
+    const tenLines = logLines.join('\n');
+    jest.spyOn(server.getClient(), 'getApplicationLogs').mockResolvedValue(tenLines);
+    const result = (await callHandler(server, 'application_logs', {
+      uuid: 'app-uuid',
+      lines: 5,
+    })) as { content: Array<{ text: string }> };
+    const text = result.content[0].text;
+    // Last 5 lines should be present
+    expect(text).toContain('kappa');
+    expect(text).toContain('zeta');
+    // First 5 lines should be absent after truncation to 5
+    expect(text).not.toContain('alpha');
+    expect(text).not.toContain('epsilon');
+  });
+});
+
+// =============================================================================
+// diagnose_app log truncation
+// =============================================================================
+describe('diagnose_app — log truncation', () => {
+  let server: TestableMcpServer;
+
+  beforeEach(() => {
+    server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
+  });
+
+  it('truncates oversized logs embedded in diagnose response', async () => {
+    const hugeLogs = 'x'.repeat(60000);
+    jest.spyOn(server.getClient(), 'diagnoseApplication').mockResolvedValue({
+      application: null,
+      health: { status: 'unknown', issues: [] },
+      logs: hugeLogs,
+      environment_variables: { count: 0, variables: [] },
+      recent_deployments: [],
+      errors: [],
+    } as never);
+    const result = (await callHandler(server, 'diagnose_app', {
+      query: 'app-uuid',
+    })) as { content: Array<{ text: string }> };
+    const text = result.content[0].text;
+    expect(text).toContain('...[truncated]...');
+    expect(text.length).toBeLessThanOrEqual(60000);
+  });
+
+  it('does not mutate the original result object from diagnoseApplication', async () => {
+    const hugeLogs = 'x'.repeat(60000);
+    const mockResult = {
+      application: null,
+      health: { status: 'unknown' as const, issues: [] },
+      logs: hugeLogs,
+      environment_variables: { count: 0, variables: [] },
+      recent_deployments: [],
+      errors: [],
+    };
+    jest.spyOn(server.getClient(), 'diagnoseApplication').mockResolvedValue(mockResult as never);
+    await callHandler(server, 'diagnose_app', { query: 'app-uuid' });
+    // Original mock object must be unchanged
+    expect(mockResult.logs).toBe(hugeLogs);
+    expect(mockResult.logs.length).toBe(60000);
   });
 });
 
@@ -2034,6 +2149,18 @@ describe('teams get/members and private_keys create/update/delete', () => {
     expect(spy).toHaveBeenCalledWith('key-uuid', expect.objectContaining({ name: 'new-name' }));
   });
 
+  it('private_keys update omits undefined private_key from payload', async () => {
+    const spy = jest.spyOn(server.getClient(), 'updatePrivateKey').mockResolvedValue({} as never);
+    await callHandler(server, 'private_keys', {
+      action: 'update',
+      uuid: 'key-uuid',
+      name: 'new-name',
+      // private_key intentionally absent
+    });
+    const payload = spy.mock.calls[0][1] as Record<string, unknown>;
+    expect('private_key' in payload).toBe(false);
+  });
+
   it('private_keys delete without uuid returns error', async () => {
     const result = (await callHandler(server, 'private_keys', { action: 'delete' })) as {
       content: Array<{ text: string }>;
@@ -2602,5 +2729,145 @@ describe('database create — alias_warning injected into JSON when name is prov
     const warn = parsed.alias_warning as Record<string, string>;
     expect(warn.fix).toContain('<sanitized-name>');
     expect(warn.fix).not.toMatch(/docker_network_alias \{[^}]+name: "my db name!"/);
+  });
+});
+
+describe('uuidSchema — input validation', () => {
+  it('accepts a standard UUID', () => {
+    expect(uuidSchema.safeParse('550e8400-e29b-41d4-a716-446655440000').success).toBe(true);
+  });
+
+  it('accepts short alphanumeric ids used by Coolify', () => {
+    expect(uuidSchema.safeParse('app-uuid').success).toBe(true);
+    expect(uuidSchema.safeParse('srv-123').success).toBe(true);
+  });
+
+  it('rejects strings with path traversal characters', () => {
+    expect(uuidSchema.safeParse('../etc/passwd').success).toBe(false);
+    expect(uuidSchema.safeParse('uuid/../../secret').success).toBe(false);
+  });
+
+  it('rejects strings with shell injection characters', () => {
+    expect(uuidSchema.safeParse('uuid; rm -rf /').success).toBe(false);
+    expect(uuidSchema.safeParse('$(whoami)').success).toBe(false);
+    expect(uuidSchema.safeParse('`id`').success).toBe(false);
+  });
+
+  it('rejects strings exceeding 64 characters', () => {
+    expect(uuidSchema.safeParse('a'.repeat(65)).success).toBe(false);
+  });
+
+  it('rejects empty string', () => {
+    expect(uuidSchema.safeParse('').success).toBe(false);
+  });
+});
+
+describe('size caps — cloudInitScriptSchema and privateKeySchema', () => {
+  it('cloudInitScriptSchema rejects strings over 65536 chars', () => {
+    expect(cloudInitScriptSchema.safeParse('x'.repeat(65537)).success).toBe(false);
+  });
+
+  it('cloudInitScriptSchema accepts strings within 65536 chars', () => {
+    expect(cloudInitScriptSchema.safeParse('x'.repeat(65536)).success).toBe(true);
+    expect(cloudInitScriptSchema.safeParse('#!/bin/bash\necho hello').success).toBe(true);
+  });
+
+  it('cloudInitScriptSchema accepts undefined (optional)', () => {
+    expect(cloudInitScriptSchema.safeParse(undefined).success).toBe(true);
+  });
+
+  it('privateKeySchema rejects strings over 16384 chars', () => {
+    expect(privateKeySchema.safeParse('x'.repeat(16385)).success).toBe(false);
+  });
+
+  it('privateKeySchema accepts strings within 16384 chars', () => {
+    expect(privateKeySchema.safeParse('x'.repeat(16384)).success).toBe(true);
+    expect(privateKeySchema.safeParse('-----BEGIN RSA PRIVATE KEY-----').success).toBe(true);
+  });
+
+  it('privateKeySchema accepts undefined (optional)', () => {
+    expect(privateKeySchema.safeParse(undefined).success).toBe(true);
+  });
+});
+
+describe('private_keys uuid field — injection prevention', () => {
+  it('uuidSchema.optional() rejects path traversal in uuid', () => {
+    expect(uuidSchema.safeParse('../etc/passwd').success).toBe(false);
+  });
+
+  it('uuidSchema.optional() rejects shell injection in uuid', () => {
+    expect(uuidSchema.safeParse('$(whoami)').success).toBe(false);
+  });
+
+  it('uuidSchema.optional() accepts undefined (optional)', () => {
+    expect(uuidSchema.optional().safeParse(undefined).success).toBe(true);
+  });
+
+  it('uuidSchema.optional() accepts valid uuid', () => {
+    expect(uuidSchema.optional().safeParse('key-uuid').success).toBe(true);
+  });
+});
+
+describe('database_backups backup_uuid and execution_uuid — injection prevention', () => {
+  it('uuidSchema rejects path traversal in backup_uuid', () => {
+    expect(uuidSchema.optional().safeParse('../etc/passwd').success).toBe(false);
+    expect(uuidSchema.optional().safeParse('backup/../../etc').success).toBe(false);
+  });
+
+  it('uuidSchema rejects shell injection in execution_uuid', () => {
+    expect(uuidSchema.optional().safeParse('$(whoami)').success).toBe(false);
+    expect(uuidSchema.optional().safeParse('exec; rm -rf /').success).toBe(false);
+  });
+
+  it('uuidSchema accepts valid backup UUID', () => {
+    expect(uuidSchema.optional().safeParse('backup-abc123').success).toBe(true);
+    expect(uuidSchema.optional().safeParse('ks4g4c0gscckkso04g8s4c0k').success).toBe(true);
+  });
+
+  it('uuidSchema accepts undefined (optional)', () => {
+    expect(uuidSchema.optional().safeParse(undefined).success).toBe(true);
+  });
+});
+
+describe('tagOrUuidSchema — deploy tag/UUID input validation', () => {
+  it('accepts a standard UUID', () => {
+    expect(tagOrUuidSchema.safeParse('550e8400-e29b-41d4-a716-446655440000').success).toBe(true);
+  });
+
+  it('accepts semver Docker tags with dots', () => {
+    expect(tagOrUuidSchema.safeParse('v1.2.3').success).toBe(true);
+    expect(tagOrUuidSchema.safeParse('1.0.0').success).toBe(true);
+  });
+
+  it('accepts tags with underscores', () => {
+    expect(tagOrUuidSchema.safeParse('my_app').success).toBe(true);
+    expect(tagOrUuidSchema.safeParse('latest_stable').success).toBe(true);
+  });
+
+  it('accepts branch-style tags with slashes', () => {
+    expect(tagOrUuidSchema.safeParse('feature/my-branch').success).toBe(true);
+  });
+
+  it('rejects empty string', () => {
+    expect(tagOrUuidSchema.safeParse('').success).toBe(false);
+  });
+
+  it('rejects strings with shell injection characters', () => {
+    expect(tagOrUuidSchema.safeParse('$(whoami)').success).toBe(false);
+    expect(tagOrUuidSchema.safeParse('tag; rm -rf /').success).toBe(false);
+    expect(tagOrUuidSchema.safeParse('`id`').success).toBe(false);
+  });
+
+  it('rejects strings exceeding 128 characters', () => {
+    expect(tagOrUuidSchema.safeParse('a'.repeat(129)).success).toBe(false);
+  });
+
+  it('accepts Docker image digest references with @', () => {
+    expect(
+      tagOrUuidSchema.safeParse(
+        'nginx@sha256:a3b2c1d4e5f6a3b2c1d4e5f6a3b2c1d4e5f6a3b2c1d4e5f6a3b2c1d4e5f6a3b2',
+      ).success,
+    ).toBe(true);
+    expect(tagOrUuidSchema.safeParse('myimage@sha256:abc123').success).toBe(true);
   });
 });

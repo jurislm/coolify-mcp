@@ -148,6 +148,36 @@ describe('CoolifyClient', () => {
       );
     });
 
+    it('should throw error if baseUrl uses unsupported protocol', () => {
+      expect(
+        () => new CoolifyClient({ baseUrl: 'ftp://example.com', accessToken: 'test' }),
+      ).toThrow('COOLIFY_URL must use http or https protocol');
+    });
+
+    it('should throw error if baseUrl is not a valid URL', () => {
+      expect(() => new CoolifyClient({ baseUrl: 'not-a-valid-url', accessToken: 'test' })).toThrow(
+        'COOLIFY_URL must be a valid URL',
+      );
+    });
+
+    it('should accept https baseUrl', () => {
+      expect(
+        () => new CoolifyClient({ baseUrl: 'https://coolify.example.com', accessToken: 'test' }),
+      ).not.toThrow();
+    });
+
+    it('should throw error if baseUrl contains a path prefix', () => {
+      expect(
+        () => new CoolifyClient({ baseUrl: 'https://host/proxy/', accessToken: 'test' }),
+      ).toThrow('COOLIFY_URL must not contain a path prefix');
+    });
+
+    it('should accept baseUrl with only trailing slash (treated as root)', () => {
+      expect(
+        () => new CoolifyClient({ baseUrl: 'http://localhost:3000/', accessToken: 'test' }),
+      ).not.toThrow();
+    });
+
     it('should strip trailing slash from baseUrl', () => {
       const c = new CoolifyClient({
         baseUrl: 'http://localhost:3000/',
@@ -833,6 +863,16 @@ describe('CoolifyClient', () => {
       mockFetch.mockRejectedValueOnce(new TypeError('fetch failed'));
 
       await expect(client.listServers()).rejects.toThrow('Failed to connect to Coolify server');
+    });
+
+    it('should not expose baseUrl in network error messages', async () => {
+      mockFetch.mockRejectedValueOnce(new TypeError('fetch failed'));
+
+      await expect(client.listServers()).rejects.toThrow(
+        expect.objectContaining({
+          message: expect.not.stringContaining('http://localhost:3000'),
+        }),
+      );
     });
 
     it('should handle empty responses', async () => {
@@ -3028,13 +3068,13 @@ describe('CoolifyClient', () => {
       );
     });
 
-    it('should use default lines for getApplicationLogs', async () => {
+    it('should use default lines=200 for getApplicationLogs', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse('log output'));
 
       await client.getApplicationLogs('app-uuid');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/v1/applications/app-uuid/logs?lines=100',
+        'http://localhost:3000/api/v1/applications/app-uuid/logs?lines=200',
         expect.any(Object),
       );
     });

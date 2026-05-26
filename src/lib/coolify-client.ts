@@ -446,6 +446,23 @@ export class CoolifyClient {
     if (!config.accessToken) {
       throw new Error('Coolify access token is required');
     }
+    let parsed: URL;
+    try {
+      parsed = new URL(config.baseUrl);
+    } catch {
+      throw new Error('COOLIFY_URL must be a valid URL');
+    }
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      throw new Error(
+        `COOLIFY_URL must use http or https protocol, got: ${parsed.protocol.replace(':', '')}`,
+      );
+    }
+    const strippedPath = parsed.pathname.replace(/\/$/, '');
+    if (strippedPath !== '') {
+      throw new Error(
+        'COOLIFY_URL must not contain a path prefix (e.g. use https://host not https://host/proxy)',
+      );
+    }
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.accessToken = config.accessToken;
   }
@@ -491,7 +508,7 @@ export class CoolifyClient {
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error(
-          `Failed to connect to Coolify server at ${this.baseUrl}. Please check if the server is running and accessible.`,
+          'Failed to connect to Coolify server. Please check if the server is running and accessible.',
         );
       }
       throw error;
@@ -811,7 +828,7 @@ export class CoolifyClient {
     );
   }
 
-  async getApplicationLogs(uuid: string, lines: number = 100): Promise<string> {
+  async getApplicationLogs(uuid: string, lines: number = 200): Promise<string> {
     return this.request<string>(`/applications/${encodeURIComponent(uuid)}/logs?lines=${lines}`);
   }
 
