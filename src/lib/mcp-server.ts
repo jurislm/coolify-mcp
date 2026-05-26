@@ -49,6 +49,22 @@ function wrap<T>(
 
 const TRUNCATION_PREFIX = '...[truncated]...\n';
 
+/** Reusable UUID/identifier schema — allows alphanumeric + hyphens, 1–64 chars */
+export const uuidSchema = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(
+    /^[a-zA-Z0-9-]+$/,
+    'Invalid UUID: must contain only letters, digits, and hyphens (max 64 chars)',
+  );
+
+/** Optional private key schema with size cap to prevent memory exhaustion */
+export const privateKeySchema = z.string().max(16384).optional();
+
+/** Optional cloud-init script schema with size cap to limit arbitrary code payload */
+export const cloudInitScriptSchema = z.string().max(65536).optional();
+
 /**
  * Truncate logs by line count and character count.
  * Exported for testing.
@@ -277,22 +293,22 @@ export class CoolifyMcpServer extends McpServer {
         wrap(() => this.client.listServers({ page, per_page, summary: true })),
     );
 
-    this.tool('get_server', 'Server details', { uuid: z.string() }, async ({ uuid }) =>
+    this.tool('get_server', 'Server details', { uuid: uuidSchema }, async ({ uuid }) =>
       wrap(() => this.client.getServer(uuid)),
     );
 
-    this.tool('server_resources', 'Resources on server', { uuid: z.string() }, async ({ uuid }) =>
+    this.tool('server_resources', 'Resources on server', { uuid: uuidSchema }, async ({ uuid }) =>
       wrap(() => this.client.getServerResources(uuid)),
     );
 
-    this.tool('server_domains', 'Domains on server', { uuid: z.string() }, async ({ uuid }) =>
+    this.tool('server_domains', 'Domains on server', { uuid: uuidSchema }, async ({ uuid }) =>
       wrap(() => this.client.getServerDomains(uuid)),
     );
 
     this.tool(
       'validate_server',
       'Validate server connection',
-      { uuid: z.string() },
+      { uuid: uuidSchema },
       async ({ uuid }) => wrap(() => this.client.validateServer(uuid)),
     );
 
@@ -425,7 +441,7 @@ export class CoolifyMcpServer extends McpServer {
       'Manage environments: list/get/create/delete (get includes dragonfly/keydb/clickhouse DBs missing from API)',
       {
         action: z.enum(['list', 'get', 'create', 'delete']),
-        project_uuid: z.string(),
+        project_uuid: uuidSchema,
         name: z.string().optional(),
         description: z.string().optional(),
       },
@@ -468,7 +484,7 @@ export class CoolifyMcpServer extends McpServer {
         ),
     );
 
-    this.tool('get_application', 'App details', { uuid: z.string() }, async ({ uuid }) =>
+    this.tool('get_application', 'App details', { uuid: uuidSchema }, async ({ uuid }) =>
       wrapWithActions(
         () => this.client.getApplication(uuid),
         (app) => getApplicationActions(app.uuid, app.status),
@@ -799,8 +815,12 @@ export class CoolifyMcpServer extends McpServer {
     this.tool(
       'application_logs',
       'Get app logs',
-      { uuid: z.string(), lines: z.number().int().min(1).max(10000).optional() },
-      async ({ uuid, lines }) => wrap(() => this.client.getApplicationLogs(uuid, lines)),
+      { uuid: uuidSchema, lines: z.number().int().min(1).max(10000).optional() },
+      async ({ uuid, lines }) =>
+        wrap(async () => {
+          const logs = await this.client.getApplicationLogs(uuid, lines);
+          return truncateLogs(logs);
+        }),
     );
 
     // =========================================================================
@@ -814,7 +834,7 @@ export class CoolifyMcpServer extends McpServer {
         wrap(() => this.client.listDatabases({ page, per_page, summary: true })),
     );
 
-    this.tool('get_database', 'Database details', { uuid: z.string() }, async ({ uuid }) =>
+    this.tool('get_database', 'Database details', { uuid: uuidSchema }, async ({ uuid }) =>
       wrap(() => this.client.getDatabase(uuid)),
     );
 
@@ -1172,7 +1192,7 @@ export class CoolifyMcpServer extends McpServer {
         wrap(() => this.client.listServices({ page, per_page, summary: true })),
     );
 
-    this.tool('get_service', 'Service details', { uuid: z.string() }, async ({ uuid }) =>
+    this.tool('get_service', 'Service details', { uuid: uuidSchema }, async ({ uuid }) =>
       wrap(() => this.client.getService(uuid)),
     );
 
@@ -1272,7 +1292,7 @@ export class CoolifyMcpServer extends McpServer {
       {
         resource: z.enum(['application', 'database', 'service']),
         action: z.enum(['start', 'stop', 'restart']),
-        uuid: z.string(),
+        uuid: uuidSchema,
         docker_cleanup: z
           .boolean()
           .optional()
@@ -1343,7 +1363,7 @@ export class CoolifyMcpServer extends McpServer {
           .describe(
             'Action to perform. Note: bulk_create performs upsert via the resource-specific PATCH bulk env endpoints: /applications/{uuid}/envs/bulk, /databases/{uuid}/envs/bulk, and /services/{uuid}/envs/bulk.',
           ),
-        uuid: z.string(),
+        uuid: uuidSchema,
         key: z.string().optional(),
         value: z.string().optional(),
         env_uuid: z.string().optional(),
@@ -1517,7 +1537,7 @@ export class CoolifyMcpServer extends McpServer {
       'deploy',
       'Deploy by tag/UUID. Use pr param for PR preview deployments (requires GitHub app integration).',
       {
-        tag_or_uuid: z.string(),
+        tag_or_uuid: uuidSchema,
         force: z.boolean().optional(),
         pr: z
           .number()
@@ -1539,7 +1559,7 @@ export class CoolifyMcpServer extends McpServer {
       'Manage deployment: get/cancel/list_for_app (logs excluded by default, use lines param to include)',
       {
         action: z.enum(['get', 'cancel', 'list_for_app']),
-        uuid: z.string(),
+        uuid: uuidSchema,
         lines: z.number().int().min(1).max(10000).optional(), // Include logs truncated to last N lines (omit for no logs)
         max_chars: z.number().int().min(1).max(500000).optional(), // Limit log output to last N chars (default: 50000)
       },
@@ -1614,7 +1634,7 @@ export class CoolifyMcpServer extends McpServer {
         uuid: z.string().optional(),
         name: z.string().optional(),
         description: z.string().optional(),
-        private_key: z.string().optional(),
+        private_key: privateKeySchema,
       },
       async ({ action, uuid, name, description, private_key }) => {
         switch (action) {
@@ -1798,7 +1818,7 @@ export class CoolifyMcpServer extends McpServer {
           'update',
           'delete',
         ]),
-        database_uuid: z.string(),
+        database_uuid: uuidSchema,
         backup_uuid: z.string().optional(),
         execution_uuid: z.string().optional(),
         delete_s3: z
@@ -1965,7 +1985,7 @@ export class CoolifyMcpServer extends McpServer {
       {
         action: z.enum(['list', 'create', 'update', 'delete']),
         resource_type: z.enum(['application', 'database', 'service']),
-        uuid: z.string().describe('The application/database/service UUID'),
+        uuid: uuidSchema.describe('The application/database/service UUID'),
         storage_uuid: z.string().optional().describe('Storage UUID (required for delete)'),
         // create/update fields
         type: z
@@ -2122,7 +2142,7 @@ export class CoolifyMcpServer extends McpServer {
       {
         action: z.enum(['list', 'create', 'update', 'delete', 'list_executions']),
         resource_type: z.enum(['application', 'service']),
-        uuid: z.string().describe('Application or service UUID'),
+        uuid: uuidSchema.describe('Application or service UUID'),
         task_uuid: z
           .string()
           .optional()
@@ -2289,7 +2309,7 @@ export class CoolifyMcpServer extends McpServer {
     this.tool(
       'restart_project_apps',
       'Restart all apps in project',
-      { project_uuid: z.string() },
+      { project_uuid: uuidSchema },
       async ({ project_uuid }) => wrap(() => this.client.restartProjectApps(project_uuid)),
     );
 
@@ -2297,7 +2317,7 @@ export class CoolifyMcpServer extends McpServer {
       'bulk_env_update',
       'Update env var across multiple apps',
       {
-        app_uuids: z.array(z.string()),
+        app_uuids: z.array(uuidSchema),
         key: z.string(),
         value: z.string(),
         is_build_time: z.boolean().optional(),
@@ -2356,7 +2376,7 @@ export class CoolifyMcpServer extends McpServer {
         enable_ipv4: z.boolean().optional(),
         enable_ipv6: z.boolean().optional(),
         hetzner_ssh_key_ids: z.array(z.number().int()).optional(),
-        cloud_init_script: z.string().optional(),
+        cloud_init_script: cloudInitScriptSchema,
         instant_validate: z.boolean().optional(),
       },
       async ({

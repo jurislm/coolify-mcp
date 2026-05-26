@@ -148,6 +148,24 @@ describe('CoolifyClient', () => {
       );
     });
 
+    it('should throw error if baseUrl uses unsupported protocol', () => {
+      expect(
+        () => new CoolifyClient({ baseUrl: 'ftp://example.com', accessToken: 'test' }),
+      ).toThrow('COOLIFY_URL must use http or https protocol');
+    });
+
+    it('should throw error if baseUrl is not a valid URL', () => {
+      expect(() => new CoolifyClient({ baseUrl: 'not-a-valid-url', accessToken: 'test' })).toThrow(
+        'COOLIFY_URL must be a valid URL',
+      );
+    });
+
+    it('should accept https baseUrl', () => {
+      expect(
+        () => new CoolifyClient({ baseUrl: 'https://coolify.example.com', accessToken: 'test' }),
+      ).not.toThrow();
+    });
+
     it('should strip trailing slash from baseUrl', () => {
       const c = new CoolifyClient({
         baseUrl: 'http://localhost:3000/',
@@ -833,6 +851,16 @@ describe('CoolifyClient', () => {
       mockFetch.mockRejectedValueOnce(new TypeError('fetch failed'));
 
       await expect(client.listServers()).rejects.toThrow('Failed to connect to Coolify server');
+    });
+
+    it('should not expose baseUrl in network error messages', async () => {
+      mockFetch.mockRejectedValueOnce(new TypeError('fetch failed'));
+
+      await expect(client.listServers()).rejects.toThrow(
+        expect.objectContaining({
+          message: expect.not.stringContaining('http://localhost:3000'),
+        }),
+      );
     });
 
     it('should handle empty responses', async () => {

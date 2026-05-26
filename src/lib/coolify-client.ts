@@ -446,6 +446,17 @@ export class CoolifyClient {
     if (!config.accessToken) {
       throw new Error('Coolify access token is required');
     }
+    let parsed: URL;
+    try {
+      parsed = new URL(config.baseUrl);
+    } catch {
+      throw new Error('COOLIFY_URL must be a valid URL');
+    }
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      throw new Error(
+        `COOLIFY_URL must use http or https protocol, got: ${parsed.protocol.replace(':', '')}`,
+      );
+    }
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
     this.accessToken = config.accessToken;
   }
@@ -491,7 +502,7 @@ export class CoolifyClient {
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error(
-          `Failed to connect to Coolify server at ${this.baseUrl}. Please check if the server is running and accessible.`,
+          'Failed to connect to Coolify server. Please check if the server is running and accessible.',
         );
       }
       throw error;
