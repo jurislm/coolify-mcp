@@ -463,7 +463,12 @@ export class CoolifyClient {
         'COOLIFY_URL must not contain a path prefix (e.g. use https://host not https://host/proxy)',
       );
     }
-    this.baseUrl = config.baseUrl.replace(/\/$/, '');
+    if (parsed.search !== '' || parsed.hash !== '') {
+      throw new Error(
+        'COOLIFY_URL must not contain a query string or fragment (e.g. use https://host not https://host?x=1)',
+      );
+    }
+    this.baseUrl = parsed.origin;
     this.accessToken = config.accessToken;
   }
 

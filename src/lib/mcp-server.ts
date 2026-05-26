@@ -56,7 +56,7 @@ export const uuidSchema = z
   .max(64)
   .regex(
     /^[a-zA-Z0-9-]+$/,
-    'Invalid UUID: must contain only letters, digits, and hyphens (max 64 chars)',
+    'Invalid identifier: must contain only letters, digits, and hyphens (max 64 chars)',
   );
 
 /**
