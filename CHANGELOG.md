@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.1](https://github.com/jurislm/coolify-mcp/compare/v3.5.0...v3.5.1) (2026-05-26)
+
+
+### Bug Fixes
+
+* address security review — SSRF, URL leak, UUID validation, log truncation, size caps ([231a97f](https://github.com/jurislm/coolify-mcp/commit/231a97fd6791bebcb316bffb41b31659634f8de4))
+
+
+### Documentation
+
+* add GitHub Pages landing site ([#41](https://github.com/jurislm/coolify-mcp/issues/41)) ([b4ca2b3](https://github.com/jurislm/coolify-mcp/commit/b4ca2b3bfe4547354c2db910321b5c6d91c4353d))
+
 ## [3.5.0](https://github.com/jurislm/coolify-mcp/compare/v3.4.1...v3.5.0) (2026-05-20)
 
 
