@@ -166,6 +166,18 @@ describe('CoolifyClient', () => {
       ).not.toThrow();
     });
 
+    it('should throw error if baseUrl contains a path prefix', () => {
+      expect(
+        () => new CoolifyClient({ baseUrl: 'https://host/proxy/', accessToken: 'test' }),
+      ).toThrow('COOLIFY_URL must not contain a path prefix');
+    });
+
+    it('should accept baseUrl with only trailing slash (treated as root)', () => {
+      expect(
+        () => new CoolifyClient({ baseUrl: 'http://localhost:3000/', accessToken: 'test' }),
+      ).not.toThrow();
+    });
+
     it('should strip trailing slash from baseUrl', () => {
       const c = new CoolifyClient({
         baseUrl: 'http://localhost:3000/',

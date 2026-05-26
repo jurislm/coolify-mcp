@@ -59,6 +59,20 @@ export const uuidSchema = z
     'Invalid UUID: must contain only letters, digits, and hyphens (max 64 chars)',
   );
 
+/**
+ * Schema for deploy tag_or_uuid — accepts Coolify UUIDs, Docker image tags
+ * (semver dots, underscores, slashes) and git branch names.
+ * Blocks shell injection while allowing all valid tag characters.
+ */
+export const tagOrUuidSchema = z
+  .string()
+  .min(1)
+  .max(128)
+  .regex(
+    /^[a-zA-Z0-9._/:-]+$/,
+    'Invalid tag/UUID: must contain only letters, digits, dots, underscores, slashes, colons, or hyphens (max 128 chars)',
+  );
+
 /** Optional private key schema with size cap to prevent memory exhaustion */
 export const privateKeySchema = z.string().max(16384).optional();
 
@@ -268,7 +282,14 @@ export class CoolifyMcpServer extends McpServer {
       'diagnose_app',
       'App diagnostics by UUID/name/domain',
       { query: z.string() },
-      async ({ query }) => wrap(() => this.client.diagnoseApplication(query)),
+      async ({ query }) =>
+        wrap(async () => {
+          const result = await this.client.diagnoseApplication(query);
+          if (typeof result.logs === 'string') {
+            result.logs = truncateLogs(result.logs);
+          }
+          return result;
+        }),
     );
 
     this.tool(
@@ -819,7 +840,7 @@ export class CoolifyMcpServer extends McpServer {
       async ({ uuid, lines }) =>
         wrap(async () => {
           const logs = await this.client.getApplicationLogs(uuid, lines);
-          return truncateLogs(logs);
+          return truncateLogs(logs, lines ?? 200);
         }),
     );
 
@@ -1537,7 +1558,7 @@ export class CoolifyMcpServer extends McpServer {
       'deploy',
       'Deploy by tag/UUID. Use pr param for PR preview deployments (requires GitHub app integration).',
       {
-        tag_or_uuid: uuidSchema,
+        tag_or_uuid: tagOrUuidSchema,
         force: z.boolean().optional(),
         pr: z
           .number()
@@ -1631,7 +1652,7 @@ export class CoolifyMcpServer extends McpServer {
       'Manage SSH keys: list/get/create/update/delete',
       {
         action: z.enum(['list', 'get', 'create', 'update', 'delete']),
-        uuid: z.string().optional(),
+        uuid: uuidSchema.optional(),
         name: z.string().optional(),
         description: z.string().optional(),
         private_key: privateKeySchema,
@@ -1654,12 +1675,15 @@ export class CoolifyMcpServer extends McpServer {
                 description,
               }),
             );
-          case 'update':
+          case 'update': {
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            return wrap(() =>
-              this.client.updatePrivateKey(uuid, { name, description, private_key }),
-            );
+            const updatePayload: { name?: string; description?: string; private_key?: string } = {};
+            if (name !== undefined) updatePayload.name = name;
+            if (description !== undefined) updatePayload.description = description;
+            if (private_key !== undefined) updatePayload.private_key = private_key;
+            return wrap(() => this.client.updatePrivateKey(uuid, updatePayload));
+          }
           case 'delete':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
