@@ -88,8 +88,10 @@ export function truncateLogs(
   lineLimit: number = 200,
   charLimit: number = 50000,
 ): string {
-  // First: limit by lines
   const logLines = logs.split('\n');
+  if (logLines.length <= lineLimit && logs.length <= charLimit) return logs;
+
+  // First: limit by lines
   const limitedLines = logLines.slice(-lineLimit);
   let truncatedLogs = limitedLines.join('\n');
 
@@ -839,7 +841,7 @@ export class CoolifyMcpServer extends McpServer {
       async ({ uuid, lines }) =>
         wrap(async () => {
           const logs = await this.client.getApplicationLogs(uuid, lines);
-          return truncateLogs(logs, lines ?? 200);
+          return truncateLogs(logs, lines);
         }),
     );
 

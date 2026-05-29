@@ -610,10 +610,10 @@
             <div class="tool-card-header">
               <span class="tool-icon">🏗️</span>
               <span class="tool-category" data-i18n="tc.infra">Infrastructure</span>
-              <span class="tool-count">4</span>
+              <span class="tool-count">5</span>
             </div>
             <div class="tool-desc" data-i18n="td.infra">
-              Overview, health check, API &amp; MCP version
+              Overview, health check, API &amp; MCP version, API control
             </div>
           </div>
           <div class="tool-card">
@@ -666,6 +666,14 @@
           </div>
           <div class="tool-card">
             <div class="tool-card-header">
+              <span class="tool-icon">⏯️</span>
+              <span class="tool-category" data-i18n="tc.control">Control</span>
+              <span class="tool-count">1</span>
+            </div>
+            <div class="tool-desc" data-i18n="td.control">Start, stop, restart app/db/service</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
               <span class="tool-icon">🚀</span>
               <span class="tool-category" data-i18n="tc.deploy">Deployments</span>
               <span class="tool-count">3</span>
@@ -691,6 +699,14 @@
               <span class="tool-count">1</span>
             </div>
             <div class="tool-desc" data-i18n="td.projects">List, get, create, update, delete</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">🌿</span>
+              <span class="tool-category" data-i18n="tc.envs">Environments</span>
+              <span class="tool-count">1</span>
+            </div>
+            <div class="tool-desc" data-i18n="td.envs">List, get, create, delete per project</div>
           </div>
           <div class="tool-card">
             <div class="tool-card-header">
@@ -753,6 +769,22 @@
               <span class="tool-count">1</span>
             </div>
             <div class="tool-desc" data-i18n="td.teams">Team and member information</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">☁️</span>
+              <span class="tool-category" data-i18n="tc.cloud">Cloud Tokens</span>
+              <span class="tool-count">1</span>
+            </div>
+            <div class="tool-desc" data-i18n="td.cloud">Hetzner &amp; DigitalOcean API tokens</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-header">
+              <span class="tool-icon">🔎</span>
+              <span class="tool-category" data-i18n="tc.resources">Resources</span>
+              <span class="tool-count">1</span>
+            </div>
+            <div class="tool-desc" data-i18n="td.resources">Search across all resource types</div>
           </div>
         </div>
       </section>
@@ -851,7 +883,7 @@
           'tools.title': '45 tools across 20 categories',
           'tools.subtitle': 'Everything you need to manage a Coolify instance',
           'tc.infra': 'Infrastructure',
-          'td.infra': 'Overview, health check, API &amp; MCP version',
+          'td.infra': 'Overview, health check, API &amp; MCP version, API control',
           'tc.diag': 'Diagnostics',
           'td.diag': 'App/server diagnostics, scan all infra for issues',
           'tc.servers': 'Servers',
@@ -868,6 +900,10 @@
           'td.env': 'CRUD &amp; bulk upsert across app/db/service',
           'tc.projects': 'Projects',
           'td.projects': 'List, get, create, update, delete',
+          'tc.envs': 'Environments',
+          'td.envs': 'List, get, create, delete per project',
+          'tc.control': 'Control',
+          'td.control': 'Start, stop, restart app/db/service',
           'tc.keys': 'Private Keys',
           'td.keys': 'SSH key lifecycle management',
           'tc.github': 'GitHub Apps',
@@ -882,6 +918,10 @@
           'td.batch': 'Restart project, bulk env, stop all, redeploy',
           'tc.teams': 'Teams',
           'td.teams': 'Team and member information',
+          'tc.cloud': 'Cloud Tokens',
+          'td.cloud': 'Hetzner &amp; DigitalOcean API tokens',
+          'tc.resources': 'Resources',
+          'td.resources': 'Search across all resource types',
           'setup.title': 'Setup',
           'setup.subtitle': 'Add to your MCP config and start managing Coolify through Claude',
           'setup.step1':
@@ -927,7 +967,7 @@
           'tools.title': '20 個分類的 45 個工具',
           'tools.subtitle': '管理 Coolify 實例所需的一切',
           'tc.infra': '基礎設施',
-          'td.infra': '總覽、健康檢查、API 與 MCP 版本',
+          'td.infra': '總覽、健康檢查、API 與 MCP 版本、API 控制',
           'tc.diag': '診斷',
           'td.diag': '應用程式/伺服器診斷，掃描所有基礎設施問題',
           'tc.servers': '伺服器',
@@ -944,6 +984,10 @@
           'td.env': 'CRUD 與批次更新，支援應用程式/資料庫/服務',
           'tc.projects': '專案',
           'td.projects': '列表、取得、建立、更新、刪除',
+          'tc.envs': '環境',
+          'td.envs': '每個專案的列表、取得、建立、刪除',
+          'tc.control': '控制',
+          'td.control': '啟動、停止、重啟應用程式/資料庫/服務',
           'tc.keys': '私鑰',
           'td.keys': 'SSH 金鑰生命週期管理',
           'tc.github': 'GitHub Apps',
@@ -958,6 +1002,10 @@
           'td.batch': '重啟專案、批次環境變數、停止所有、重新部署',
           'tc.teams': '團隊',
           'td.teams': '團隊與成員資訊',
+          'tc.cloud': '雲端 Token',
+          'td.cloud': 'Hetzner 與 DigitalOcean API Token',
+          'tc.resources': '資源',
+          'td.resources': '跨所有資源類型搜尋',
           'setup.title': '設定',
           'setup.subtitle': '加入 MCP 設定，開始透過 Claude 管理 Coolify',
           'setup.step1':
@@ -1005,7 +1053,7 @@
           'tools.title': '20カテゴリの45ツール',
           'tools.subtitle': 'Coolifyインスタンス管理に必要なすべて',
           'tc.infra': 'インフラ',
-          'td.infra': '概要、ヘルスチェック、API・MCPバージョン',
+          'td.infra': '概要、ヘルスチェック、API・MCPバージョン、API制御',
           'tc.diag': '診断',
           'td.diag': 'アプリ/サーバー診断、全インフラのスキャン',
           'tc.servers': 'サーバー',
@@ -1022,6 +1070,10 @@
           'td.env': 'CRUD・一括アップサート（アプリ/DB/サービス対応）',
           'tc.projects': 'プロジェクト',
           'td.projects': 'リスト、取得、作成、更新、削除',
+          'tc.envs': '環境',
+          'td.envs': 'プロジェクトごとのリスト、取得、作成、削除',
+          'tc.control': 'コントロール',
+          'td.control': 'アプリ/DB/サービスの起動、停止、再起動',
           'tc.keys': '秘密鍵',
           'td.keys': 'SSHキーのライフサイクル管理',
           'tc.github': 'GitHub Apps',
@@ -1036,6 +1088,10 @@
           'td.batch': 'プロジェクト再起動、一括環境変数、全停止、再デプロイ',
           'tc.teams': 'チーム',
           'td.teams': 'チームとメンバー情報',
+          'tc.cloud': 'クラウドトークン',
+          'td.cloud': 'Hetzner・DigitalOcean APIトークン',
+          'tc.resources': 'リソース',
+          'td.resources': '全リソースタイプを横断検索',
           'setup.title': 'セットアップ',
           'setup.subtitle': 'MCP設定に追加して、Claude経由でCoolifyを管理',
           'setup.step1':
@@ -1083,7 +1139,7 @@
           'tools.title': '20개 카테고리의 45개 도구',
           'tools.subtitle': 'Coolify 인스턴스 관리에 필요한 모든 것',
           'tc.infra': '인프라',
-          'td.infra': '개요, 헬스 체크, API 및 MCP 버전',
+          'td.infra': '개요, 헬스 체크, API 및 MCP 버전, API 제어',
           'tc.diag': '진단',
           'td.diag': '앱/서버 진단, 전체 인프라 스캔',
           'tc.servers': '서버',
@@ -1100,6 +1156,10 @@
           'td.env': 'CRUD 및 일괄 업서트 (앱/DB/서비스)',
           'tc.projects': '프로젝트',
           'td.projects': '목록, 가져오기, 생성, 업데이트, 삭제',
+          'tc.envs': '환경',
+          'td.envs': '프로젝트별 목록, 가져오기, 생성, 삭제',
+          'tc.control': '제어',
+          'td.control': '앱/DB/서비스 시작, 중지, 재시작',
           'tc.keys': '개인 키',
           'td.keys': 'SSH 키 라이프사이클 관리',
           'tc.github': 'GitHub Apps',
@@ -1114,6 +1174,10 @@
           'td.batch': '프로젝트 재시작, 일괄 환경 변수, 전체 중지, 재배포',
           'tc.teams': '팀',
           'td.teams': '팀 및 멤버 정보',
+          'tc.cloud': '클라우드 토큰',
+          'td.cloud': 'Hetzner 및 DigitalOcean API 토큰',
+          'tc.resources': '리소스',
+          'td.resources': '모든 리소스 유형 횡단 검색',
           'setup.title': '설정',
           'setup.subtitle': 'MCP 설정에 추가하고 Claude를 통해 Coolify 관리 시작',
           'setup.step1':

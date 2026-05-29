@@ -457,8 +457,7 @@ export class CoolifyClient {
         `COOLIFY_URL must use http or https protocol, got: ${parsed.protocol.replace(':', '')}`,
       );
     }
-    const strippedPath = parsed.pathname.replace(/\/$/, '');
-    if (strippedPath !== '') {
+    if (parsed.pathname.replace(/\/$/, '') !== '') {
       throw new Error(
         'COOLIFY_URL must not contain a path prefix (e.g. use https://host not https://host/proxy)',
       );
