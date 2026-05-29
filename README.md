@@ -1,15 +1,16 @@
 # @jurislm/coolify-mcp
 
-MCP (Model Context Protocol) server for [Coolify](https://coolify.io) — provides 44 tools for infrastructure management (servers, applications, databases, deployments, diagnostics) via natural language.
+MCP (Model Context Protocol) server for [Coolify](https://coolify.io) — provides 45 tools for infrastructure management (servers, applications, databases, deployments, diagnostics) via natural language.
 
 ## Tools
 
-### Infrastructure (4 tools)
+### Infrastructure (5 tools)
 
 - `get_infrastructure_overview` — Get overview of all resources (servers, projects, apps, databases, services)
 - `get_mcp_version` — Get coolify-mcp server version
 - `get_version` — Get Coolify API version
 - `health` — Check Coolify instance health
+- `api_control` — Enable or disable the Coolify API (`action: enable|disable`)
 
 ### Diagnostics (3 tools)
 
