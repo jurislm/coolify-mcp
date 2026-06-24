@@ -724,22 +724,22 @@ describe('CoolifyClient', () => {
       expect(result[0]).not.toHaveProperty('public_key');
     });
 
-    it('should redact private_key on get by default', async () => {
+    it('returns metadata only (no key material) on get by default', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse(mockKey));
 
       const result = await client.getPrivateKey('key-uuid');
 
-      expect(result.private_key).not.toBe('ssh-rsa SECRET-MATERIAL');
-      expect(result.private_key).toContain('REDACTED');
-      expect(result.name).toBe('my-key');
-      // public_key is also key material — must not leak on the redacted path
+      // No private_key field at all — not even a sentinel that could be PATCHed back
+      expect(result).not.toHaveProperty('private_key');
       expect(result).not.toHaveProperty('public_key');
+      expect(result.name).toBe('my-key');
+      expect(result.fingerprint).toBe('SHA256:abc');
     });
 
     it('should return raw private_key and public_key on get when reveal is true', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse(mockKey));
 
-      const result = await client.getPrivateKey('key-uuid', { reveal: true });
+      const result = (await client.getPrivateKey('key-uuid', { reveal: true })) as PrivateKey;
 
       expect(result.private_key).toBe('ssh-rsa SECRET-MATERIAL');
       expect(result.public_key).toBe('ssh-rsa PUBLIC');
@@ -2994,13 +2994,12 @@ describe('CoolifyClient', () => {
       updated_at: '2024-01-01',
     } as PrivateKey;
 
-    it('should get a private key with key material redacted by default', async () => {
+    it('should get a private key as metadata only by default', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse(mockPrivateKey));
 
       const result = await client.getPrivateKey('key-uuid');
 
-      expect(result.private_key).toContain('REDACTED');
-      expect(result.private_key).not.toBe('ssh-rsa AAAA...');
+      expect(result).not.toHaveProperty('private_key');
       expect(result).not.toHaveProperty('public_key');
       expect(result.fingerprint).toBe('SHA256:xxx');
       expect(result.name).toBe('my-key');

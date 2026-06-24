@@ -435,9 +435,11 @@ function toEnvVarSummary(envVar: EnvironmentVariable): EnvVarSummary {
   };
 }
 
-/** Placeholder returned in place of secret key material when not explicitly revealed. */
-const REDACTED_PRIVATE_KEY = '[REDACTED — pass reveal:true to retrieve raw key material]';
-
+// Allowlist projection to metadata only: omits private_key and public_key (and any
+// future secret-bearing field added to PrivateKey). Used for the safe path of both
+// listPrivateKeys and getPrivateKey. Omitting private_key entirely — rather than
+// returning a sentinel string — avoids a read-modify-write hazard where a caller
+// could PATCH the sentinel back over the real key.
 function toPrivateKeySummary(key: PrivateKey): PrivateKeySummary {
   return {
     id: key.id,
@@ -450,13 +452,6 @@ function toPrivateKeySummary(key: PrivateKey): PrivateKeySummary {
     created_at: key.created_at,
     updated_at: key.updated_at,
   };
-}
-
-// Allowlist redaction: build from the metadata-only summary and re-add a redacted
-// private_key. Spreading the raw key would let public_key — and any future
-// secret-bearing field added to PrivateKey — pass through unredacted.
-function redactPrivateKey(key: PrivateKey): PrivateKey {
-  return { ...toPrivateKeySummary(key), private_key: REDACTED_PRIVATE_KEY };
 }
 
 /**
@@ -1253,9 +1248,14 @@ export class CoolifyClient {
     return keys.map(toPrivateKeySummary);
   }
 
-  async getPrivateKey(uuid: string, options?: { reveal?: boolean }): Promise<PrivateKey> {
+  // Default (reveal omitted/false) returns a metadata-only summary with no
+  // private_key/public_key field at all. reveal:true returns the full key.
+  async getPrivateKey(
+    uuid: string,
+    options?: { reveal?: boolean },
+  ): Promise<PrivateKey | PrivateKeySummary> {
     const key = await this.request<PrivateKey>(`/security/keys/${encodeURIComponent(uuid)}`);
-    return options?.reveal ? key : redactPrivateKey(key);
+    return options?.reveal ? key : toPrivateKeySummary(key);
   }
 
   async createPrivateKey(data: CreatePrivateKeyRequest): Promise<UuidResponse> {
