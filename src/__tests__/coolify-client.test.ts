@@ -1880,7 +1880,7 @@ describe('CoolifyClient', () => {
 
       const result = await client.listApplicationEnvVars('app-uuid');
 
-      expect(result).toEqual([mockEnvVar]);
+      expect(result).toEqual([mockEnvVar] as unknown as EnvironmentVariable[]);
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/applications/app-uuid/envs',
         expect.any(Object),
@@ -2631,7 +2631,7 @@ describe('CoolifyClient', () => {
 
       const result = await client.listDatabaseEnvVars('db-uuid');
 
-      expect(result).toEqual([mockEnvVar]);
+      expect(result).toEqual([mockEnvVar] as unknown as EnvironmentVariable[]);
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/databases/db-uuid/envs',
         expect.any(Object),
