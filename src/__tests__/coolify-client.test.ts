@@ -739,7 +739,7 @@ describe('CoolifyClient', () => {
     it('should return raw private_key and public_key on get when reveal is true', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse(mockKey));
 
-      const result = (await client.getPrivateKey('key-uuid', { reveal: true })) as PrivateKey;
+      const result = await client.getPrivateKey('key-uuid', { reveal: true });
 
       expect(result.private_key).toBe('ssh-rsa SECRET-MATERIAL');
       expect(result.public_key).toBe('ssh-rsa PUBLIC');

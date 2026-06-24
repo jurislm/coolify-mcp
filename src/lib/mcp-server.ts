@@ -1429,7 +1429,11 @@ export class CoolifyMcpServer extends McpServer {
         if (resource === 'application') {
           switch (action) {
             case 'list':
-              return wrap(() => this.client.listApplicationEnvVars(uuid, { summary: !reveal }));
+              return wrap(async () =>
+                reveal
+                  ? this.client.listApplicationEnvVars(uuid)
+                  : this.client.listApplicationEnvVars(uuid, { summary: true }),
+              );
             case 'create':
               if (!key || !value)
                 return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
@@ -1470,7 +1474,11 @@ export class CoolifyMcpServer extends McpServer {
         } else if (resource === 'database') {
           switch (action) {
             case 'list':
-              return wrap(() => this.client.listDatabaseEnvVars(uuid, { summary: !reveal }));
+              return wrap(async () =>
+                reveal
+                  ? this.client.listDatabaseEnvVars(uuid)
+                  : this.client.listDatabaseEnvVars(uuid, { summary: true }),
+              );
             case 'create':
               if (!key || !value)
                 return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
@@ -1509,7 +1517,11 @@ export class CoolifyMcpServer extends McpServer {
         } else {
           switch (action) {
             case 'list':
-              return wrap(() => this.client.listServiceEnvVars(uuid, { summary: !reveal }));
+              return wrap(async () =>
+                reveal
+                  ? this.client.listServiceEnvVars(uuid)
+                  : this.client.listServiceEnvVars(uuid, { summary: true }),
+              );
             case 'create':
               if (!key || !value)
                 return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
@@ -1678,7 +1690,11 @@ export class CoolifyMcpServer extends McpServer {
           case 'get':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            return wrap(() => this.client.getPrivateKey(uuid, { reveal }));
+            return wrap(async () =>
+              reveal
+                ? this.client.getPrivateKey(uuid, { reveal: true })
+                : this.client.getPrivateKey(uuid),
+            );
           case 'create':
             if (!private_key)
               return { content: [{ type: 'text' as const, text: 'Error: private_key required' }] };

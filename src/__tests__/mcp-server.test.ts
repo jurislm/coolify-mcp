@@ -1978,7 +1978,7 @@ describe('env_vars — database/service paths, application bulk_create, list_dep
       uuid: 'app-uuid',
       reveal: true,
     });
-    expect(spy).toHaveBeenLastCalledWith('app-uuid', { summary: false });
+    expect(spy).toHaveBeenLastCalledWith('app-uuid');
   });
 
   it('database list summarizes by default and reveals values when reveal:true', async () => {
@@ -1995,7 +1995,7 @@ describe('env_vars — database/service paths, application bulk_create, list_dep
       uuid: 'db-uuid',
       reveal: true,
     });
-    expect(spy).toHaveBeenLastCalledWith('db-uuid', { summary: false });
+    expect(spy).toHaveBeenLastCalledWith('db-uuid');
   });
 
   it('service list summarizes by default and reveals values when reveal:true', async () => {
@@ -2012,7 +2012,7 @@ describe('env_vars — database/service paths, application bulk_create, list_dep
       uuid: 'svc-uuid',
       reveal: true,
     });
-    expect(spy).toHaveBeenLastCalledWith('svc-uuid', { summary: false });
+    expect(spy).toHaveBeenLastCalledWith('svc-uuid');
   });
 
   it('application bulk_create dispatches to bulkUpdateApplicationEnvVars', async () => {
@@ -2193,7 +2193,7 @@ describe('teams get/members and private_keys create/update/delete', () => {
   it('private_keys get defaults reveal to undefined (redacted path)', async () => {
     const spy = jest.spyOn(server.getClient(), 'getPrivateKey').mockResolvedValue({} as never);
     await callHandler(server, 'private_keys', { action: 'get', uuid: 'key-uuid' });
-    expect(spy).toHaveBeenCalledWith('key-uuid', { reveal: undefined });
+    expect(spy).toHaveBeenCalledWith('key-uuid');
   });
 
   it('private_keys get threads reveal:true to getPrivateKey', async () => {

@@ -899,6 +899,11 @@ export class CoolifyClient {
   // Application Environment Variables
   // ===========================================================================
 
+  async listApplicationEnvVars(uuid: string, options: { summary: true }): Promise<EnvVarSummary[]>;
+  async listApplicationEnvVars(
+    uuid: string,
+    options?: { summary?: false },
+  ): Promise<EnvironmentVariable[]>;
   async listApplicationEnvVars(
     uuid: string,
     options?: { summary?: boolean },
@@ -1134,6 +1139,11 @@ export class CoolifyClient {
   // Service Environment Variables
   // ===========================================================================
 
+  async listServiceEnvVars(uuid: string, options: { summary: true }): Promise<EnvVarSummary[]>;
+  async listServiceEnvVars(
+    uuid: string,
+    options?: { summary?: false },
+  ): Promise<EnvironmentVariable[]>;
   async listServiceEnvVars(
     uuid: string,
     options?: { summary?: boolean },
@@ -1250,6 +1260,8 @@ export class CoolifyClient {
 
   // Default (reveal omitted/false) returns a metadata-only summary with no
   // private_key/public_key field at all. reveal:true returns the full key.
+  async getPrivateKey(uuid: string, options: { reveal: true }): Promise<PrivateKey>;
+  async getPrivateKey(uuid: string, options?: { reveal?: false }): Promise<PrivateKeySummary>;
   async getPrivateKey(
     uuid: string,
     options?: { reveal?: boolean },
@@ -1449,6 +1461,11 @@ export class CoolifyClient {
   // Database Environment Variables
   // ===========================================================================
 
+  async listDatabaseEnvVars(uuid: string, options: { summary: true }): Promise<EnvVarSummary[]>;
+  async listDatabaseEnvVars(
+    uuid: string,
+    options?: { summary?: false },
+  ): Promise<EnvironmentVariable[]>;
   async listDatabaseEnvVars(
     uuid: string,
     options?: { summary?: boolean },
