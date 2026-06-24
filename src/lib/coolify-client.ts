@@ -80,6 +80,7 @@ import type {
   TeamMember,
   // Private key types
   PrivateKey,
+  PrivateKeySummary,
   CreatePrivateKeyRequest,
   UpdatePrivateKeyRequest,
   // GitHub App types
@@ -427,8 +428,29 @@ function toEnvVarSummary(envVar: EnvironmentVariable): EnvVarSummary {
   return {
     uuid: envVar.uuid,
     key: envVar.key,
-    value: envVar.value,
     is_build_time: envVar.is_build_time,
+    // A deliberately-empty value ('') still counts as set; only a missing
+    // value (null/undefined) reports has_value: false.
+    has_value: envVar.value != null,
+  };
+}
+
+// Allowlist projection to metadata only: omits private_key and public_key (and any
+// future secret-bearing field added to PrivateKey). Used for the safe path of both
+// listPrivateKeys and getPrivateKey. Omitting private_key entirely — rather than
+// returning a sentinel string — avoids a read-modify-write hazard where a caller
+// could PATCH the sentinel back over the real key.
+function toPrivateKeySummary(key: PrivateKey): PrivateKeySummary {
+  return {
+    id: key.id,
+    uuid: key.uuid,
+    name: key.name,
+    description: key.description,
+    fingerprint: key.fingerprint,
+    is_git_related: key.is_git_related,
+    team_id: key.team_id,
+    created_at: key.created_at,
+    updated_at: key.updated_at,
   };
 }
 
@@ -877,6 +899,11 @@ export class CoolifyClient {
   // Application Environment Variables
   // ===========================================================================
 
+  async listApplicationEnvVars(uuid: string, options: { summary: true }): Promise<EnvVarSummary[]>;
+  async listApplicationEnvVars(
+    uuid: string,
+    options?: { summary?: false },
+  ): Promise<EnvironmentVariable[]>;
   async listApplicationEnvVars(
     uuid: string,
     options?: { summary?: boolean },
@@ -1112,8 +1139,19 @@ export class CoolifyClient {
   // Service Environment Variables
   // ===========================================================================
 
-  async listServiceEnvVars(uuid: string): Promise<EnvironmentVariable[]> {
-    return this.request<EnvironmentVariable[]>(`/services/${encodeURIComponent(uuid)}/envs`);
+  async listServiceEnvVars(uuid: string, options: { summary: true }): Promise<EnvVarSummary[]>;
+  async listServiceEnvVars(
+    uuid: string,
+    options?: { summary?: false },
+  ): Promise<EnvironmentVariable[]>;
+  async listServiceEnvVars(
+    uuid: string,
+    options?: { summary?: boolean },
+  ): Promise<EnvironmentVariable[] | EnvVarSummary[]> {
+    const envVars = await this.request<EnvironmentVariable[]>(
+      `/services/${encodeURIComponent(uuid)}/envs`,
+    );
+    return options?.summary ? envVars.map(toEnvVarSummary) : envVars;
   }
 
   async createServiceEnvVar(uuid: string, data: CreateEnvVarRequest): Promise<UuidResponse> {
@@ -1215,12 +1253,21 @@ export class CoolifyClient {
   // Private Key endpoints
   // ===========================================================================
 
-  async listPrivateKeys(): Promise<PrivateKey[]> {
-    return this.request<PrivateKey[]>('/security/keys');
+  async listPrivateKeys(): Promise<PrivateKeySummary[]> {
+    const keys = await this.request<PrivateKey[]>('/security/keys');
+    return keys.map(toPrivateKeySummary);
   }
 
-  async getPrivateKey(uuid: string): Promise<PrivateKey> {
-    return this.request<PrivateKey>(`/security/keys/${encodeURIComponent(uuid)}`);
+  // Default (reveal omitted/false) returns a metadata-only summary with no
+  // private_key/public_key field at all. reveal:true returns the full key.
+  async getPrivateKey(uuid: string, options: { reveal: true }): Promise<PrivateKey>;
+  async getPrivateKey(uuid: string, options?: { reveal?: false }): Promise<PrivateKeySummary>;
+  async getPrivateKey(
+    uuid: string,
+    options?: { reveal?: boolean },
+  ): Promise<PrivateKey | PrivateKeySummary> {
+    const key = await this.request<PrivateKey>(`/security/keys/${encodeURIComponent(uuid)}`);
+    return options?.reveal ? key : toPrivateKeySummary(key);
   }
 
   async createPrivateKey(data: CreatePrivateKeyRequest): Promise<UuidResponse> {
@@ -1230,8 +1277,12 @@ export class CoolifyClient {
     });
   }
 
-  async updatePrivateKey(uuid: string, data: UpdatePrivateKeyRequest): Promise<PrivateKey> {
-    return this.request<PrivateKey>(`/security/keys/${encodeURIComponent(uuid)}`, {
+  // The update endpoint returns a UUID-only acknowledgment ({ uuid }), not a full
+  // key (see docs/openapi-chunks/private-keys-api.yaml). Return it as-is — there is
+  // no key material to redact, and treating it as a PrivateKey would fabricate
+  // undefined metadata fields and a synthetic private_key.
+  async updatePrivateKey(uuid: string, data: UpdatePrivateKeyRequest): Promise<UuidResponse> {
+    return this.request<UuidResponse>(`/security/keys/${encodeURIComponent(uuid)}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -1410,6 +1461,11 @@ export class CoolifyClient {
   // Database Environment Variables
   // ===========================================================================
 
+  async listDatabaseEnvVars(uuid: string, options: { summary: true }): Promise<EnvVarSummary[]>;
+  async listDatabaseEnvVars(
+    uuid: string,
+    options?: { summary?: false },
+  ): Promise<EnvironmentVariable[]>;
   async listDatabaseEnvVars(
     uuid: string,
     options?: { summary?: boolean },
@@ -1803,7 +1859,8 @@ export class CoolifyClient {
     const results = await Promise.allSettled([
       this.getApplication(uuid),
       this.getApplicationLogs(uuid, 50),
-      this.listApplicationEnvVars(uuid),
+      // summary only — the diagnostic projects key + is_build_time, never values
+      this.listApplicationEnvVars(uuid, { summary: true }),
       this.listApplicationDeployments(uuid),
     ]);
 
