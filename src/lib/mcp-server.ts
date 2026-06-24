@@ -1406,6 +1406,12 @@ export class CoolifyMcpServer extends McpServer {
           .describe(
             'Array of {key, value, comment?, is_runtime?, is_buildtime?} for bulk_create action (application, database, and service)',
           ),
+        reveal: z
+          .boolean()
+          .optional()
+          .describe(
+            'list only: include secret env var values in the response. Defaults to false — summaries show key + has_value to avoid exposing secrets in the AI context.',
+          ),
       },
       async ({
         resource,
@@ -1418,11 +1424,16 @@ export class CoolifyMcpServer extends McpServer {
         is_runtime,
         is_buildtime,
         bulk_data,
+        reveal,
       }) => {
         if (resource === 'application') {
           switch (action) {
             case 'list':
-              return wrap(() => this.client.listApplicationEnvVars(uuid, { summary: true }));
+              return wrap(async () =>
+                reveal
+                  ? this.client.listApplicationEnvVars(uuid)
+                  : this.client.listApplicationEnvVars(uuid, { summary: true }),
+              );
             case 'create':
               if (!key || !value)
                 return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
@@ -1463,7 +1474,11 @@ export class CoolifyMcpServer extends McpServer {
         } else if (resource === 'database') {
           switch (action) {
             case 'list':
-              return wrap(() => this.client.listDatabaseEnvVars(uuid, { summary: true }));
+              return wrap(async () =>
+                reveal
+                  ? this.client.listDatabaseEnvVars(uuid)
+                  : this.client.listDatabaseEnvVars(uuid, { summary: true }),
+              );
             case 'create':
               if (!key || !value)
                 return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
@@ -1502,7 +1517,11 @@ export class CoolifyMcpServer extends McpServer {
         } else {
           switch (action) {
             case 'list':
-              return wrap(() => this.client.listServiceEnvVars(uuid));
+              return wrap(async () =>
+                reveal
+                  ? this.client.listServiceEnvVars(uuid)
+                  : this.client.listServiceEnvVars(uuid, { summary: true }),
+              );
             case 'create':
               if (!key || !value)
                 return { content: [{ type: 'text' as const, text: 'Error: key, value required' }] };
@@ -1657,15 +1676,25 @@ export class CoolifyMcpServer extends McpServer {
         name: z.string().optional(),
         description: z.string().optional(),
         private_key: privateKeySchema,
+        reveal: z
+          .boolean()
+          .optional()
+          .describe(
+            'get only: return raw private key material. Defaults to false (redacted). list never returns key material.',
+          ),
       },
-      async ({ action, uuid, name, description, private_key }) => {
+      async ({ action, uuid, name, description, private_key, reveal }) => {
         switch (action) {
           case 'list':
             return wrap(() => this.client.listPrivateKeys());
           case 'get':
             if (!uuid)
               return { content: [{ type: 'text' as const, text: 'Error: uuid required' }] };
-            return wrap(() => this.client.getPrivateKey(uuid));
+            return wrap(async () =>
+              reveal
+                ? this.client.getPrivateKey(uuid, { reveal: true })
+                : this.client.getPrivateKey(uuid),
+            );
           case 'create':
             if (!private_key)
               return { content: [{ type: 'text' as const, text: 'Error: private_key required' }] };
