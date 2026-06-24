@@ -483,12 +483,15 @@ export interface StopOptions {
   dockerCleanup?: boolean;
 }
 
-// Summary type for env vars - reduces response size significantly
+// Summary type for env vars - reduces response size significantly.
+// The value is intentionally omitted to avoid exposing secrets in the AI context;
+// pass reveal:true on the env_vars tool to retrieve full values.
 export interface EnvVarSummary {
   uuid: string;
   key: string;
-  value: string;
   is_build_time: boolean;
+  /** Whether a non-empty value is set. The actual value is omitted from summaries. */
+  has_value: boolean;
 }
 
 // =============================================================================
@@ -925,6 +928,20 @@ export interface PrivateKey {
   description?: string;
   private_key: string;
   public_key?: string;
+  fingerprint?: string;
+  is_git_related: boolean;
+  team_id: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Summary type for private keys - omits secret key material (private_key/public_key)
+// so that listing keys never dumps raw PEM material into the AI context.
+export interface PrivateKeySummary {
+  id: number;
+  uuid: string;
+  name: string;
+  description?: string;
   fingerprint?: string;
   is_git_related: boolean;
   team_id: number;

@@ -688,24 +688,70 @@ describe('CoolifyClient', () => {
   });
 
   describe('private keys', () => {
-    it('should list private keys', async () => {
-      const mockKeys = [
+    const mockKey = {
+      id: 1,
+      uuid: 'key-uuid',
+      name: 'my-key',
+      description: 'desc',
+      private_key: 'ssh-rsa SECRET-MATERIAL',
+      public_key: 'ssh-rsa PUBLIC',
+      fingerprint: 'SHA256:abc',
+      is_git_related: false,
+      team_id: 1,
+      created_at: '2024-01-01',
+      updated_at: '2024-01-01',
+    };
+
+    it('should list private keys without exposing key material', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse([mockKey]));
+
+      const result = await client.listPrivateKeys();
+
+      expect(result).toEqual([
         {
           id: 1,
           uuid: 'key-uuid',
           name: 'my-key',
-          private_key: 'ssh-rsa AAAA...',
+          description: 'desc',
+          fingerprint: 'SHA256:abc',
           is_git_related: false,
           team_id: 1,
           created_at: '2024-01-01',
           updated_at: '2024-01-01',
         },
-      ];
-      mockFetch.mockResolvedValueOnce(mockResponse(mockKeys));
+      ]);
+      expect(result[0]).not.toHaveProperty('private_key');
+      expect(result[0]).not.toHaveProperty('public_key');
+    });
 
-      const result = await client.listPrivateKeys();
+    it('should redact private_key on get by default', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(mockKey));
 
-      expect(result).toEqual(mockKeys);
+      const result = await client.getPrivateKey('key-uuid');
+
+      expect(result.private_key).not.toBe('ssh-rsa SECRET-MATERIAL');
+      expect(result.private_key).toContain('REDACTED');
+      expect(result.name).toBe('my-key');
+      // public_key is also key material — must not leak on the redacted path
+      expect(result).not.toHaveProperty('public_key');
+    });
+
+    it('should return raw private_key and public_key on get when reveal is true', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(mockKey));
+
+      const result = await client.getPrivateKey('key-uuid', { reveal: true });
+
+      expect(result.private_key).toBe('ssh-rsa SECRET-MATERIAL');
+      expect(result.public_key).toBe('ssh-rsa PUBLIC');
+    });
+
+    it('should redact private_key and drop public_key in the update response', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse(mockKey));
+
+      const result = await client.updatePrivateKey('key-uuid', { name: 'my-key' });
+
+      expect(result.private_key).toContain('REDACTED');
+      expect(result).not.toHaveProperty('public_key');
     });
 
     it('should create a private key', async () => {
@@ -1861,14 +1907,32 @@ describe('CoolifyClient', () => {
 
       const result = await client.listApplicationEnvVars('app-uuid', { summary: true });
 
-      // Summary should only include uuid, key, value, is_build_time
+      // Summary should omit the secret value and only expose key + has_value
       expect(result).toEqual([
         {
           uuid: 'env-var-uuid',
           key: 'API_KEY',
-          value: 'secret123',
           is_build_time: false,
+          has_value: true,
         },
+      ]);
+      expect(result[0]).not.toHaveProperty('value');
+    });
+
+    it('has_value distinguishes empty-string (set) from missing value', async () => {
+      const envVars = [
+        { uuid: 'a', key: 'EMPTY', value: '', is_build_time: false },
+        { uuid: 'b', key: 'MISSING', is_build_time: false },
+        { uuid: 'c', key: 'SET', value: 'x', is_build_time: false },
+      ];
+      mockFetch.mockResolvedValueOnce(mockResponse(envVars));
+
+      const result = await client.listApplicationEnvVars('app-uuid', { summary: true });
+
+      expect(result).toEqual([
+        { uuid: 'a', key: 'EMPTY', is_build_time: false, has_value: true },
+        { uuid: 'b', key: 'MISSING', is_build_time: false, has_value: false },
+        { uuid: 'c', key: 'SET', is_build_time: false, has_value: true },
       ]);
     });
 
@@ -2508,6 +2572,17 @@ describe('CoolifyClient', () => {
       );
     });
 
+    it('should list service env vars with summary (value omitted)', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse([mockEnvVar]));
+
+      const result = await client.listServiceEnvVars('test-uuid', { summary: true });
+
+      expect(result).toEqual([
+        { uuid: 'svc-env-uuid', key: 'SVC_KEY', is_build_time: false, has_value: true },
+      ]);
+      expect(result[0]).not.toHaveProperty('value');
+    });
+
     it('should create service env var', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse({ uuid: 'new-env-uuid' }));
 
@@ -2563,13 +2638,14 @@ describe('CoolifyClient', () => {
       );
     });
 
-    it('should list database env vars with summary', async () => {
-      const mockEnvVars = [{ uuid: 'e1', key: 'KEY1', value: 'val1' }];
+    it('should list database env vars with summary (value omitted)', async () => {
+      const mockEnvVars = [{ uuid: 'e1', key: 'KEY1', value: 'val1', is_build_time: false }];
       mockFetch.mockResolvedValueOnce(mockResponse(mockEnvVars));
 
       const result = await client.listDatabaseEnvVars('db-uuid', { summary: true });
 
-      expect(Array.isArray(result)).toBe(true);
+      expect(result).toEqual([{ uuid: 'e1', key: 'KEY1', is_build_time: false, has_value: true }]);
+      expect(result[0]).not.toHaveProperty('value');
     });
 
     it('should create database env var', async () => {
@@ -2910,30 +2986,37 @@ describe('CoolifyClient', () => {
       name: 'my-key',
       fingerprint: 'SHA256:xxx',
       private_key: 'ssh-rsa AAAA...',
+      public_key: 'ssh-rsa PUBLIC',
       is_git_related: false,
       team_id: 1,
       created_at: '2024-01-01',
       updated_at: '2024-01-01',
     } as PrivateKey;
 
-    it('should get a private key', async () => {
+    it('should get a private key with key material redacted by default', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse(mockPrivateKey));
 
       const result = await client.getPrivateKey('key-uuid');
 
-      expect(result).toEqual(mockPrivateKey);
+      expect(result.private_key).toContain('REDACTED');
+      expect(result.private_key).not.toBe('ssh-rsa AAAA...');
+      expect(result).not.toHaveProperty('public_key');
+      expect(result.fingerprint).toBe('SHA256:xxx');
+      expect(result.name).toBe('my-key');
       expect(mockFetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/v1/security/keys/key-uuid',
         expect.any(Object),
       );
     });
 
-    it('should update a private key', async () => {
+    it('should update a private key with key material redacted', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse({ ...mockPrivateKey, name: 'updated-key' }));
 
       const result = await client.updatePrivateKey('key-uuid', { name: 'updated-key' });
 
       expect(result.name).toBe('updated-key');
+      expect(result.private_key).toContain('REDACTED');
+      expect(result).not.toHaveProperty('public_key');
     });
 
     it('should delete a private key', async () => {

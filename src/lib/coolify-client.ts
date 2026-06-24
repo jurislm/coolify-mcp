@@ -80,6 +80,7 @@ import type {
   TeamMember,
   // Private key types
   PrivateKey,
+  PrivateKeySummary,
   CreatePrivateKeyRequest,
   UpdatePrivateKeyRequest,
   // GitHub App types
@@ -427,9 +428,35 @@ function toEnvVarSummary(envVar: EnvironmentVariable): EnvVarSummary {
   return {
     uuid: envVar.uuid,
     key: envVar.key,
-    value: envVar.value,
     is_build_time: envVar.is_build_time,
+    // A deliberately-empty value ('') still counts as set; only a missing
+    // value (null/undefined) reports has_value: false.
+    has_value: envVar.value != null,
   };
+}
+
+/** Placeholder returned in place of secret key material when not explicitly revealed. */
+const REDACTED_PRIVATE_KEY = '[REDACTED — pass reveal:true to retrieve raw key material]';
+
+function toPrivateKeySummary(key: PrivateKey): PrivateKeySummary {
+  return {
+    id: key.id,
+    uuid: key.uuid,
+    name: key.name,
+    description: key.description,
+    fingerprint: key.fingerprint,
+    is_git_related: key.is_git_related,
+    team_id: key.team_id,
+    created_at: key.created_at,
+    updated_at: key.updated_at,
+  };
+}
+
+// Allowlist redaction: build from the metadata-only summary and re-add a redacted
+// private_key. Spreading the raw key would let public_key — and any future
+// secret-bearing field added to PrivateKey — pass through unredacted.
+function redactPrivateKey(key: PrivateKey): PrivateKey {
+  return { ...toPrivateKeySummary(key), private_key: REDACTED_PRIVATE_KEY };
 }
 
 /**
@@ -1112,8 +1139,14 @@ export class CoolifyClient {
   // Service Environment Variables
   // ===========================================================================
 
-  async listServiceEnvVars(uuid: string): Promise<EnvironmentVariable[]> {
-    return this.request<EnvironmentVariable[]>(`/services/${encodeURIComponent(uuid)}/envs`);
+  async listServiceEnvVars(
+    uuid: string,
+    options?: { summary?: boolean },
+  ): Promise<EnvironmentVariable[] | EnvVarSummary[]> {
+    const envVars = await this.request<EnvironmentVariable[]>(
+      `/services/${encodeURIComponent(uuid)}/envs`,
+    );
+    return options?.summary ? envVars.map(toEnvVarSummary) : envVars;
   }
 
   async createServiceEnvVar(uuid: string, data: CreateEnvVarRequest): Promise<UuidResponse> {
@@ -1215,12 +1248,14 @@ export class CoolifyClient {
   // Private Key endpoints
   // ===========================================================================
 
-  async listPrivateKeys(): Promise<PrivateKey[]> {
-    return this.request<PrivateKey[]>('/security/keys');
+  async listPrivateKeys(): Promise<PrivateKeySummary[]> {
+    const keys = await this.request<PrivateKey[]>('/security/keys');
+    return keys.map(toPrivateKeySummary);
   }
 
-  async getPrivateKey(uuid: string): Promise<PrivateKey> {
-    return this.request<PrivateKey>(`/security/keys/${encodeURIComponent(uuid)}`);
+  async getPrivateKey(uuid: string, options?: { reveal?: boolean }): Promise<PrivateKey> {
+    const key = await this.request<PrivateKey>(`/security/keys/${encodeURIComponent(uuid)}`);
+    return options?.reveal ? key : redactPrivateKey(key);
   }
 
   async createPrivateKey(data: CreatePrivateKeyRequest): Promise<UuidResponse> {
@@ -1231,10 +1266,11 @@ export class CoolifyClient {
   }
 
   async updatePrivateKey(uuid: string, data: UpdatePrivateKeyRequest): Promise<PrivateKey> {
-    return this.request<PrivateKey>(`/security/keys/${encodeURIComponent(uuid)}`, {
+    const key = await this.request<PrivateKey>(`/security/keys/${encodeURIComponent(uuid)}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
+    return redactPrivateKey(key);
   }
 
   async deletePrivateKey(uuid: string): Promise<MessageResponse> {
@@ -1803,7 +1839,8 @@ export class CoolifyClient {
     const results = await Promise.allSettled([
       this.getApplication(uuid),
       this.getApplicationLogs(uuid, 50),
-      this.listApplicationEnvVars(uuid),
+      // summary only — the diagnostic projects key + is_build_time, never values
+      this.listApplicationEnvVars(uuid, { summary: true }),
       this.listApplicationDeployments(uuid),
     ]);
 

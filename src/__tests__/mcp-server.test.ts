@@ -1964,6 +1964,57 @@ describe('env_vars — database/service paths, application bulk_create, list_dep
     server = new TestableMcpServer({ baseUrl: 'http://localhost:3000', accessToken: 'test-token' });
   });
 
+  it('application list summarizes by default and reveals values when reveal:true', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listApplicationEnvVars').mockResolvedValue([]);
+    await callHandler(server, 'env_vars', {
+      resource: 'application',
+      action: 'list',
+      uuid: 'app-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith('app-uuid', { summary: true });
+    await callHandler(server, 'env_vars', {
+      resource: 'application',
+      action: 'list',
+      uuid: 'app-uuid',
+      reveal: true,
+    });
+    expect(spy).toHaveBeenLastCalledWith('app-uuid', { summary: false });
+  });
+
+  it('database list summarizes by default and reveals values when reveal:true', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listDatabaseEnvVars').mockResolvedValue([]);
+    await callHandler(server, 'env_vars', {
+      resource: 'database',
+      action: 'list',
+      uuid: 'db-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith('db-uuid', { summary: true });
+    await callHandler(server, 'env_vars', {
+      resource: 'database',
+      action: 'list',
+      uuid: 'db-uuid',
+      reveal: true,
+    });
+    expect(spy).toHaveBeenLastCalledWith('db-uuid', { summary: false });
+  });
+
+  it('service list summarizes by default and reveals values when reveal:true', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listServiceEnvVars').mockResolvedValue([]);
+    await callHandler(server, 'env_vars', {
+      resource: 'service',
+      action: 'list',
+      uuid: 'svc-uuid',
+    });
+    expect(spy).toHaveBeenCalledWith('svc-uuid', { summary: true });
+    await callHandler(server, 'env_vars', {
+      resource: 'service',
+      action: 'list',
+      uuid: 'svc-uuid',
+      reveal: true,
+    });
+    expect(spy).toHaveBeenLastCalledWith('svc-uuid', { summary: false });
+  });
+
   it('application bulk_create dispatches to bulkUpdateApplicationEnvVars', async () => {
     const spy = jest
       .spyOn(server.getClient(), 'bulkUpdateApplicationEnvVars')
@@ -2124,6 +2175,31 @@ describe('teams get/members and private_keys create/update/delete', () => {
     const spy = jest.spyOn(server.getClient(), 'getTeamMembers').mockResolvedValue([]);
     await callHandler(server, 'teams', { action: 'members', id: 2 });
     expect(spy).toHaveBeenCalledWith(2);
+  });
+
+  it('private_keys list dispatches to listPrivateKeys', async () => {
+    const spy = jest.spyOn(server.getClient(), 'listPrivateKeys').mockResolvedValue([]);
+    await callHandler(server, 'private_keys', { action: 'list' });
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('private_keys get without uuid returns error', async () => {
+    const result = (await callHandler(server, 'private_keys', { action: 'get' })) as {
+      content: Array<{ text: string }>;
+    };
+    expect(result.content[0].text).toContain('uuid required');
+  });
+
+  it('private_keys get defaults reveal to undefined (redacted path)', async () => {
+    const spy = jest.spyOn(server.getClient(), 'getPrivateKey').mockResolvedValue({} as never);
+    await callHandler(server, 'private_keys', { action: 'get', uuid: 'key-uuid' });
+    expect(spy).toHaveBeenCalledWith('key-uuid', { reveal: undefined });
+  });
+
+  it('private_keys get threads reveal:true to getPrivateKey', async () => {
+    const spy = jest.spyOn(server.getClient(), 'getPrivateKey').mockResolvedValue({} as never);
+    await callHandler(server, 'private_keys', { action: 'get', uuid: 'key-uuid', reveal: true });
+    expect(spy).toHaveBeenCalledWith('key-uuid', { reveal: true });
   });
 
   it('private_keys create dispatches to createPrivateKey', async () => {
