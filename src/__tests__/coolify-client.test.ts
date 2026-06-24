@@ -745,12 +745,13 @@ describe('CoolifyClient', () => {
       expect(result.public_key).toBe('ssh-rsa PUBLIC');
     });
 
-    it('should redact private_key and drop public_key in the update response', async () => {
-      mockFetch.mockResolvedValueOnce(mockResponse(mockKey));
+    it('returns the uuid acknowledgment on update (no key material in response)', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ uuid: 'key-uuid' }));
 
       const result = await client.updatePrivateKey('key-uuid', { name: 'my-key' });
 
-      expect(result.private_key).toContain('REDACTED');
+      expect(result).toEqual({ uuid: 'key-uuid' });
+      expect(result).not.toHaveProperty('private_key');
       expect(result).not.toHaveProperty('public_key');
     });
 
@@ -3009,14 +3010,16 @@ describe('CoolifyClient', () => {
       );
     });
 
-    it('should update a private key with key material redacted', async () => {
-      mockFetch.mockResolvedValueOnce(mockResponse({ ...mockPrivateKey, name: 'updated-key' }));
+    it('should return the uuid acknowledgment on update', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ uuid: 'key-uuid' }));
 
       const result = await client.updatePrivateKey('key-uuid', { name: 'updated-key' });
 
-      expect(result.name).toBe('updated-key');
-      expect(result.private_key).toContain('REDACTED');
-      expect(result).not.toHaveProperty('public_key');
+      expect(result).toEqual({ uuid: 'key-uuid' });
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/v1/security/keys/key-uuid',
+        expect.objectContaining({ method: 'PATCH' }),
+      );
     });
 
     it('should delete a private key', async () => {

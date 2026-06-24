@@ -1265,12 +1265,15 @@ export class CoolifyClient {
     });
   }
 
-  async updatePrivateKey(uuid: string, data: UpdatePrivateKeyRequest): Promise<PrivateKey> {
-    const key = await this.request<PrivateKey>(`/security/keys/${encodeURIComponent(uuid)}`, {
+  // The update endpoint returns a UUID-only acknowledgment ({ uuid }), not a full
+  // key (see docs/openapi-chunks/private-keys-api.yaml). Return it as-is — there is
+  // no key material to redact, and treating it as a PrivateKey would fabricate
+  // undefined metadata fields and a synthetic private_key.
+  async updatePrivateKey(uuid: string, data: UpdatePrivateKeyRequest): Promise<UuidResponse> {
+    return this.request<UuidResponse>(`/security/keys/${encodeURIComponent(uuid)}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
-    return redactPrivateKey(key);
   }
 
   async deletePrivateKey(uuid: string): Promise<MessageResponse> {
