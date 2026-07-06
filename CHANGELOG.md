@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.2](https://github.com/jurislm/coolify-mcp/compare/v3.5.1...v3.5.2) (2026-06-24)
+
+
+### Bug Fixes
+
+* stop leaking secrets into AI context from env-var and private-key reads ([#47](https://github.com/jurislm/coolify-mcp/issues/47)) ([32987ac](https://github.com/jurislm/coolify-mcp/commit/32987ac58e71d461ee6288d036a126e557d411da))
+
+
+### Refactoring
+
+* simplify + fix docs (tool count, missing categories) ([#42](https://github.com/jurislm/coolify-mcp/issues/42)) ([fce86ae](https://github.com/jurislm/coolify-mcp/commit/fce86ae80caca597162246efc91dc5777db3419f))
+
 ## [3.5.1](https://github.com/jurislm/coolify-mcp/compare/v3.5.0...v3.5.1) (2026-05-26)
 
 
