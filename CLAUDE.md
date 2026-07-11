@@ -144,10 +144,9 @@ Commit after each independent task:
 Versioning is managed automatically by [Release Please](https://github.com/googleapis/release-please). **Do NOT manually bump the version in `package.json`.**
 
 - Release Please reads conventional commits (`feat:`, `fix:`, etc.) and determines the correct semver bump automatically.
-- When `develop` is merged into `main`, Release Please opens a release PR with the updated version and CHANGELOG.
-- After merging the Release Please PR, **manually run `npm publish --access public`** from the `main` branch root.
-
-To trigger a release: merge `develop` → `main` via PR → Release Please opens a version PR → merge it → `npm publish --access public`.
+- When `develop` is merged into `main`, Release Please opens (or updates) a release PR with the version bump and CHANGELOG.
+- **The release PR auto-merges and `npm publish --access public` runs automatically** — both are handled by `.github/workflows/release.yml` (2026-07-11): `main`'s branch protection requires the `Lint, Format, Tests` check, `release.yml` requests GitHub auto-merge on the release PR right after opening/updating it, and once merged the same workflow's `publish` job runs `npm publish` using the `NPM_TOKEN` repo secret.
+- No manual action needed to trigger a release: merging a fix/feat PR into `main` is the only step. Release Please + auto-merge + npm publish take it from there.
 
 ## Documentation Standards
 
