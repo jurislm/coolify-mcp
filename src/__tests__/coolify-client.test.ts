@@ -1852,6 +1852,22 @@ describe('CoolifyClient', () => {
       );
     });
 
+    it('accepts a bare string response for application logs (forward-compat)', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse('log line 1\nlog line 2'));
+
+      const result = await client.getApplicationLogs('app-uuid', 50);
+
+      expect(result).toBe('log line 1\nlog line 2');
+    });
+
+    it('throws on unrecognized application logs response shape', async () => {
+      mockFetch.mockResolvedValueOnce(mockResponse({ unexpected: true }));
+
+      await expect(client.getApplicationLogs('app-uuid', 50)).rejects.toThrow(
+        /unrecognized response shape/,
+      );
+    });
+
     it('should restart an application', async () => {
       mockFetch.mockResolvedValueOnce(mockResponse({ message: 'Restarted' }));
 
