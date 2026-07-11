@@ -374,6 +374,28 @@ function normalizeDeploymentsResponse(raw: unknown): Deployment[] {
   return [];
 }
 
+// Coolify normally wraps logs as `{ logs: string }`, but also accepts a bare
+// string for forward-compat with any endpoint variant that returns raw text.
+function normalizeApplicationLogsResponse(raw: unknown): string {
+  if (typeof raw === 'string') return raw;
+  if (
+    raw !== null &&
+    typeof raw === 'object' &&
+    typeof (raw as { logs?: unknown }).logs === 'string'
+  ) {
+    return (raw as { logs: string }).logs;
+  }
+  const summary =
+    raw === null
+      ? 'null'
+      : raw === undefined
+        ? 'undefined'
+        : typeof raw === 'object'
+          ? `object keys=${JSON.stringify(Object.keys(raw as object))}`
+          : typeof raw;
+  throw new Error(`[coolify-mcp] getApplicationLogs: unrecognized response shape (${summary})`);
+}
+
 function toDeploymentEssential(dep: Deployment): DeploymentEssential {
   return {
     uuid: dep.uuid,
@@ -855,7 +877,10 @@ export class CoolifyClient {
   }
 
   async getApplicationLogs(uuid: string, lines: number = 200): Promise<string> {
-    return this.request<string>(`/applications/${encodeURIComponent(uuid)}/logs?lines=${lines}`);
+    const raw = await this.request<unknown>(
+      `/applications/${encodeURIComponent(uuid)}/logs?lines=${lines}`,
+    );
+    return normalizeApplicationLogsResponse(raw);
   }
 
   async startApplication(
