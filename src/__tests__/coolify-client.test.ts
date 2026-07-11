@@ -1841,7 +1841,7 @@ describe('CoolifyClient', () => {
     });
 
     it('should get application logs', async () => {
-      mockFetch.mockResolvedValueOnce(mockResponse('log line 1\nlog line 2'));
+      mockFetch.mockResolvedValueOnce(mockResponse({ logs: 'log line 1\nlog line 2' }));
 
       const result = await client.getApplicationLogs('app-uuid', 50);
 
@@ -3521,7 +3521,7 @@ describe('CoolifyClient', () => {
       it('should aggregate all application data successfully', async () => {
         mockFetch
           .mockResolvedValueOnce(mockResponse(mockApp))
-          .mockResolvedValueOnce(mockResponse(mockLogs))
+          .mockResolvedValueOnce(mockResponse({ logs: mockLogs }))
           .mockResolvedValueOnce(mockResponse(mockEnvVars))
           .mockResolvedValueOnce(mockResponse(mockDeployments));
 
@@ -3553,7 +3553,7 @@ describe('CoolifyClient', () => {
       it('completes diagnosis when deployments come back as a wrapper object (issue #24)', async () => {
         mockFetch
           .mockResolvedValueOnce(mockResponse(mockApp))
-          .mockResolvedValueOnce(mockResponse(mockLogs))
+          .mockResolvedValueOnce(mockResponse({ logs: mockLogs }))
           .mockResolvedValueOnce(mockResponse(mockEnvVars))
           .mockResolvedValueOnce(
             mockResponse({ count: mockDeployments.length, deployments: mockDeployments }),
@@ -3572,7 +3572,7 @@ describe('CoolifyClient', () => {
         try {
           mockFetch
             .mockResolvedValueOnce(mockResponse(mockApp))
-            .mockResolvedValueOnce(mockResponse(mockLogs))
+            .mockResolvedValueOnce(mockResponse({ logs: mockLogs }))
             .mockResolvedValueOnce(mockResponse(mockEnvVars))
             .mockResolvedValueOnce(mockResponse({ foo: 'bar' }));
 
@@ -3591,7 +3591,7 @@ describe('CoolifyClient', () => {
         const unhealthyApp = { ...mockApp, status: 'exited:unhealthy' };
         mockFetch
           .mockResolvedValueOnce(mockResponse(unhealthyApp))
-          .mockResolvedValueOnce(mockResponse(mockLogs))
+          .mockResolvedValueOnce(mockResponse({ logs: mockLogs }))
           .mockResolvedValueOnce(mockResponse(mockEnvVars))
           .mockResolvedValueOnce(mockResponse([]));
 
@@ -3608,7 +3608,7 @@ describe('CoolifyClient', () => {
         ];
         mockFetch
           .mockResolvedValueOnce(mockResponse(mockApp))
-          .mockResolvedValueOnce(mockResponse(mockLogs))
+          .mockResolvedValueOnce(mockResponse({ logs: mockLogs }))
           .mockResolvedValueOnce(mockResponse(mockEnvVars))
           .mockResolvedValueOnce(mockResponse(failedDeployments));
 
@@ -3651,7 +3651,7 @@ describe('CoolifyClient', () => {
         mockFetch
           .mockResolvedValueOnce(mockResponse(mockApps)) // listApplications for lookup
           .mockResolvedValueOnce(mockResponse(mockApp))
-          .mockResolvedValueOnce(mockResponse(mockLogs))
+          .mockResolvedValueOnce(mockResponse({ logs: mockLogs }))
           .mockResolvedValueOnce(mockResponse(mockEnvVars))
           .mockResolvedValueOnce(mockResponse(mockDeployments));
 
@@ -3671,7 +3671,7 @@ describe('CoolifyClient', () => {
         mockFetch
           .mockResolvedValueOnce(mockResponse(mockApps)) // listApplications for lookup
           .mockResolvedValueOnce(mockResponse(mockApp))
-          .mockResolvedValueOnce(mockResponse(mockLogs))
+          .mockResolvedValueOnce(mockResponse({ logs: mockLogs }))
           .mockResolvedValueOnce(mockResponse(mockEnvVars))
           .mockResolvedValueOnce(mockResponse(mockDeployments));
 

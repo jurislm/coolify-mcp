@@ -855,7 +855,10 @@ export class CoolifyClient {
   }
 
   async getApplicationLogs(uuid: string, lines: number = 200): Promise<string> {
-    return this.request<string>(`/applications/${encodeURIComponent(uuid)}/logs?lines=${lines}`);
+    const response = await this.request<{ logs: string }>(
+      `/applications/${encodeURIComponent(uuid)}/logs?lines=${lines}`,
+    );
+    return response.logs;
   }
 
   async startApplication(

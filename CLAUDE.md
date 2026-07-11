@@ -102,6 +102,7 @@ The Coolify OpenAPI docs are unreliable — always test against the real API. Kn
 - **Validation errors vary in format** — The `errors` field in API error responses can contain `string[]` or plain `string` values. The client handles both.
 - **`/deployments/applications/{uuid}` returns a wrapper, not an array** — OpenAPI claims `type: array`, but real Coolify returns `{ count, deployments: [...] }`. The client normalizes this in `listApplicationDeployments` (also accepts `{ data: [...] }` and bare arrays as fallbacks). See issue #24.
 - **`docker_compose_domains` for docker-compose Applications** — Applications using the dockercompose build pack cannot use `domains`/`fqdn`; they require `docker_compose_domains: [{name: "service-name", domain: "https://..."}]`. Passing `domains` returns 422 `The domains field cannot be used for dockercompose applications.`. This is distinct from Coolify Service type (which needs `docker_compose_raw` Traefik labels). See issue #36.
+- **`/applications/{uuid}/logs` returns a wrapper, not a bare string** — OpenAPI/naming suggests the endpoint returns raw log text, but real Coolify returns `{ "logs": "..." }`. The client extracts `.logs` in `getApplicationLogs`. See issue #120.
 
 ## TypeScript Standards
 
