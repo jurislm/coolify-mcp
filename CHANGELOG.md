@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.3](https://github.com/jurislm/coolify-mcp/compare/v3.5.2...v3.5.3) (2026-07-11)
+
+
+### Bug Fixes
+
+* extract logs field from application logs API response ([b03aa27](https://github.com/jurislm/coolify-mcp/commit/b03aa273c1adb82acad5cfaca102440142da383d))
+* extract logs field from application logs API response ([d36a27d](https://github.com/jurislm/coolify-mcp/commit/d36a27d9551fb984734f50771fb3896222ea689f)), closes [#120](https://github.com/jurislm/coolify-mcp/issues/120)
+* validate application logs response shape before returning ([6a566c9](https://github.com/jurislm/coolify-mcp/commit/6a566c983a0531cb745dc42faffd719aea1cc2f2))
+
 ## [3.5.2](https://github.com/jurislm/coolify-mcp/compare/v3.5.1...v3.5.2) (2026-06-24)
 
 
