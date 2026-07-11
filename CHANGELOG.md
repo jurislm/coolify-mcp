@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0](https://github.com/jurislm/coolify-mcp/compare/v3.5.3...v3.6.0) (2026-07-11)
+
+
+### Features
+
+* auto-merge release-please PRs and auto-publish to npm ([262a5eb](https://github.com/jurislm/coolify-mcp/commit/262a5eb7403b9e571ba65db242c7f5c649957273))
+* auto-merge release-please PRs and auto-publish to npm ([ea32d60](https://github.com/jurislm/coolify-mcp/commit/ea32d60d1581bbaf7f79624e9eb44dcb139936ab))
+
 ## [3.5.3](https://github.com/jurislm/coolify-mcp/compare/v3.5.2...v3.5.3) (2026-07-11)
 
 
